@@ -1,48 +1,150 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Check, X, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Check, X, Search, Loader2 } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
 
-// Mock data
-const mockGroups = [
-  { id: 1, name: 'Promoções Amazon Oficial', status: 'active', memberCount: 142, lastMessage: 'Há 5 minutos' },
-  { id: 2, name: 'Ofertas Shopee BR', status: 'active', memberCount: 89, lastMessage: 'Há 20 minutos' },
-  { id: 3, name: 'Compartilhamento de Cupons Magalu', status: 'active', memberCount: 56, lastMessage: 'Há 1 hora' },
-  { id: 4, name: 'Descontos Incríveis Natura', status: 'paused', memberCount: 75, lastMessage: 'Há 3 horas' },
-  { id: 5, name: 'Grupo de Ofertas Relâmpago', status: 'active', memberCount: 122, lastMessage: 'Há 30 minutos' },
-  { id: 6, name: 'Cupons Secretos Amazon', status: 'active', memberCount: 61, lastMessage: 'Há 2 horas' },
-  { id: 7, name: 'Grupo de Testes', status: 'paused', memberCount: 3, lastMessage: 'Há 1 dia' },
-];
+// API endpoint base URL from the hook
+const API_BASE = 'http://168.231.98.177:4000';
+const API_BASE_URL = `${API_BASE}/api/whatsapp`;
+
+interface Group {
+  id: string;
+  name: string;
+}
 
 export default function GruposMonitorados() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [groups, setGroups] = useState(mockGroups);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [monitoredIds, setMonitoredIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState<Record<string, boolean>>({});
+  const { connectionStatus } = useWhatsAppConnection();
+
+  // Fetch all groups and monitored groups
+  useEffect(() => {
+    const fetchData = async () => {
+      if (connectionStatus !== 'connected') {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Fetch all groups
+        const groupsResponse = await fetch(`${API_BASE_URL}/groups`);
+        if (!groupsResponse.ok) {
+          throw new Error('Falha ao carregar grupos');
+        }
+        const groupsData = await groupsResponse.json();
+
+        // Fetch monitored groups
+        const monitoredResponse = await fetch(`${API_BASE_URL}/monitored`);
+        if (!monitoredResponse.ok) {
+          throw new Error('Falha ao carregar grupos monitorados');
+        }
+        const monitoredData = await monitoredResponse.json();
+
+        setGroups(groupsData.groups || []);
+        setMonitoredIds(monitoredData.monitored || []);
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+        toast.error('Erro ao carregar dados dos grupos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [connectionStatus]);
 
   const filteredGroups = groups.filter(group => 
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const toggleGroupStatus = (id: number) => {
-    setGroups(groups.map(group => 
-      group.id === id 
-        ? { ...group, status: group.status === 'active' ? 'paused' : 'active' } 
-        : group
-    ));
+  const handleAddToMonitored = async (groupId: string) => {
+    setIsProcessing(prev => ({ ...prev, [groupId]: true }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/monitored`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao adicionar grupo monitorado');
+      }
+
+      const data = await response.json();
+      setMonitoredIds(data.monitored);
+      toast.success('Grupo adicionado à lista de monitoramento');
+    } catch (error) {
+      console.error('Error adding monitored group:', error);
+      toast.error('Erro ao adicionar grupo monitorado');
+    } finally {
+      setIsProcessing(prev => ({ ...prev, [groupId]: false }));
+    }
   };
 
-  const removeGroup = (id: number) => {
-    setGroups(groups.filter(group => group.id !== id));
+  const handleRemoveFromMonitored = async (groupId: string) => {
+    setIsProcessing(prev => ({ ...prev, [groupId]: true }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/monitored/${groupId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao remover grupo monitorado');
+      }
+
+      const data = await response.json();
+      setMonitoredIds(data.monitored);
+      toast.success('Grupo removido da lista de monitoramento');
+    } catch (error) {
+      console.error('Error removing monitored group:', error);
+      toast.error('Erro ao remover grupo monitorado');
+    } finally {
+      setIsProcessing(prev => ({ ...prev, [groupId]: false }));
+    }
   };
+
+  if (connectionStatus !== 'connected') {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Grupos Monitorados</h1>
+        <Card className="p-6">
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              WhatsApp não está conectado. Por favor, conecte o WhatsApp primeiro.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/whatsapp-conexao'}
+              className="mt-4"
+            >
+              Ir para página de conexão
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Grupos Monitorados</h1>
-        
-        <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-700 transition-colors">
-          Adicionar Grupo
-        </button>
       </div>
       
       <Card className="dashboard-card">
@@ -59,74 +161,84 @@ export default function GruposMonitorados() {
         </div>
         
         <div className="p-4">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium">Nome do Grupo</th>
-                  <th className="text-center py-3 px-4 font-medium">Membros</th>
-                  <th className="text-center py-3 px-4 font-medium">Última Mensagem</th>
-                  <th className="text-center py-3 px-4 font-medium">Status</th>
-                  <th className="text-center py-3 px-4 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredGroups.map((group) => (
-                  <tr key={group.id} className="border-b last:border-b-0 hover:bg-accent/30 transition-colors">
-                    <td className="py-3 px-4">{group.name}</td>
-                    <td className="py-3 px-4 text-center">{group.memberCount}</td>
-                    <td className="py-3 px-4 text-center">{group.lastMessage}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        group.status === 'active'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
-                      }`}>
-                        {group.status === 'active' ? 'Ativo' : 'Pausado'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          onClick={() => toggleGroupStatus(group.id)}
-                          className={`p-1.5 rounded-md ${
-                            group.status === 'active'
-                              ? 'text-yellow-500 hover:bg-yellow-500/10'
-                              : 'text-green-500 hover:bg-green-500/10'
-                          }`}
-                          title={group.status === 'active' ? 'Pausar' : 'Ativar'}
-                        >
-                          {group.status === 'active' ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="6" y="4" width="4" height="16"></rect>
-                              <rect x="14" y="4" width="4" height="16"></rect>
-                            </svg>
-                          ) : (
-                            <Check size={18} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => removeGroup(group.id)}
-                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md"
-                          title="Remover"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                
-                {filteredGroups.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                      Nenhum grupo encontrado com esse termo.
-                    </td>
-                  </tr>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2">Carregando grupos...</span>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome do Grupo</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredGroups.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-6">
+                      {groups.length === 0 
+                        ? 'Nenhum grupo disponível' 
+                        : 'Nenhum grupo encontrado com esse termo de pesquisa'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredGroups.map((group) => {
+                    const isMonitored = monitoredIds.includes(group.id);
+                    return (
+                      <TableRow key={group.id}>
+                        <TableCell>{group.name}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isMonitored
+                              ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
+                          }`}>
+                            {isMonitored ? 'Monitorado' : 'Não Monitorado'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex justify-center gap-2">
+                            {isMonitored ? (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveFromMonitored(group.id)}
+                                disabled={isProcessing[group.id]}
+                              >
+                                {isProcessing[group.id] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                ) : (
+                                  <X size={16} className="mr-1" />
+                                )}
+                                Remover
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleAddToMonitored(group.id)}
+                                disabled={isProcessing[group.id]}
+                              >
+                                {isProcessing[group.id] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                ) : (
+                                  <Check size={16} className="mr-1" />
+                                )}
+                                Adicionar
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          )}
         </div>
       </Card>
     </div>

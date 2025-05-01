@@ -16,6 +16,8 @@ app.use(express.json());
 let qrCodeDataUrl = null;
 let isConnected = false;
 let device = null;
+let monitoredGroups = []; // Store monitored group IDs
+let sendGroups = []; // Store send group IDs
 
 // Initialize WhatsApp client with LocalAuth and specific puppeteer options
 const client = new Client({
@@ -108,6 +110,102 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
   } catch (error) {
     console.error('Error disconnecting WhatsApp:', error);
     res.status(500).json({ error: 'Failed to disconnect WhatsApp' });
+  }
+});
+
+// New API endpoint to get all WhatsApp groups
+app.get('/api/whatsapp/groups', async (req, res) => {
+  try {
+    if (!isConnected) {
+      return res.status(400).json({ error: 'WhatsApp not connected' });
+    }
+
+    const chats = await client.getChats();
+    const groups = chats
+      .filter(chat => chat.isGroup)
+      .map(group => ({
+        id: group.id._serialized,
+        name: group.name
+      }));
+
+    res.json({ groups });
+  } catch (error) {
+    console.error('Error fetching WhatsApp groups:', error);
+    res.status(500).json({ error: 'Failed to fetch WhatsApp groups' });
+  }
+});
+
+// API endpoint to get monitored groups
+app.get('/api/whatsapp/monitored', (req, res) => {
+  res.json({ monitored: monitoredGroups });
+});
+
+// API endpoint to add a group to monitored
+app.post('/api/whatsapp/monitored', (req, res) => {
+  try {
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ error: 'Group ID is required' });
+    }
+
+    if (!monitoredGroups.includes(groupId)) {
+      monitoredGroups.push(groupId);
+    }
+
+    res.json({ monitored: monitoredGroups });
+  } catch (error) {
+    console.error('Error adding monitored group:', error);
+    res.status(500).json({ error: 'Failed to add monitored group' });
+  }
+});
+
+// API endpoint to remove a group from monitored
+app.delete('/api/whatsapp/monitored/:groupId', (req, res) => {
+  try {
+    const { groupId } = req.params;
+    monitoredGroups = monitoredGroups.filter(id => id !== groupId);
+    res.json({ monitored: monitoredGroups });
+  } catch (error) {
+    console.error('Error removing monitored group:', error);
+    res.status(500).json({ error: 'Failed to remove monitored group' });
+  }
+});
+
+// API endpoint to get send groups
+app.get('/api/whatsapp/send', (req, res) => {
+  res.json({ send: sendGroups });
+});
+
+// API endpoint to add a group to send list
+app.post('/api/whatsapp/send', (req, res) => {
+  try {
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ error: 'Group ID is required' });
+    }
+
+    if (!sendGroups.includes(groupId)) {
+      sendGroups.push(groupId);
+    }
+
+    res.json({ send: sendGroups });
+  } catch (error) {
+    console.error('Error adding send group:', error);
+    res.status(500).json({ error: 'Failed to add send group' });
+  }
+});
+
+// API endpoint to remove a group from send list
+app.delete('/api/whatsapp/send/:groupId', (req, res) => {
+  try {
+    const { groupId } = req.params;
+    sendGroups = sendGroups.filter(id => id !== groupId);
+    res.json({ send: sendGroups });
+  } catch (error) {
+    console.error('Error removing send group:', error);
+    res.status(500).json({ error: 'Failed to remove send group' });
   }
 });
 
