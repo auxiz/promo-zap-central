@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 type QRCodeScannerProps = {
   qrCode: string;
@@ -20,13 +21,20 @@ export default function QRCodeScanner({
           Abra o WhatsApp no seu celular e escaneie o QR Code abaixo:
         </p>
         
-        <div className="mt-6 p-4 bg-white rounded-lg inline-block">
-          <img
-            src={qrCode}
-            alt="QR Code para conectar WhatsApp"
-            className="w-64 h-64"
-            onClick={handleQrCodeScanned} // This is just for demo
-          />
+        <div className="mt-6 p-4 bg-white rounded-lg inline-block min-h-[264px] min-w-[264px] flex items-center justify-center">
+          {qrCode ? (
+            <img
+              src={qrCode}
+              alt="QR Code para conectar WhatsApp"
+              className="w-64 h-64"
+              onClick={handleQrCodeScanned}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center">
+              <Loader2 size={48} className="text-gray-300 animate-spin" />
+              <p className="text-sm text-gray-400 mt-2">Carregando QR Code...</p>
+            </div>
+          )}
         </div>
       </div>
       
