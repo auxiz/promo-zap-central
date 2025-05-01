@@ -1,7 +1,7 @@
 
 const express = require('express');
 const cors = require('cors');
-const { Client } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 
 // Initialize express app
@@ -17,11 +17,19 @@ let qrCodeDataUrl = null;
 let isConnected = false;
 let device = null;
 
-// Initialize WhatsApp client with LocalAuth
+// Initialize WhatsApp client with LocalAuth and specific puppeteer options
 const client = new Client({
-  authStrategy: new (require('whatsapp-web.js')).LocalAuth(),
+  authStrategy: new LocalAuth(),
   puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    executablePath: '/usr/bin/chromium',
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-extensions',
+      '--disable-gpu'
+    ]
   }
 });
 
