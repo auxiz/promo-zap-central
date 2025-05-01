@@ -178,7 +178,7 @@ export default function WhatsAppConexao() {
             </div>
             <div>
               <h3 className="font-medium">Escaneie o QR Code</h3>
-              <p className="text-muted-foreground mt-1">Abra o WhatsApp no seu celular, vá em Configurações > Dispositivos conectados > Conectar um dispositivo.</p>
+              <p className="text-muted-foreground mt-1">Abra o WhatsApp no seu celular, vá em Configurações {'>'}  Dispositivos conectados {'>'}  Conectar um dispositivo.</p>
             </div>
           </div>
           
