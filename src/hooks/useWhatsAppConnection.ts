@@ -10,12 +10,21 @@ export default function useWhatsAppConnection() {
   const [qrCode, setQrCode] = useState('');
   const [deviceInfo, setDeviceInfo] = useState({ name: '', lastConnection: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [backendError, setBackendError] = useState(false);
 
   // Function to fetch connection status
   const fetchStatus = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/status`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      
+      // Clear any backend error if we got a successful response
+      setBackendError(false);
 
       if (data.status === 'CONNECTED') {
         setConnectionStatus('connected');
@@ -32,7 +41,7 @@ export default function useWhatsAppConnection() {
       }
     } catch (error) {
       console.error('Error fetching WhatsApp status:', error);
-      toast.error('Falha ao verificar status do WhatsApp');
+      setBackendError(true);
       setConnectionStatus('disconnected');
     }
   }, []);
@@ -41,14 +50,22 @@ export default function useWhatsAppConnection() {
   const fetchQrCode = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/qrcode`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      
+      // Clear backend error if successful
+      setBackendError(false);
       
       if (data.qr) {
         setQrCode(data.qr);
       }
     } catch (error) {
       console.error('Error fetching QR code:', error);
-      toast.error('Falha ao obter QR Code');
+      setBackendError(true);
     }
   }, []);
 
@@ -103,20 +120,28 @@ export default function useWhatsAppConnection() {
     setIsLoading(true);
     
     try {
-      await fetch(`${API_BASE_URL}/disconnect`, {
+      const response = await fetch(`${API_BASE_URL}/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         }
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       setConnectionStatus('disconnected');
       setQrCode('');
       setDeviceInfo({ name: '', lastConnection: '' });
       toast.success('WhatsApp desconectado com sucesso');
+      
+      // Clear backend error if successful
+      setBackendError(false);
     } catch (error) {
       console.error('Error disconnecting WhatsApp:', error);
       toast.error('Falha ao desconectar WhatsApp');
+      setBackendError(true);
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +152,7 @@ export default function useWhatsAppConnection() {
     qrCode,
     deviceInfo,
     isLoading,
+    backendError,
     handleConnect,
     handleQrCodeScanned,
     handleDisconnect

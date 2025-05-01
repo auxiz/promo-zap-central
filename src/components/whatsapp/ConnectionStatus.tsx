@@ -9,6 +9,7 @@ type ConnectionStatusProps = {
   qrCode: string;
   deviceInfo: { name: string; lastConnection: string };
   isLoading: boolean;
+  backendError?: boolean;
   handleConnect: () => void;
   handleQrCodeScanned: () => void;
   handleDisconnect: () => void;
@@ -19,6 +20,7 @@ export default function ConnectionStatus({
   qrCode,
   deviceInfo,
   isLoading,
+  backendError = false,
   handleConnect,
   handleQrCodeScanned,
   handleDisconnect
@@ -33,7 +35,8 @@ export default function ConnectionStatus({
         <div className="max-w-xl mx-auto">
           {connectionStatus === 'connecting' ? (
             <QRCodeScanner 
-              qrCode={qrCode} 
+              qrCode={qrCode}
+              backendError={backendError}
               handleQrCodeScanned={handleQrCodeScanned}
               handleConnect={handleConnect}
             />
@@ -42,6 +45,7 @@ export default function ConnectionStatus({
               connectionStatus={connectionStatus}
               deviceInfo={deviceInfo}
               isLoading={isLoading}
+              backendError={backendError}
               handleConnect={handleConnect}
               handleDisconnect={handleDisconnect}
             />

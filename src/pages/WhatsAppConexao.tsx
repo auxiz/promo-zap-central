@@ -10,6 +10,7 @@ export default function WhatsAppConexao() {
     qrCode,
     deviceInfo,
     isLoading,
+    backendError,
     handleConnect,
     handleQrCodeScanned,
     handleDisconnect
@@ -24,6 +25,7 @@ export default function WhatsAppConexao() {
         qrCode={qrCode}
         deviceInfo={deviceInfo}
         isLoading={isLoading}
+        backendError={backendError}
         handleConnect={handleConnect}
         handleQrCodeScanned={handleQrCodeScanned}
         handleDisconnect={handleDisconnect}
