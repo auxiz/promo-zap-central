@@ -1,0 +1,46 @@
+
+import React from 'react';
+
+type QRCodeScannerProps = {
+  qrCode: string;
+  handleQrCodeScanned: () => void;
+  handleConnect: () => void;
+}
+
+export default function QRCodeScanner({ 
+  qrCode, 
+  handleQrCodeScanned,
+  handleConnect 
+}: QRCodeScannerProps) {
+  return (
+    <div className="text-center">
+      <div className="mb-6">
+        <h3 className="text-lg font-medium">Leia o QR Code</h3>
+        <p className="text-muted-foreground mt-2">
+          Abra o WhatsApp no seu celular e escaneie o QR Code abaixo:
+        </p>
+        
+        <div className="mt-6 p-4 bg-white rounded-lg inline-block">
+          <img
+            src={qrCode}
+            alt="QR Code para conectar WhatsApp"
+            className="w-64 h-64"
+            onClick={handleQrCodeScanned} // This is just for demo
+          />
+        </div>
+      </div>
+      
+      <div className="mt-4 text-sm text-muted-foreground">
+        <p>Aguardando leitura do QR Code...</p>
+        <p className="mt-1">O QR Code expira em 60 segundos</p>
+      </div>
+      
+      <button
+        onClick={handleConnect}
+        className="mt-6 px-4 py-2 bg-primary/20 text-primary rounded-md hover:bg-primary/30 transition-colors"
+      >
+        Gerar Novo QR Code
+      </button>
+    </div>
+  );
+}
