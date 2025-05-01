@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const crypto = require('crypto'); // For HMAC-SHA256 signing
+const axios = require('axios'); // For making HTTP requests
+const url = require('url'); // For URL parsing
 
 // Initialize express app
 const app = express();
@@ -18,6 +21,12 @@ let isConnected = false;
 let device = null;
 let monitoredGroups = []; // Store monitored group IDs
 let sendGroups = []; // Store send group IDs
+
+// Shopee credentials
+let shopeeCredentials = {
+  appId: process.env.SHOPEE_APP_ID || '',
+  secretKey: process.env.SHOPEE_SECRET_KEY || ''
+};
 
 // Initialize WhatsApp client with LocalAuth and specific puppeteer options
 const client = new Client({
@@ -55,6 +64,121 @@ client.on('ready', () => {
   console.log(`WhatsApp connected with device: ${device}`);
   qrCodeDataUrl = null; // Clear QR code after successful connection
 });
+
+// Handle incoming messages for affiliate link conversion
+client.on('message', async (message) => {
+  try {
+    // Check if message is from a monitored group
+    if (!monitoredGroups.includes(message.from)) {
+      return; // Not from a monitored group, ignore
+    }
+
+    const originalText = message.body;
+    console.log(`Message received from monitored group: ${message.from}`);
+
+    // Skip if no Shopee credentials or no send groups configured
+    if (!shopeeCredentials.appId || !shopeeCredentials.secretKey || sendGroups.length === 0) {
+      console.log('Skipping message forwarding: missing credentials or send groups');
+      return;
+    }
+
+    // Look for Shopee URLs in the message
+    const shopeeUrls = extractShopeeUrls(originalText);
+    if (shopeeUrls.length === 0) {
+      console.log('No Shopee URLs found in message');
+      return;
+    }
+
+    // Convert Shopee URLs to affiliate links
+    let modifiedText = originalText;
+    for (const shopeeUrl of shopeeUrls) {
+      try {
+        const affiliateUrl = await convertToAffiliateLink(shopeeUrl);
+        if (affiliateUrl) {
+          modifiedText = modifiedText.replace(shopeeUrl, affiliateUrl);
+          console.log(`Converted URL: ${shopeeUrl} -> ${affiliateUrl}`);
+        }
+      } catch (error) {
+        console.error(`Error converting URL ${shopeeUrl}:`, error);
+      }
+    }
+
+    // Only forward if text was modified
+    if (modifiedText !== originalText) {
+      // Forward modified message to all send groups
+      for (const groupId of sendGroups) {
+        try {
+          await client.sendMessage(groupId, modifiedText);
+          console.log(`Message forwarded to group: ${groupId}`);
+        } catch (error) {
+          console.error(`Error forwarding message to group ${groupId}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error processing message:', error);
+  }
+});
+
+// Function to extract Shopee URLs from text
+function extractShopeeUrls(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const matches = text.match(urlRegex) || [];
+  
+  return matches.filter(match => {
+    try {
+      const parsedUrl = new URL(match);
+      return parsedUrl.hostname.includes('shopee');
+    } catch (e) {
+      return false;
+    }
+  });
+}
+
+// Function to convert a Shopee URL to an affiliate link
+async function convertToAffiliateLink(originalUrl) {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const partnerId = parseInt(shopeeCredentials.appId, 10);
+
+    // Prepare request body
+    const requestBody = {
+      partner_id: partnerId,
+      timestamp: timestamp,
+      requests: [{ url: originalUrl }]
+    };
+
+    // Generate signature
+    const baseString = `${partnerId}${timestamp}`;
+    const signature = crypto
+      .createHmac('sha256', shopeeCredentials.secretKey)
+      .update(baseString)
+      .digest('hex');
+
+    // Make API call
+    const response = await axios({
+      method: 'post',
+      url: 'https://partner.shopeemobile.com/api/v1/affiliate/link_generate',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': signature
+      },
+      data: requestBody
+    });
+
+    // Check response
+    if (response.data && response.data.responses && response.data.responses[0] && response.data.responses[0].affiliate_link) {
+      return response.data.responses[0].affiliate_link;
+    }
+
+    console.log('Unexpected response format:', response.data);
+    return null;
+  } catch (error) {
+    console.error('Error converting to affiliate link:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    return null;
+  }
+}
 
 // Event handler for disconnected state
 client.on('disconnected', () => {
@@ -113,7 +237,7 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
   }
 });
 
-// New API endpoint to get all WhatsApp groups
+// API endpoint to get all WhatsApp groups
 app.get('/api/whatsapp/groups', async (req, res) => {
   try {
     if (!isConnected) {
@@ -206,6 +330,60 @@ app.delete('/api/whatsapp/send/:groupId', (req, res) => {
   } catch (error) {
     console.error('Error removing send group:', error);
     res.status(500).json({ error: 'Failed to remove send group' });
+  }
+});
+
+// Shopee API endpoints
+// Get Shopee credentials (only returns app ID for security)
+app.get('/api/shopee/credentials', (req, res) => {
+  res.json({ 
+    appId: shopeeCredentials.appId,
+    // Not sending secretKey for security
+  });
+});
+
+// Update Shopee credentials
+app.post('/api/shopee/credentials', (req, res) => {
+  try {
+    const { appId, secretKey } = req.body;
+    
+    // Validate inputs
+    if (!appId || !secretKey) {
+      return res.status(400).json({ error: 'Both App ID and Secret Key are required' });
+    }
+
+    // Update credentials
+    shopeeCredentials = { appId, secretKey };
+    res.json({ success: true, appId });
+  } catch (error) {
+    console.error('Error updating Shopee credentials:', error);
+    res.status(500).json({ error: 'Failed to update Shopee credentials' });
+  }
+});
+
+// Convert a URL to Shopee affiliate link
+app.post('/api/shopee/convert', async (req, res) => {
+  try {
+    const { url: originalUrl } = req.body;
+    
+    if (!originalUrl) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+    
+    if (!shopeeCredentials.appId || !shopeeCredentials.secretKey) {
+      return res.status(400).json({ error: 'Shopee credentials not configured' });
+    }
+    
+    const affiliateUrl = await convertToAffiliateLink(originalUrl);
+    
+    if (!affiliateUrl) {
+      return res.status(500).json({ error: 'Failed to convert URL' });
+    }
+    
+    res.json({ affiliate_url: affiliateUrl });
+  } catch (error) {
+    console.error('Error converting URL:', error);
+    res.status(500).json({ error: 'Failed to convert URL' });
   }
 });
 
