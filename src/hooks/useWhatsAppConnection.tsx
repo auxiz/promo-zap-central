@@ -1,9 +1,11 @@
+// Replace with your actual VPS IPv4 address and port
+const API_BASE = 'http://168.231.98.177:4000';
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 // API endpoint base URL
-const API_BASE_URL = 'http://localhost:4000/api/whatsapp';
+const API_BASE_URL = `${API_BASE}/api/whatsapp`;
 
 export default function useWhatsAppConnection() {
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected
