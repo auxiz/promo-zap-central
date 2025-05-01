@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Loader2, ServerCrash } from 'lucide-react';
-import { useWhatsAppConnection } from '@/hooks/useWhatsAppConnection';
+import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
 
 export default function QRCodeScanner() {
   const { 

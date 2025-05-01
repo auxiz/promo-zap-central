@@ -34,12 +34,7 @@ export default function ConnectionStatus({
       <div className="p-6">
         <div className="max-w-xl mx-auto">
           {connectionStatus === 'connecting' ? (
-            <QRCodeScanner 
-              qrCode={qrCode}
-              backendError={backendError}
-              handleQrCodeScanned={handleQrCodeScanned}
-              handleConnect={handleConnect}
-            />
+            <QRCodeScanner />
           ) : (
             <StatusIndicator
               connectionStatus={connectionStatus}
