@@ -17,6 +17,7 @@ const convertToAffiliateLink = async (originalUrl) => {
     const timestamp = Math.floor(Date.now() / 1000);
     const partnerId = parseInt(credentials.appId, 10);
     const endpoint = '/api/v2/affiliate/link_generate';
+    console.log(`[Shopee Affiliate] Converting URL with timestamp: ${timestamp}`);
 
     // Generate signature
     const signature = generateSignature(
@@ -32,6 +33,16 @@ const convertToAffiliateLink = async (originalUrl) => {
       requests: [{ url: originalUrl }]
     };
 
+    const requestParams = {
+      partner_id: partnerId,
+      timestamp,
+      sign: signature,
+      access_token: credentials.accessToken
+    };
+    
+    console.log(`[Shopee Affiliate] Convert URL request params:`, requestParams);
+    console.log(`[Shopee Affiliate] Convert URL request body:`, JSON.stringify(requestBody));
+
     // Make API call
     const response = await axios({
       method: 'post',
@@ -40,14 +51,11 @@ const convertToAffiliateLink = async (originalUrl) => {
         'Content-Type': 'application/json',
         'Authorization': credentials.accessToken
       },
-      params: {
-        partner_id: partnerId,
-        timestamp,
-        sign: signature,
-        access_token: credentials.accessToken
-      },
+      params: requestParams,
       data: requestBody
     });
+
+    console.log(`[Shopee Affiliate] Convert URL response:`, JSON.stringify(response.data));
 
     // Check response
     if (response.data && 
@@ -62,7 +70,7 @@ const convertToAffiliateLink = async (originalUrl) => {
     console.log('Unexpected response format:', response.data);
     return null;
   } catch (error) {
-    console.error('Error converting to affiliate link:', error);
+    console.error('Error converting to affiliate link:', error.message);
     console.error('Error details:', error.response?.data || error.message);
     return null;
   }
@@ -81,6 +89,7 @@ const getAffiliatePerformance = async (start_date, end_date) => {
     const timestamp = Math.floor(Date.now() / 1000);
     const partnerId = parseInt(credentials.appId, 10);
     const endpoint = '/api/v2/affiliate/get_report';
+    console.log(`[Shopee Affiliate] Getting performance data with timestamp: ${timestamp}`);
     
     // Generate signature
     const signature = generateSignature(
@@ -91,6 +100,17 @@ const getAffiliatePerformance = async (start_date, end_date) => {
       credentials.secretKey
     );
     
+    const requestParams = {
+      partner_id: partnerId,
+      timestamp,
+      sign: signature,
+      access_token: credentials.accessToken,
+      start_date,
+      end_date
+    };
+    
+    console.log(`[Shopee Affiliate] Get performance request params:`, requestParams);
+    
     // Make API call
     const response = await axios({
       method: 'get',
@@ -99,15 +119,10 @@ const getAffiliatePerformance = async (start_date, end_date) => {
         'Content-Type': 'application/json',
         'Authorization': credentials.accessToken
       },
-      params: {
-        partner_id: partnerId,
-        timestamp,
-        sign: signature,
-        access_token: credentials.accessToken,
-        start_date,
-        end_date
-      }
+      params: requestParams
     });
+    
+    console.log(`[Shopee Affiliate] Get performance response:`, JSON.stringify(response.data));
     
     if (response.data && response.data.error === '') {
       return { success: true, performance_data: response.data.response };
@@ -116,7 +131,10 @@ const getAffiliatePerformance = async (start_date, end_date) => {
       return { success: false, error: response.data.error || 'Failed to get affiliate performance' };
     }
   } catch (error) {
-    console.error('Error getting affiliate performance:', error);
+    console.error('Error getting affiliate performance:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+    }
     return { success: false, error: error.message };
   }
 };

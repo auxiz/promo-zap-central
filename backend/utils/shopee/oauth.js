@@ -21,11 +21,22 @@ const exchangeAuthCode = async (code, redirectUri) => {
   try {
     const credentials = getFullCredentials();
     const timestamp = Math.floor(Date.now() / 1000);
+    console.log(`[Shopee OAuth] Exchange auth code timestamp: ${timestamp}`);
+    
     const partnerId = parseInt(credentials.appId, 10);
     const endpoint = '/api/v2/auth/token/get';
     
     // Generate signature
     const signature = generateSignature(endpoint, partnerId, timestamp, '', credentials.secretKey);
+    
+    const requestData = {
+      code,
+      partner_id: partnerId,
+      shop_id: 0, // Will be returned from auth response
+      timestamp
+    };
+    
+    console.log(`[Shopee OAuth] Auth token request data:`, JSON.stringify(requestData));
     
     // Make API call to get access token
     const response = await axios({
@@ -34,13 +45,10 @@ const exchangeAuthCode = async (code, redirectUri) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: {
-        code,
-        partner_id: partnerId,
-        shop_id: 0, // Will be returned from auth response
-        timestamp
-      }
+      data: requestData
     });
+    
+    console.log(`[Shopee OAuth] Auth token response:`, JSON.stringify(response.data));
     
     if (response.data && response.data.error === '') {
       const { access_token, refresh_token, expire_in, shop_id } = response.data;
@@ -62,7 +70,10 @@ const exchangeAuthCode = async (code, redirectUri) => {
       return { success: false, error: response.data.error || 'Failed to exchange authorization code' };
     }
   } catch (error) {
-    console.error('Error exchanging auth code:', error);
+    console.error('Error exchanging auth code:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+    }
     return { success: false, error: error.message };
   }
 };
@@ -77,11 +88,21 @@ const refreshAccessToken = async () => {
     }
     
     const timestamp = Math.floor(Date.now() / 1000);
+    console.log(`[Shopee OAuth] Refresh token timestamp: ${timestamp}`);
+    
     const partnerId = parseInt(credentials.appId, 10);
     const endpoint = '/api/v2/auth/access_token/get';
     
     // Generate signature
     const signature = generateSignature(endpoint, partnerId, timestamp, '', credentials.secretKey);
+    
+    const requestData = {
+      refresh_token: credentials.refreshToken,
+      partner_id: partnerId,
+      timestamp
+    };
+    
+    console.log(`[Shopee OAuth] Refresh token request data:`, JSON.stringify(requestData));
     
     // Make API call to refresh token
     const response = await axios({
@@ -90,12 +111,15 @@ const refreshAccessToken = async () => {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: {
-        refresh_token: credentials.refreshToken,
+      data: requestData,
+      params: {
         partner_id: partnerId,
-        timestamp
+        timestamp,
+        sign: signature
       }
     });
+    
+    console.log(`[Shopee OAuth] Refresh token response:`, JSON.stringify(response.data));
     
     if (response.data && response.data.error === '') {
       const { access_token, refresh_token, expire_in } = response.data;
@@ -112,7 +136,10 @@ const refreshAccessToken = async () => {
       return { success: false, error: response.data.error || 'Failed to refresh token' };
     }
   } catch (error) {
-    console.error('Error refreshing token:', error);
+    console.error('Error refreshing token:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+    }
     return { success: false, error: error.message };
   }
 };
