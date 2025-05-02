@@ -6,17 +6,41 @@ const url = require('url');
 // Initialize Shopee credentials
 let shopeeCredentials = {
   appId: process.env.SHOPEE_APP_ID || '',
-  secretKey: process.env.SHOPEE_SECRET_KEY || ''
+  secretKey: process.env.SHOPEE_SECRET_KEY || '',
+  status: 'offline' // Add status field
 };
 
 // Function to update Shopee credentials
-const updateShopeeCredentials = (appId, secretKey) => {
-  shopeeCredentials = { appId, secretKey };
+const updateShopeeCredentials = (appId, secretKey, status = 'offline') => {
+  shopeeCredentials = { appId, secretKey, status };
 };
 
-// Function to get Shopee credentials (only appId for security)
+// Function to get Shopee credentials (only appId for security and status)
 const getShopeeCredentials = () => {
-  return { appId: shopeeCredentials.appId };
+  return { appId: shopeeCredentials.appId, status: shopeeCredentials.status };
+};
+
+// Function to test Shopee connection
+const testShopeeConnection = async () => {
+  try {
+    // Use a test URL to verify if the credentials work
+    const testUrl = 'https://shopee.com.br/product/123/456';
+    const result = await convertToAffiliateLink(testUrl);
+    
+    // Update status based on the result
+    if (result) {
+      updateShopeeCredentials(shopeeCredentials.appId, shopeeCredentials.secretKey, 'online');
+      return true;
+    }
+    
+    // If no result, connection failed
+    updateShopeeCredentials(shopeeCredentials.appId, shopeeCredentials.secretKey, 'offline');
+    return false;
+  } catch (error) {
+    console.error('Error testing Shopee connection:', error);
+    updateShopeeCredentials(shopeeCredentials.appId, shopeeCredentials.secretKey, 'offline');
+    return false;
+  }
 };
 
 // Function to extract Shopee URLs from text
@@ -83,5 +107,6 @@ module.exports = {
   updateShopeeCredentials,
   getShopeeCredentials,
   extractShopeeUrls,
-  convertToAffiliateLink
+  convertToAffiliateLink,
+  testShopeeConnection
 };

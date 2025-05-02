@@ -3,13 +3,13 @@ const express = require('express');
 const router = express.Router();
 const shopeeUtils = require('../utils/shopeeUtils');
 
-// Get Shopee credentials (only returns app ID for security)
+// Get Shopee credentials (returns app ID and status for security)
 router.get('/credentials', (req, res) => {
   res.json(shopeeUtils.getShopeeCredentials());
 });
 
 // Update Shopee credentials
-router.post('/credentials', (req, res) => {
+router.post('/credentials', async (req, res) => {
   try {
     const { appId, secretKey } = req.body;
     
@@ -18,9 +18,19 @@ router.post('/credentials', (req, res) => {
       return res.status(400).json({ error: 'Both App ID and Secret Key are required' });
     }
 
-    // Update credentials
-    shopeeUtils.updateShopeeCredentials(appId, secretKey);
-    res.json({ success: true, appId });
+    // Update credentials with offline status initially
+    shopeeUtils.updateShopeeCredentials(appId, secretKey, 'offline');
+    
+    // Test the connection
+    const isConnected = await shopeeUtils.testShopeeConnection();
+    
+    // Return the updated credentials
+    const credentials = shopeeUtils.getShopeeCredentials();
+    res.json({ 
+      success: true, 
+      appId: credentials.appId,
+      status: credentials.status
+    });
   } catch (error) {
     console.error('Error updating Shopee credentials:', error);
     res.status(500).json({ error: 'Failed to update Shopee credentials' });

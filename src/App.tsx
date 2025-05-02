@@ -12,6 +12,7 @@ import GruposMonitorados from "./pages/GruposMonitorados";
 import GruposEnvio from "./pages/GruposEnvio";
 import WhatsAppConexao from "./pages/WhatsAppConexao";
 import Configuracoes from "./pages/Configuracoes";
+import ConfigShopee from "./pages/ConfigShopee";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => {
               <Route path="/grupos-envio" element={<GruposEnvio />} />
               <Route path="/whatsapp-conexao" element={<WhatsAppConexao />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/configuracoes-shopee" element={<ConfigShopee />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
