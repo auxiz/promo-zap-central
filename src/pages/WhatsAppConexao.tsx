@@ -1,22 +1,32 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import ConnectionStatus from '@/components/whatsapp/ConnectionStatus';
 import Instructions from '@/components/whatsapp/Instructions';
 import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/sonner';
+import { PlusCircle } from 'lucide-react';
+import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
+import InstancesList from '@/components/whatsapp/InstancesList';
+import NewInstanceDialog from '@/components/whatsapp/NewInstanceDialog';
+import DeleteInstanceDialog from '@/components/whatsapp/DeleteInstanceDialog';
 
 export default function WhatsAppConexao() {
-  const [instanceName, setInstanceName] = useState('');
-  const [instances, setInstances] = useState<{ id: string; name: string }[]>([{ id: 'default', name: 'Principal' }]);
-  const [currentInstance, setCurrentInstance] = useState('default');
-  const [showNewInstanceDialog, setShowNewInstanceDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [instanceToDelete, setInstanceToDelete] = useState<{ id: string; name: string } | null>(null);
+  const {
+    instances,
+    currentInstance,
+    instanceName,
+    showNewInstanceDialog,
+    showDeleteDialog,
+    instanceToDelete,
+    setInstanceName,
+    setShowNewInstanceDialog,
+    setShowDeleteDialog,
+    setInstanceToDelete,
+    addNewInstance,
+    handleInstanceSwitch,
+    openDeleteDialog,
+    handleDeleteInstance
+  } = useWhatsAppInstances();
   
   const {
     connectionStatus,
@@ -29,52 +39,10 @@ export default function WhatsAppConexao() {
     handleDisconnect
   } = useWhatsAppConnection(currentInstance);
 
-  const addNewInstance = () => {
-    if (!instanceName.trim()) {
-      toast.error('Digite um nome para a instância');
-      return;
-    }
-
-    const newInstanceId = `instance-${Date.now()}`;
-    const newInstance = { id: newInstanceId, name: instanceName };
-    
-    setInstances(prev => [...prev, newInstance]);
-    setCurrentInstance(newInstanceId);
-    setInstanceName('');
-    setShowNewInstanceDialog(false);
-    
-    toast.success(`Nova instância "${instanceName}" adicionada`);
-  };
-
-  const handleInstanceSwitch = (instanceId: string) => {
-    setCurrentInstance(instanceId);
-  };
-
   const handleDisconnectAndShowQR = async () => {
     await handleDisconnect();
     // Após desconectar, conecta novamente para mostrar o QR code
     handleConnect();
-  };
-  
-  const openDeleteDialog = (instance: { id: string; name: string }) => {
-    setInstanceToDelete(instance);
-    setShowDeleteDialog(true);
-  };
-  
-  const handleDeleteInstance = () => {
-    if (!instanceToDelete) return;
-    
-    // Se a instância atual está sendo excluída, mude para a instância principal
-    if (currentInstance === instanceToDelete.id) {
-      setCurrentInstance('default');
-    }
-    
-    // Remova a instância da lista
-    setInstances(prev => prev.filter(instance => instance.id !== instanceToDelete.id));
-    
-    toast.success(`Instância "${instanceToDelete.name}" excluída com sucesso`);
-    setShowDeleteDialog(false);
-    setInstanceToDelete(null);
   };
 
   return (
@@ -91,40 +59,12 @@ export default function WhatsAppConexao() {
         </Button>
       </div>
 
-      {instances.length > 1 && (
-        <Card className="overflow-hidden">
-          <CardHeader className="py-4">
-            <CardTitle className="text-md">Instâncias WhatsApp</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="flex flex-wrap gap-2 p-4">
-              {instances.map(instance => (
-                <div key={instance.id} className="flex items-center gap-1">
-                  <Button
-                    variant={currentInstance === instance.id ? "default" : "outline"}
-                    onClick={() => handleInstanceSwitch(instance.id)}
-                    className="text-sm"
-                  >
-                    {instance.name}
-                  </Button>
-                  
-                  {/* Não permitir excluir a instância principal */}
-                  {instance.id !== 'default' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDeleteDialog(instance)}
-                      className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <InstancesList 
+        instances={instances} 
+        currentInstance={currentInstance}
+        handleInstanceSwitch={handleInstanceSwitch}
+        openDeleteDialog={openDeleteDialog}
+      />
       
       <ConnectionStatus
         connectionStatus={connectionStatus}
@@ -140,51 +80,21 @@ export default function WhatsAppConexao() {
       
       <Instructions />
 
-      {/* Diálogo para adicionar nova instância */}
-      <AlertDialog open={showNewInstanceDialog} onOpenChange={setShowNewInstanceDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Nova Instância WhatsApp</AlertDialogTitle>
-            <AlertDialogDescription>
-              Digite um nome para identificar esta instância do WhatsApp.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Input
-              placeholder="Nome da instância (ex: Vendas, Suporte)"
-              value={instanceName}
-              onChange={(e) => setInstanceName(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setInstanceName('')}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={addNewInstance}>Adicionar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Diálogos */}
+      <NewInstanceDialog 
+        showDialog={showNewInstanceDialog}
+        setShowDialog={setShowNewInstanceDialog}
+        instanceName={instanceName}
+        setInstanceName={setInstanceName}
+        addNewInstance={addNewInstance}
+      />
       
-      {/* Diálogo de confirmação para excluir instância */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Instância</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir a instância "{instanceToDelete?.name}"?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setInstanceToDelete(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteInstance}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteInstanceDialog 
+        showDialog={showDeleteDialog}
+        setShowDialog={setShowDeleteDialog}
+        instanceToDelete={instanceToDelete}
+        handleDeleteInstance={handleDeleteInstance}
+      />
     </div>
   );
 }
