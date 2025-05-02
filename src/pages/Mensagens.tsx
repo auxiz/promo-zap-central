@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateHeader } from '@/components/mensagens/TemplateHeader';
 import { TemplateForm } from '@/components/mensagens/TemplateForm';
 import { TemplatePreview } from '@/components/mensagens/TemplatePreview';
-import { useTemplateUtils, messagePlaceholders, messageTemplateStyles, defaultTemplates } from '@/hooks/useTemplateUtils';
+import { useTemplateUtils, messagePlaceholders, messageTemplateStyles, defaultTemplateStyles } from '@/hooks/useTemplateUtils';
 
 export default function Mensagens() {
   const {
@@ -57,7 +57,7 @@ export default function Mensagens() {
               handleTemplateSelect={handleTemplateSelect}
               placeholders={messagePlaceholders}
               templateStyles={messageTemplateStyles}
-              defaultTemplates={defaultTemplates}
+              defaultTemplates={defaultTemplateStyles}
               loadDefaultTemplate={loadDefaultTemplate}
             />
           </TabsContent>
