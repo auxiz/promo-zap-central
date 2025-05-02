@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/sonner';
 import { Activity, RefreshCw } from 'lucide-react';
 
 // Replace with your actual VPS IPv4 address and port
@@ -49,8 +50,8 @@ const isToday = (timestamp: number): boolean => {
 };
 
 const Index = () => {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isStatusLoading, setIsStatusLoading] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<WhatsAppStatus>({
     connected: false,
     device: '',
@@ -94,9 +95,12 @@ const Index = () => {
       if (response.ok) {
         const data = await response.json();
         setWhatsappStatus(data);
+        return data;
       }
+      return null;
     } catch (error) {
       console.error('Error fetching WhatsApp status:', error);
+      return null;
     }
   };
 
@@ -133,6 +137,38 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    setIsStatusLoading(true);
+    try {
+      const status = await fetchWhatsappStatus();
+      
+      if (status) {
+        toast({
+          title: status.connected ? "WhatsApp Conectado" : "WhatsApp Desconectado",
+          description: status.connected 
+            ? `Conectado ao dispositivo ${status.device}` 
+            : "Nenhuma conexão ativa no momento",
+          variant: status.connected ? "default" : "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro de Conexão",
+          description: "Não foi possível verificar o status do WhatsApp. Servidor offline?",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error checking status:', error);
+      toast({
+        title: "Falha na Verificação",
+        description: "Ocorreu um erro ao verificar o status do WhatsApp.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -203,12 +239,22 @@ const Index = () => {
           </div>
           <div className="mt-4">
             <Button 
-              onClick={fetchWhatsappStatus} 
+              onClick={handleCheckStatus} 
               className="w-full"
               variant="outline"
-              disabled={isLoading}
+              disabled={isStatusLoading}
             >
-              Verificar Status
+              {isStatusLoading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verificando...
+                </>
+              ) : (
+                'Verificar Status'
+              )}
             </Button>
           </div>
         </Card>
@@ -269,7 +315,7 @@ const Index = () => {
               
               <div className="mt-4">
                 <Button className="w-full" asChild>
-                  <a href="/whatsapp-conexao">Gerenciar Conexão</a>
+                  <Link to="/whatsapp-conexao">Gerenciar Conexão</Link>
                 </Button>
               </div>
             </div>

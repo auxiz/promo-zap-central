@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from '@/components/ui/sonner';
 
+// Utiliza a mesma base de API que o restante do aplicativo
+const API_BASE = 'http://168.231.98.177:4000';
+
 export interface Template {
   id: string;
   name: string;
@@ -66,7 +69,7 @@ export function useTemplates() {
     setError(null);
     
     try {
-      const response = await axios.get('http://localhost:4000/api/templates');
+      const response = await axios.get(`${API_BASE}/api/templates`);
       
       // Check if the response data is an empty array
       if (Array.isArray(response.data) && response.data.length === 0) {
@@ -84,7 +87,7 @@ export function useTemplates() {
       setTemplates(defaultTemplates);
       
       toast.error('Erro ao carregar templates', {
-        description: errorMessage
+        description: `Usando templates padrão. (${errorMessage})`
       });
     } finally {
       setIsLoading(false);
@@ -93,7 +96,7 @@ export function useTemplates() {
 
   const saveTemplate = async (template: Omit<Template, 'id'> & { id?: string }) => {
     try {
-      const response = await axios.post('http://localhost:4000/api/templates', template);
+      const response = await axios.post(`${API_BASE}/api/templates`, template);
       
       if (response.data.success) {
         toast.success('Template salvo com sucesso');
@@ -113,7 +116,7 @@ export function useTemplates() {
 
   const deleteTemplate = async (id: string) => {
     try {
-      const response = await axios.delete(`http://localhost:4000/api/templates/${id}`);
+      const response = await axios.delete(`${API_BASE}/api/templates/${id}`);
       
       if (response.data.success) {
         toast.success('Template excluído com sucesso');

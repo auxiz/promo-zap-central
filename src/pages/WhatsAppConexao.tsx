@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import ConnectionStatus from '@/components/whatsapp/ConnectionStatus';
 import Instructions from '@/components/whatsapp/Instructions';
 import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ export default function WhatsAppConexao() {
   const [instances, setInstances] = useState<{ id: string; name: string }[]>([{ id: 'default', name: 'Principal' }]);
   const [currentInstance, setCurrentInstance] = useState('default');
   const [showNewInstanceDialog, setShowNewInstanceDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [instanceToDelete, setInstanceToDelete] = useState<{ id: string; name: string } | null>(null);
   
   const {
     connectionStatus,
@@ -53,6 +55,27 @@ export default function WhatsAppConexao() {
     // Após desconectar, conecta novamente para mostrar o QR code
     handleConnect();
   };
+  
+  const openDeleteDialog = (instance: { id: string; name: string }) => {
+    setInstanceToDelete(instance);
+    setShowDeleteDialog(true);
+  };
+  
+  const handleDeleteInstance = () => {
+    if (!instanceToDelete) return;
+    
+    // Se a instância atual está sendo excluída, mude para a instância principal
+    if (currentInstance === instanceToDelete.id) {
+      setCurrentInstance('default');
+    }
+    
+    // Remova a instância da lista
+    setInstances(prev => prev.filter(instance => instance.id !== instanceToDelete.id));
+    
+    toast.success(`Instância "${instanceToDelete.name}" excluída com sucesso`);
+    setShowDeleteDialog(false);
+    setInstanceToDelete(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -76,14 +99,27 @@ export default function WhatsAppConexao() {
           <CardContent className="p-0">
             <div className="flex flex-wrap gap-2 p-4">
               {instances.map(instance => (
-                <Button
-                  key={instance.id}
-                  variant={currentInstance === instance.id ? "default" : "outline"}
-                  onClick={() => handleInstanceSwitch(instance.id)}
-                  className="text-sm"
-                >
-                  {instance.name}
-                </Button>
+                <div key={instance.id} className="flex items-center gap-1">
+                  <Button
+                    variant={currentInstance === instance.id ? "default" : "outline"}
+                    onClick={() => handleInstanceSwitch(instance.id)}
+                    className="text-sm"
+                  >
+                    {instance.name}
+                  </Button>
+                  
+                  {/* Não permitir excluir a instância principal */}
+                  {instance.id !== 'default' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openDeleteDialog(instance)}
+                      className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           </CardContent>
@@ -104,6 +140,7 @@ export default function WhatsAppConexao() {
       
       <Instructions />
 
+      {/* Diálogo para adicionar nova instância */}
       <AlertDialog open={showNewInstanceDialog} onOpenChange={setShowNewInstanceDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -123,6 +160,28 @@ export default function WhatsAppConexao() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setInstanceName('')}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={addNewInstance}>Adicionar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Diálogo de confirmação para excluir instância */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Instância</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a instância "{instanceToDelete?.name}"?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setInstanceToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteInstance}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
