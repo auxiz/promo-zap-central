@@ -1,31 +1,27 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNotificationContext } from '@/contexts/NotificationContext';
+import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
 
-// API base URL (using the same as other components)
-const API_BASE = 'http://168.231.98.177:4000';
-
-export interface WhatsAppStatus {
-  connected: boolean;
-  device: string;
-  since: number | null;
+export interface WhatsAppStatusData {
   status: string;
+  connected: boolean;
+  device?: string;
+  since?: number | null;
 }
 
-export function useWhatsAppStatus() {
+export function useWhatsAppStatus(instanceId: string = 'default') {
   const [isStatusLoading, setIsStatusLoading] = useState(false);
-  const [whatsappStatus, setWhatsappStatus] = useState<WhatsAppStatus>({
+  const [whatsappStatus, setWhatsappStatus] = useState<WhatsAppStatusData>({
     connected: false,
-    device: '',
-    since: null,
-    status: 'DISCONNECTED'
+    status: 'DISCONNECTED',
   });
   
   const { addNotification } = useNotificationContext();
 
-  const fetchWhatsappStatus = async () => {
+  const fetchWhatsappStatus = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/whatsapp/status`);
+      const response = await fetch(`${WHATSAPP_API_BASE_URL}/status?instanceId=${instanceId}`);
       if (response.ok) {
         const data = await response.json();
         setWhatsappStatus(data);
@@ -42,9 +38,9 @@ export function useWhatsAppStatus() {
       );
       return null;
     }
-  };
+  }, [instanceId, addNotification]);
 
-  const handleCheckStatus = async () => {
+  const handleCheckStatus = useCallback(async () => {
     setIsStatusLoading(true);
     try {
       const status = await fetchWhatsappStatus();
@@ -84,7 +80,7 @@ export function useWhatsAppStatus() {
     } finally {
       setIsStatusLoading(false);
     }
-  };
+  }, [fetchWhatsappStatus, addNotification]);
 
   return {
     isStatusLoading,

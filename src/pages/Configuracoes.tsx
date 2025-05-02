@@ -1,11 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { ShopeeSettings } from '@/components/configuracoes/ShopeeSettings';
 import { InstagramSettings } from '@/components/configuracoes/InstagramSettings';
 import { FutureIntegrationsGrid } from '@/components/configuracoes/FutureIntegrationsGrid';
-
-// API base URL from the hook
-const API_BASE = 'http://168.231.98.177:4000';
+import { API_BASE } from '@/utils/api-constants';
 
 export default function Configuracoes() {
   const [shopeeAppId, setShopeeAppId] = useState('');

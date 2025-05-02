@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { RefreshCw } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
-import { useWhatsAppStatus } from '@/hooks/useWhatsAppStatus';
+import { useWhatsAppStatus } from '@/hooks/whatsapp/useWhatsAppStatus';
 import StatusCard from '@/components/dashboard/StatusCard';
 import ConnectionStatusCard from '@/components/dashboard/ConnectionStatusCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
