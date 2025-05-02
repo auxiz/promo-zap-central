@@ -83,8 +83,11 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       const success = await disconnectWhatsApp();
       if (success) {
         setConnectionStatus('disconnected');
-        setQrCode('');
+        setQrCode(''); // Clear QR code after disconnection
+        console.log('WhatsApp disconnected successfully');
       }
+    } catch (error) {
+      console.error('Error disconnecting WhatsApp:', error);
     } finally {
       setIsLoading(false);
     }

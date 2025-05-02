@@ -39,11 +39,8 @@ export default function WhatsAppConexao() {
     handleDisconnect
   } = useWhatsAppConnection(currentInstance);
 
-  const handleDisconnectAndShowQR = async () => {
-    await handleDisconnect();
-    // Após desconectar, conecta novamente para mostrar o QR code
-    handleConnect();
-  };
+  // Remove the combined disconnect and connect logic
+  // The disconnect should only disconnect, not immediately reconnect
 
   return (
     <div className="space-y-6">
@@ -74,7 +71,7 @@ export default function WhatsAppConexao() {
         backendError={backendError}
         handleConnect={handleConnect}
         handleQrCodeScanned={handleQrCodeScanned}
-        handleDisconnect={handleDisconnectAndShowQR}
+        handleDisconnect={handleDisconnect}
         instanceName={instances.find(i => i.id === currentInstance)?.name || ''}
       />
       

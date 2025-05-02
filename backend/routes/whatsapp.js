@@ -4,18 +4,22 @@ const whatsappClient = require('../whatsapp/client');
 
 // API endpoint to get QR code
 router.get('/qrcode', (req, res) => {
-  res.json({ qr: whatsappClient.getQRCode() });
+  // Get the instanceId from query params, default to 'default'
+  const { instanceId = 'default' } = req.query;
+  res.json({ qr: whatsappClient.getQRCode(instanceId) });
 });
 
 // API endpoint to get connection status
 router.get('/status', (req, res) => {
-  const { isConnected, device } = whatsappClient.getConnectionStatus();
-  const connectionTime = whatsappClient.getConnectionTime();
+  // Get the instanceId from query params, default to 'default'
+  const { instanceId = 'default' } = req.query;
+  const { isConnected, device } = whatsappClient.getConnectionStatus(instanceId);
+  const connectionTime = whatsappClient.getConnectionTime(instanceId);
   
   let status = 'DISCONNECTED';
   if (isConnected) {
     status = 'CONNECTED';
-  } else if (whatsappClient.getQRCode()) {
+  } else if (whatsappClient.getQRCode(instanceId)) {
     status = 'PENDING';
   }
   
@@ -27,20 +31,37 @@ router.get('/status', (req, res) => {
   });
 });
 
+// API endpoint to connect WhatsApp
+router.post('/connect', async (req, res) => {
+  try {
+    // Get the instanceId from the request body, default to 'default'
+    const { instanceId = 'default' } = req.body;
+    
+    // Initialize the client for this instance
+    whatsappClient.initializeClient(instanceId);
+    
+    res.json({ status: 'CONNECTING' });
+  } catch (error) {
+    console.error('Error connecting WhatsApp:', error);
+    res.status(500).json({ error: 'Failed to connect WhatsApp' });
+  }
+});
+
 // API endpoint to disconnect WhatsApp
 router.post('/disconnect', async (req, res) => {
   try {
-    const { isConnected } = whatsappClient.getConnectionStatus();
+    // Get the instanceId from the request body, default to 'default'
+    const { instanceId = 'default' } = req.body;
+    const { isConnected } = whatsappClient.getConnectionStatus(instanceId);
     
     if (isConnected) {
-      await whatsappClient.client.destroy();
-      console.log('WhatsApp client destroyed');
+      // Properly destroy the client session without reinitializing
+      await whatsappClient.destroyClient(instanceId);
+      console.log(`WhatsApp client for instance ${instanceId} destroyed`);
+      
+      // Clear the QR code for this instance
+      whatsappClient.clearQRCode(instanceId);
     }
-    
-    // Reinitialize the client
-    setTimeout(() => {
-      whatsappClient.initializeClient();
-    }, 1000);
     
     res.json({ status: 'DISCONNECTED' });
   } catch (error) {
@@ -52,13 +73,15 @@ router.post('/disconnect', async (req, res) => {
 // API endpoint to get all WhatsApp groups
 router.get('/groups', async (req, res) => {
   try {
-    const { isConnected } = whatsappClient.getConnectionStatus();
+    // Get the instanceId from query params, default to 'default'
+    const { instanceId = 'default' } = req.query;
+    const { isConnected } = whatsappClient.getConnectionStatus(instanceId);
     
     if (!isConnected) {
       return res.status(400).json({ error: 'WhatsApp not connected' });
     }
 
-    const chats = await whatsappClient.client.getChats();
+    const chats = await whatsappClient.getChats(instanceId);
     const groups = chats
       .filter(chat => chat.isGroup)
       .map(group => ({
@@ -75,8 +98,10 @@ router.get('/groups', async (req, res) => {
 
 // API endpoint to get monitored groups count
 router.get('/monitored/count', (req, res) => {
-  const monitoredGroups = whatsappClient.getMonitoredGroups();
-  const { isConnected } = whatsappClient.getConnectionStatus();
+  // Get the instanceId from query params, default to 'default'
+  const { instanceId = 'default' } = req.query;
+  const monitoredGroups = whatsappClient.getMonitoredGroups(instanceId);
+  const { isConnected } = whatsappClient.getConnectionStatus(instanceId);
   
   res.json({
     total: monitoredGroups.length,
@@ -86,8 +111,10 @@ router.get('/monitored/count', (req, res) => {
 
 // API endpoint to get send groups count
 router.get('/send/count', (req, res) => {
-  const sendGroups = whatsappClient.getSendGroups();
-  const { isConnected } = whatsappClient.getConnectionStatus();
+  // Get the instanceId from query params, default to 'default'
+  const { instanceId = 'default' } = req.query;
+  const sendGroups = whatsappClient.getSendGroups(instanceId);
+  const { isConnected } = whatsappClient.getConnectionStatus(instanceId);
   
   res.json({
     total: sendGroups.length,
@@ -97,20 +124,22 @@ router.get('/send/count', (req, res) => {
 
 // API endpoint to get monitored groups
 router.get('/monitored', (req, res) => {
-  res.json({ monitored: whatsappClient.getMonitoredGroups() });
+  const { instanceId = 'default' } = req.query;
+  res.json({ monitored: whatsappClient.getMonitoredGroups(instanceId) });
 });
 
 // API endpoint to add a group to monitored
 router.post('/monitored', (req, res) => {
   try {
     const { groupId } = req.body;
+    const { instanceId = 'default' } = req.query;
 
     if (!groupId) {
       return res.status(400).json({ error: 'Group ID is required' });
     }
 
-    whatsappClient.addMonitoredGroup(groupId);
-    res.json({ monitored: whatsappClient.getMonitoredGroups() });
+    whatsappClient.addMonitoredGroup(groupId, instanceId);
+    res.json({ monitored: whatsappClient.getMonitoredGroups(instanceId) });
   } catch (error) {
     console.error('Error adding monitored group:', error);
     res.status(500).json({ error: 'Failed to add monitored group' });
@@ -121,8 +150,9 @@ router.post('/monitored', (req, res) => {
 router.delete('/monitored/:groupId', (req, res) => {
   try {
     const { groupId } = req.params;
-    whatsappClient.removeMonitoredGroup(groupId);
-    res.json({ monitored: whatsappClient.getMonitoredGroups() });
+    const { instanceId = 'default' } = req.query;
+    whatsappClient.removeMonitoredGroup(groupId, instanceId);
+    res.json({ monitored: whatsappClient.getMonitoredGroups(instanceId) });
   } catch (error) {
     console.error('Error removing monitored group:', error);
     res.status(500).json({ error: 'Failed to remove monitored group' });
@@ -131,20 +161,22 @@ router.delete('/monitored/:groupId', (req, res) => {
 
 // API endpoint to get send groups
 router.get('/send', (req, res) => {
-  res.json({ send: whatsappClient.getSendGroups() });
+    const { instanceId = 'default' } = req.query;
+  res.json({ send: whatsappClient.getSendGroups(instanceId) });
 });
 
 // API endpoint to add a group to send list
 router.post('/send', (req, res) => {
   try {
     const { groupId } = req.body;
+      const { instanceId = 'default' } = req.query;
 
     if (!groupId) {
       return res.status(400).json({ error: 'Group ID is required' });
     }
 
-    whatsappClient.addSendGroup(groupId);
-    res.json({ send: whatsappClient.getSendGroups() });
+    whatsappClient.addSendGroup(groupId, instanceId);
+    res.json({ send: whatsappClient.getSendGroups(instanceId) });
   } catch (error) {
     console.error('Error adding send group:', error);
     res.status(500).json({ error: 'Failed to add send group' });
@@ -155,8 +187,9 @@ router.post('/send', (req, res) => {
 router.delete('/send/:groupId', (req, res) => {
   try {
     const { groupId } = req.params;
-    whatsappClient.removeSendGroup(groupId);
-    res.json({ send: whatsappClient.getSendGroups() });
+      const { instanceId = 'default' } = req.query;
+    whatsappClient.removeSendGroup(groupId, instanceId);
+    res.json({ send: whatsappClient.getSendGroups(instanceId) });
   } catch (error) {
     console.error('Error removing send group:', error);
     res.status(500).json({ error: 'Failed to remove send group' });

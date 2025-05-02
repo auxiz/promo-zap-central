@@ -30,8 +30,20 @@ export function useWhatsAppInstances() {
       return;
     }
 
-    const newInstanceId = `instance-${Date.now()}`;
-    const newInstance = { id: newInstanceId, name: instanceName };
+    // Check for duplicate names
+    if (instances.some(instance => instance.name.toLowerCase() === instanceName.trim().toLowerCase())) {
+      addNotification(
+        'Nome Duplicado',
+        'Já existe uma instância com este nome',
+        'error',
+        'low'
+      );
+      return;
+    }
+
+    // Generate a unique ID with timestamp and random string to ensure uniqueness
+    const newInstanceId = `instance-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const newInstance = { id: newInstanceId, name: instanceName.trim() };
     
     setInstances(prev => [...prev, newInstance]);
     setCurrentInstance(newInstanceId);
