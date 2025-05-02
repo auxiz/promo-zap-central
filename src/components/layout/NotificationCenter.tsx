@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export function NotificationCenter() {
   const {
@@ -71,33 +72,61 @@ export function NotificationCenter() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
-        <div className="flex items-center justify-between px-3 py-2 border-b">
-          <h3 className="font-medium">Notificações</h3>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={markAllAsRead}>
-              <Check size={14} /> <span className="ml-1 text-xs">Marcar como lido</span>
+      <DropdownMenuContent 
+        className="w-[340px] max-w-[90vw] p-0 overflow-hidden" 
+        align="end" 
+        sideOffset={8}
+      >
+        {/* Header section */}
+        <div className="bg-muted/30 px-4 py-2.5 border-b border-border flex items-center justify-between sticky top-0 z-10">
+          <h3 className="font-medium text-sm">Notificações</h3>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 px-2 text-xs"
+              onClick={markAllAsRead}
+            >
+              <Check size={14} className="mr-1" /> Marcar como lido
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={clearAllNotifications}>
-              <Trash2 size={14} /> <span className="ml-1 text-xs">Limpar</span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 px-2 text-xs"
+              onClick={clearAllNotifications}
+            >
+              <Trash2 size={14} className="mr-1" /> Limpar
             </Button>
           </div>
         </div>
         
+        {/* Content section */}
         {notifications.length > 0 ? (
-          <div className="max-h-[320px] overflow-y-auto">
+          <div className="max-h-[320px] overflow-y-auto py-1 scrollbar-thin">
             {notifications.map((notification) => (
-              <div key={notification.id} className={cn("px-3 py-2 hover:bg-accent cursor-pointer", !notification.read && "bg-accent/30")}>
-                <div className="flex gap-2">
-                  <div className={cn("w-2 h-2 rounded-full mt-2", getTypeColor(notification.type))} />
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center">
-                      <h4 className={cn("font-medium", !notification.read && "font-semibold")}>{notification.title}</h4>
-                      <span className="text-xs text-muted-foreground">{formatTime(notification.timestamp)}</span>
+              <div 
+                key={notification.id} 
+                className={cn(
+                  "px-4 py-3 hover:bg-accent/50 border-b border-border/50 last:border-0",
+                  !notification.read && "bg-accent/20"
+                )}
+              >
+                <div className="flex gap-3">
+                  <div className={cn("flex-shrink-0 w-2 h-2 rounded-full mt-2", getTypeColor(notification.type))} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <h4 className={cn("font-medium text-sm line-clamp-1", !notification.read && "font-semibold")}>
+                        {notification.title}
+                      </h4>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                        {formatTime(notification.timestamp)}
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                    <p className="text-sm text-muted-foreground mt-1 break-words">
+                      {notification.message}
+                    </p>
                     
-                    <div className="flex gap-2 mt-1.5">
+                    <div className="flex gap-4 mt-2">
                       <button 
                         onClick={() => markAsRead(notification.id)} 
                         className="text-xs text-muted-foreground hover:text-foreground"
@@ -117,7 +146,7 @@ export function NotificationCenter() {
             ))}
           </div>
         ) : (
-          <div className="py-6 text-center text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             <p>Nenhuma notificação</p>
           </div>
         )}
