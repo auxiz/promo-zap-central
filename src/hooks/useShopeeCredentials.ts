@@ -7,14 +7,20 @@ export interface ShopeeCredentials {
   appId: string;
   secretKey: string;
   status: 'online' | 'offline';
+  hasToken: boolean;
   isLoading: boolean;
 }
 
-export function useShopeeCredentials(initialAppId: string, initialStatus: 'online' | 'offline' = 'offline') {
+export function useShopeeCredentials(
+  initialAppId: string, 
+  initialStatus: 'online' | 'offline' = 'offline',
+  initialHasToken: boolean = false
+) {
   const [shopeeSettings, setShopeeSettings] = useState<ShopeeCredentials>({
     appId: initialAppId || '',
     secretKey: '',
     status: initialStatus || 'offline',
+    hasToken: initialHasToken || false,
     isLoading: false,
   });
   
@@ -29,7 +35,8 @@ export function useShopeeCredentials(initialAppId: string, initialStatus: 'onlin
           setShopeeSettings(prev => ({
             ...prev,
             appId: data.appId || prev.appId,
-            status: data.status || 'offline'
+            status: data.status || 'offline',
+            hasToken: data.hasToken || false
           }));
         }
       } catch (error) {
@@ -50,9 +57,10 @@ export function useShopeeCredentials(initialAppId: string, initialStatus: 'onlin
     setShopeeSettings(prev => ({
       ...prev,
       appId: initialAppId || prev.appId,
-      status: initialStatus || prev.status
+      status: initialStatus || prev.status,
+      hasToken: initialHasToken || prev.hasToken
     }));
-  }, [initialAppId, initialStatus]);
+  }, [initialAppId, initialStatus, initialHasToken]);
 
   const saveShopeeCredentials = async () => {
     if (!shopeeSettings.appId || !shopeeSettings.secretKey) return;
@@ -91,7 +99,8 @@ export function useShopeeCredentials(initialAppId: string, initialStatus: 'onlin
             const data = await statusResponse.json();
             setShopeeSettings(prev => ({
               ...prev,
-              status: data.status || 'offline'
+              status: data.status || 'offline',
+              hasToken: data.hasToken || false
             }));
           }
         } catch (error) {
@@ -149,10 +158,28 @@ export function useShopeeCredentials(initialAppId: string, initialStatus: 'onlin
     }
   };
 
+  const refreshShopeeStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/shopee/credentials`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        setShopeeSettings(prev => ({
+          ...prev,
+          status: data.status || prev.status,
+          hasToken: data.hasToken || prev.hasToken
+        }));
+      }
+    } catch (error) {
+      console.error("Error refreshing Shopee status:", error);
+    }
+  };
+
   return {
     shopeeSettings,
     setShopeeSettings,
     saveShopeeCredentials,
-    testShopeeConnection
+    testShopeeConnection,
+    refreshShopeeStatus
   };
 }

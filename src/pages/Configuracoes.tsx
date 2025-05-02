@@ -8,6 +8,7 @@ import { API_BASE } from '@/utils/api-constants';
 export default function Configuracoes() {
   const [shopeeAppId, setShopeeAppId] = useState('');
   const [shopeeStatus, setShopeeStatus] = useState<'online' | 'offline'>('offline');
+  const [hasToken, setHasToken] = useState(false);
 
   // Fetch current Shopee credentials on mount
   useEffect(() => {
@@ -24,6 +25,10 @@ export default function Configuracoes() {
           if (data.status) {
             setShopeeStatus(data.status);
           }
+
+          if (data.hasToken) {
+            setHasToken(data.hasToken);
+          }
         }
       } catch (error) {
         console.error("Error fetching Shopee credentials:", error);
@@ -37,7 +42,11 @@ export default function Configuracoes() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Configurações de Integrações</h1>
       
-      <ShopeeSettings initialAppId={shopeeAppId} initialStatus={shopeeStatus} />
+      <ShopeeSettings 
+        initialAppId={shopeeAppId} 
+        initialStatus={shopeeStatus}
+        initialHasToken={hasToken}
+      />
       <InstagramSettings />
       <FutureIntegrationsGrid />
     </div>

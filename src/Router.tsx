@@ -1,26 +1,58 @@
 
-import { Route, Routes } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
-
-// Pages
 import Index from '@/pages/Index';
-import Mensagens from '@/pages/Mensagens';
+import WhatsAppConexao from '@/pages/WhatsAppConexao';
 import GruposMonitorados from '@/pages/GruposMonitorados';
 import GruposEnvio from '@/pages/GruposEnvio';
-import WhatsAppConexao from '@/pages/WhatsAppConexao';
+import Mensagens from '@/pages/Mensagens';
 import Configuracoes from '@/pages/Configuracoes';
+import ConfigShopee from '@/pages/ConfigShopee';
+import ShopeeOAuthCallback from '@/pages/ShopeeOAuthCallback';
 import NotFound from '@/pages/NotFound';
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    errorElement: <NotFound />,
+    children: [
+      {
+        index: true,
+        element: <Index />
+      },
+      {
+        path: "/whatsapp",
+        element: <WhatsAppConexao />
+      },
+      {
+        path: "/grupos-monitorados",
+        element: <GruposMonitorados />
+      },
+      {
+        path: "/grupos-envio",
+        element: <GruposEnvio />
+      },
+      {
+        path: "/mensagens",
+        element: <Mensagens />
+      },
+      {
+        path: "/configuracoes",
+        element: <Configuracoes />
+      },
+      {
+        path: "/config-shopee",
+        element: <ConfigShopee />
+      }
+    ]
+  },
+  {
+    path: "/config-shopee/callback",
+    element: <ShopeeOAuthCallback />
+  }
+]);
+
 export default function Router() {
-  return (
-    <Routes>
-      <Route path="/" element={<Layout><Index /></Layout>} />
-      <Route path="/mensagens" element={<Layout><Mensagens /></Layout>} />
-      <Route path="/grupos-monitorados" element={<Layout><GruposMonitorados /></Layout>} />
-      <Route path="/grupos-envio" element={<Layout><GruposEnvio /></Layout>} />
-      <Route path="/whatsapp-conexao" element={<Layout><WhatsAppConexao /></Layout>} />
-      <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
+  return <RouterProvider router={router} />;
 }

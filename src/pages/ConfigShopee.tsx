@@ -6,6 +6,7 @@ import { API_BASE } from '@/utils/api-constants';
 export default function ConfigShopee() {
   const [shopeeAppId, setShopeeAppId] = useState('');
   const [initialStatus, setInitialStatus] = useState<'online' | 'offline'>('offline');
+  const [hasToken, setHasToken] = useState(false);
 
   // Fetch current Shopee credentials on mount
   useEffect(() => {
@@ -22,6 +23,10 @@ export default function ConfigShopee() {
           if (data.status) {
             setInitialStatus(data.status);
           }
+
+          if (data.hasToken) {
+            setHasToken(data.hasToken);
+          }
         }
       } catch (error) {
         console.error("Error fetching Shopee credentials:", error);
@@ -34,7 +39,11 @@ export default function ConfigShopee() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Configurações Shopee</h1>
-      <ShopeeSettings initialAppId={shopeeAppId} initialStatus={initialStatus} />
+      <ShopeeSettings 
+        initialAppId={shopeeAppId} 
+        initialStatus={initialStatus}
+        initialHasToken={hasToken}
+      />
       
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-4">Como Funciona</h2>
@@ -59,6 +68,13 @@ export default function ConfigShopee() {
             Para começar, configure suas credenciais da Shopee acima e depois defina os 
             grupos que deseja monitorar e os grupos para onde deseja encaminhar as mensagens
             convertidas nas páginas de Grupos Monitorados e Grupos de Envio.
+          </p>
+
+          <p className="mt-4">
+            <strong>Autenticação OAuth:</strong> Para utilizar a API de afiliados da Shopee, é 
+            necessário autenticar-se via OAuth após configurar o APP ID e Secret Key. Este processo 
+            permite que o sistema receba um token de acesso para converter links e acessar 
+            informações de desempenho dos seus links de afiliado.
           </p>
         </div>
       </div>
