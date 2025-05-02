@@ -6,6 +6,8 @@ import { ShopeeInfoText } from './shopee/ShopeeInfoText';
 import { ShopeeOAuthSection } from './shopee/ShopeeOAuthSection';
 import { useShopeeCredentials } from '@/hooks/useShopeeCredentials';
 import { Separator } from '@/components/ui/separator';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface ShopeeSettingsProps {
   initialAppId: string;
@@ -18,6 +20,8 @@ export function ShopeeSettings({
   initialStatus = 'offline',
   initialHasToken = false
 }: ShopeeSettingsProps) {
+  const location = useLocation();
+  
   const { 
     shopeeSettings, 
     setShopeeSettings, 
@@ -25,6 +29,21 @@ export function ShopeeSettings({
     testShopeeConnection,
     refreshShopeeStatus
   } = useShopeeCredentials(initialAppId, initialStatus, initialHasToken);
+  
+  // Check for OAuth callback params in URL (for direct navigation or page refresh)
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const code = queryParams.get('code');
+    
+    // If we have a code in the URL but we're not on the callback page
+    if (code && location.pathname !== '/config-shopee/callback') {
+      console.log('OAuth code detected in URL, handling as callback');
+      
+      // This is a safeguard for users who navigate directly with a code in URL
+      // We'll refresh the status to capture any successful OAuth flow
+      refreshShopeeStatus();
+    }
+  }, [location, refreshShopeeStatus]);
   
   return (
     <Card className="dashboard-card overflow-hidden">
