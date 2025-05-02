@@ -1,3 +1,4 @@
+
 // Replace with your actual VPS IPv4 address and port
 const API_BASE = 'http://168.231.98.177:4000';
 
@@ -7,7 +8,7 @@ import { toast } from '@/components/ui/sonner';
 // API endpoint base URL
 const API_BASE_URL = `${API_BASE}/api/whatsapp`;
 
-export default function useWhatsAppConnection() {
+export default function useWhatsAppConnection(instanceId: string = 'default') {
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected
   const [qrCode, setQrCode] = useState('');
   const [deviceInfo, setDeviceInfo] = useState({ name: '', lastConnection: '' });
@@ -17,7 +18,7 @@ export default function useWhatsAppConnection() {
   // Function to fetch connection status
   const fetchStatus = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/status`);
+      const response = await fetch(`${API_BASE_URL}/status?instanceId=${instanceId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,12 +47,12 @@ export default function useWhatsAppConnection() {
       setBackendError(true);
       setConnectionStatus('disconnected');
     }
-  }, []);
+  }, [instanceId]);
 
   // Function to fetch QR code
   const fetchQrCode = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/qrcode`);
+      const response = await fetch(`${API_BASE_URL}/qrcode?instanceId=${instanceId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -69,7 +70,7 @@ export default function useWhatsAppConnection() {
       console.error('Error fetching QR code:', error);
       setBackendError(true);
     }
-  }, []);
+  }, [instanceId]);
 
   // Initial fetch of status on component mount
   useEffect(() => {
@@ -101,6 +102,18 @@ export default function useWhatsAppConnection() {
     setConnectionStatus('connecting');
     
     try {
+      const response = await fetch(`${API_BASE_URL}/connect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ instanceId })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       await fetchQrCode();
       await fetchStatus();
     } catch (error) {
@@ -126,7 +139,8 @@ export default function useWhatsAppConnection() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ instanceId })
       });
       
       if (!response.ok) {

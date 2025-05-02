@@ -1,15 +1,18 @@
 
 import React from 'react';
 import { Loader2, ServerCrash } from 'lucide-react';
-import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
 
-export default function QRCodeScanner() {
-  const { 
-    connectionStatus, 
-    qrCode,
-    backendError 
-  } = useWhatsAppConnection();
+type QRCodeScannerProps = {
+  qrCode: string;
+  connectionStatus: string;
+  backendError: boolean;
+}
 
+export default function QRCodeScanner({ 
+  qrCode, 
+  connectionStatus, 
+  backendError 
+}: QRCodeScannerProps) {
   if (connectionStatus === 'connected') {
     return <p className="text-center text-green-500 font-medium">✅ WhatsApp conectado!</p>;
   }
