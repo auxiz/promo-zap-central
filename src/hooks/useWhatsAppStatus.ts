@@ -43,26 +43,23 @@ export function useWhatsAppStatus() {
       
       if (status) {
         if (status.connected) {
-          toast("WhatsApp Conectado", {
+          toast.success("WhatsApp Conectado", {
             description: `Conectado ao dispositivo ${status.device}`,
           });
         } else {
-          toast("WhatsApp Desconectado", {
+          toast.error("WhatsApp Desconectado", {
             description: "Nenhuma conexão ativa no momento",
-            variant: "destructive",
           });
         }
       } else {
-        toast("Erro de Conexão", {
+        toast.error("Erro de Conexão", {
           description: "Não foi possível verificar o status do WhatsApp. Servidor offline?",
-          variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Error checking status:', error);
-      toast("Falha na Verificação", {
+      toast.error("Falha na Verificação", {
         description: "Ocorreu um erro ao verificar o status do WhatsApp.",
-        variant: "destructive",
       });
     } finally {
       setIsStatusLoading(false);
