@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Loader2, ServerCrash } from 'lucide-react';
+import { Loader2, ServerCrash, AlertTriangle } from 'lucide-react';
 
 type QRCodeScannerProps = {
   qrCode: string;
@@ -29,8 +29,8 @@ export default function QRCodeScanner({
           {backendError ? (
             <div className="flex flex-col items-center justify-center">
               <ServerCrash size={48} className="text-destructive" />
-              <p className="text-sm text-destructive mt-2">Erro de conexão com o backend</p>
-              <p className="text-xs text-muted-foreground mt-1">Verifique se o servidor Node.js está rodando na porta 4000</p>
+              <p className="text-sm text-destructive mt-2">Erro de conexão com o servidor</p>
+              <p className="text-xs text-muted-foreground mt-1">Verifique se o servidor está ativo e acessível</p>
             </div>
           ) : qrCode ? (
             <img
@@ -38,16 +38,23 @@ export default function QRCodeScanner({
               alt="QR Code para conectar WhatsApp"
               className="w-64 h-64"
             />
-          ) : (
+          ) : connectionStatus === 'connecting' ? (
             <div className="flex flex-col items-center justify-center">
               <Loader2 size={48} className="text-gray-300 animate-spin" />
               <p className="text-sm text-gray-400 mt-2">Gerando QR Code, aguarde...</p>
+              <p className="text-xs text-muted-foreground mt-1">Isso pode levar alguns instantes</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center">
+              <AlertTriangle size={48} className="text-amber-500" />
+              <p className="text-sm text-amber-500 mt-2">QR Code não disponível</p>
+              <p className="text-xs text-muted-foreground mt-1">Clique em Conectar para gerar um novo QR Code</p>
             </div>
           )}
         </div>
       </div>
       
-      {!backendError && connectionStatus === 'connecting' && (
+      {!backendError && connectionStatus === 'connecting' && qrCode && (
         <div className="mt-4 text-sm text-muted-foreground">
           <p>Aguardando leitura do QR Code...</p>
           <p className="mt-1">O QR Code expira em 60 segundos</p>
