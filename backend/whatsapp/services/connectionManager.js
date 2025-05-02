@@ -6,6 +6,7 @@
 
 const instanceModel = require('../models/instance');
 const { createClient } = require('./clientFactory');
+const errorTracker = require('./errorTracker');
 
 // Initialize WhatsApp client for a specific instance
 const initializeClient = (instanceId = 'default') => {
@@ -21,7 +22,12 @@ const initializeClient = (instanceId = 'default') => {
   instance.client = client;
   
   client.initialize().catch(error => {
-    console.error(`Error initializing WhatsApp client for instance ${instanceId}:`, error);
+    errorTracker.trackError(
+      instanceId,
+      'CONNECTION', 
+      `Error initializing WhatsApp client for instance ${instanceId}`, 
+      error
+    );
   });
   
   return client;
@@ -40,9 +46,15 @@ const destroyClient = async (instanceId = 'default') => {
       instance.connectionTime = null;
       instance.qrCodeDataUrl = null;
       console.log(`Client for instance ${instanceId} destroyed successfully`);
+      errorTracker.resetRetryAttempts(instanceId);
       return true;
     } catch (error) {
-      console.error(`Error destroying client for instance ${instanceId}:`, error);
+      errorTracker.trackError(
+        instanceId,
+        'DISCONNECTION',
+        `Error destroying client for instance ${instanceId}`,
+        error
+      );
       return false;
     }
   }

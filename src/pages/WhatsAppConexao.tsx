@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button';
 import ConnectionStatus from '@/components/whatsapp/ConnectionStatus';
 import Instructions from '@/components/whatsapp/Instructions';
 import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, BarChart } from 'lucide-react';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
 import InstancesList from '@/components/whatsapp/InstancesList';
 import NewInstanceDialog from '@/components/whatsapp/NewInstanceDialog';
 import DeleteInstanceDialog from '@/components/whatsapp/DeleteInstanceDialog';
+import ErrorMonitor from '@/components/whatsapp/ErrorMonitor';
+import { useState } from 'react';
 
 export default function WhatsAppConexao() {
+  const [showErrorMonitor, setShowErrorMonitor] = useState(false);
+  
   const {
     instances,
     currentInstance,
@@ -39,21 +43,29 @@ export default function WhatsAppConexao() {
     handleDisconnect
   } = useWhatsAppConnection(currentInstance);
 
-  // Remove the combined disconnect and connect logic
-  // The disconnect should only disconnect, not immediately reconnect
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">WhatsApp Conexão</h1>
-        <Button 
-          onClick={() => setShowNewInstanceDialog(true)}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <PlusCircle size={16} />
-          Nova Instância
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setShowErrorMonitor(!showErrorMonitor)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <BarChart size={16} />
+            {showErrorMonitor ? 'Ocultar Monitor' : 'Monitor de Erros'}
+          </Button>
+          <Button 
+            onClick={() => setShowNewInstanceDialog(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <PlusCircle size={16} />
+            Nova Instância
+          </Button>
+        </div>
       </div>
 
       <InstancesList 
@@ -62,6 +74,14 @@ export default function WhatsAppConexao() {
         handleInstanceSwitch={handleInstanceSwitch}
         openDeleteDialog={openDeleteDialog}
       />
+      
+      {showErrorMonitor && (
+        <ErrorMonitor 
+          instanceId={currentInstance}
+          autoRefresh={connectionStatus === 'connecting'}
+          showDetails={true}
+        />
+      )}
       
       <ConnectionStatus
         connectionStatus={connectionStatus}

@@ -7,6 +7,7 @@
 // Import service modules
 const connectionManager = require('./services/connectionManager');
 const stateManager = require('./services/stateManager');
+const errorTracker = require('./services/errorTracker');
 
 // Initialize default instance
 connectionManager.initializeClient('default');
@@ -32,5 +33,10 @@ module.exports = {
   addMonitoredGroup: stateManager.addMonitoredGroup,
   removeMonitoredGroup: stateManager.removeMonitoredGroup,
   addSendGroup: stateManager.addSendGroup,
-  removeSendGroup: stateManager.removeSendGroup
+  removeSendGroup: stateManager.removeSendGroup,
+  
+  // Error tracking
+  getInstanceErrorStats: errorTracker.getInstanceErrorStats,
+  getGlobalErrorStats: errorTracker.getGlobalErrorStats,
+  clearErrorHistory: errorTracker.clearErrorHistory
 };
