@@ -2,72 +2,62 @@
 const express = require('express');
 const router = express.Router();
 
-// In-memory storage for templates (in a real app, this would be a database)
-let templates = [
+// Default templates that will be used as fallback
+const defaultTemplates = [
   {
     id: '1',
-    name: 'SUPER OFERTA',
-    content: `🔥 *SUPER OFERTA* 🔥
-
+    name: 'OFERTA RELÂMPAGO',
+    content: `🔥 OFERTA RELÂMPAGO 🔥
 --produtodescricao--
-
-✅ De: ~R$ --precoantigo--~
-✅ Por apenas: *R$ 39,90*
-
-🛒 COMPRAR: --linklojaoficial--
-
-⚠️ *ESTOQUE LIMITADO*
-📦 Frete Grátis`
+❌ De: --precoantigo--
+🎉 Por: --precocomdesconto--
+🛒 COMPRAR: --linklojaoficial--`
   },
   {
     id: '2',
-    name: 'NOVA CHEGADA',
-    content: `🆕 *ACABOU DE CHEGAR* 🆕
-
+    name: 'ESTOQUE LIMITADO',
+    content: `⚡️ ESTOQUE LIMITADO ⚡️
 --produtodescricao--
-
-🔸 Lançamento exclusivo!
-🔸 Preço de lançamento: *R$ 49,90*
-
-🛒 COMPRAR: --linklojaoficial--
-
-📦 Frete Grátis para todo Brasil
-⏱️ *PROMOÇÃO POR TEMPO LIMITADO*`
+Só por: --precocomdesconto--
+🛒 Link: --linklojaoficial--`
   },
   {
     id: '3',
-    name: 'OFERTA RELÂMPAGO',
-    content: `⚡ *OFERTA RELÂMPAGO* ⚡
-
+    name: 'NOVA CHEGADA',
+    content: `💥 NOVA CHEGADA 💥
 --produtodescricao--
-
-⏰ *APENAS HOJE*
-✅ De: ~R$ --precoantigo--~
-✅ Por: *R$ 29,90*
-
-🛒 COMPRAR AGORA: --linklojaoficial--
-
-⚠️ *ÚLTIMAS UNIDADES*`
+Apenas: --precocomdesconto--
+📦 Frete grátis!
+🛒 Comprar: --linklojaoficial--`
   },
   {
     id: '4',
-    name: 'ÚLTIMA CHANCE',
-    content: `⏰ *ÚLTIMA CHANCE* ⏰
-
+    name: 'SUPER DESCONTO',
+    content: `🎁 SUPER DESCONTO 🎁
 --produtodescricao--
-
-🔴 PROMOÇÃO ACABA EM 24 HORAS!
-✅ De: ~R$ --precoantigo--~
-✅ Por apenas: *R$ 44,90*
-
-🛒 GARANTIR AGORA: --linklojaoficial--
-
-📦 Frete Grátis para todo Brasil`
+❌ De: --precoantigo--
+➡️ Por: --precocomdesconto--
+🛒 Confira: --linklojaoficial--`
+  },
+  {
+    id: '5',
+    name: 'SUPER OFERTA',
+    content: `⭐ SUPER OFERTA ⭐
+--produtodescricao--
+🔖 Preço especial: --precocomdesconto--
+🛒 Adquira em: --linklojaoficial--`
   }
 ];
 
+// In-memory storage for templates (in a real app, this would be a database)
+let templates = [...defaultTemplates];
+
 // Get all templates
 router.get('/', (req, res) => {
+  // Always return something - if templates array is empty, return default templates
+  if (templates.length === 0) {
+    templates = [...defaultTemplates];
+  }
   res.json(templates);
 });
 

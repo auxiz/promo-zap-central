@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { Template, useTemplates } from '@/hooks/useTemplates';
+import { Template, useTemplates, defaultTemplates } from '@/hooks/useTemplates';
 import { toast } from '@/components/ui/sonner';
 
-// Templates padrão
-export const defaultTemplates = {
+// Templates padrão para diferentes estilos
+export const defaultTemplateStyles = {
   normal: `🔥 SUPER OFERTA 🔥
 --produtodescricao--
 🛒 COMPRAR: --linklojaoficial--
@@ -108,8 +108,8 @@ export function useTemplateUtils() {
   };
 
   // Carrega um template padrão
-  const loadDefaultTemplate = (templateType: keyof typeof defaultTemplates) => {
-    setTemplateContent(defaultTemplates[templateType]);
+  const loadDefaultTemplate = (templateType: keyof typeof defaultTemplateStyles) => {
+    setTemplateContent(defaultTemplateStyles[templateType]);
     setTemplateName(messageTemplateStyles.find(style => style.id === templateType)?.name || '');
   };
   

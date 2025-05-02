@@ -9,6 +9,53 @@ export interface Template {
   content: string;
 }
 
+// Default templates that will be used as fallback if API call fails
+export const defaultTemplates: Template[] = [
+  {
+    id: '1',
+    name: 'OFERTA RELÂMPAGO',
+    content: `🔥 OFERTA RELÂMPAGO 🔥
+--produtodescricao--
+❌ De: --precoantigo--
+🎉 Por: --precocomdesconto--
+🛒 COMPRAR: --linklojaoficial--`
+  },
+  {
+    id: '2',
+    name: 'ESTOQUE LIMITADO',
+    content: `⚡️ ESTOQUE LIMITADO ⚡️
+--produtodescricao--
+Só por: --precocomdesconto--
+🛒 Link: --linklojaoficial--`
+  },
+  {
+    id: '3',
+    name: 'NOVA CHEGADA',
+    content: `💥 NOVA CHEGADA 💥
+--produtodescricao--
+Apenas: --precocomdesconto--
+📦 Frete grátis!
+🛒 Comprar: --linklojaoficial--`
+  },
+  {
+    id: '4',
+    name: 'SUPER DESCONTO',
+    content: `🎁 SUPER DESCONTO 🎁
+--produtodescricao--
+❌ De: --precoantigo--
+➡️ Por: --precocomdesconto--
+🛒 Confira: --linklojaoficial--`
+  },
+  {
+    id: '5',
+    name: 'SUPER OFERTA',
+    content: `⭐ SUPER OFERTA ⭐
+--produtodescricao--
+🔖 Preço especial: --precocomdesconto--
+🛒 Adquira em: --linklojaoficial--`
+  }
+];
+
 export function useTemplates() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,10 +67,22 @@ export function useTemplates() {
     
     try {
       const response = await axios.get('http://localhost:4000/api/templates');
-      setTemplates(response.data);
+      
+      // Check if the response data is an empty array
+      if (Array.isArray(response.data) && response.data.length === 0) {
+        console.log('API returned empty templates array, using fallback templates');
+        setTemplates(defaultTemplates);
+      } else {
+        setTemplates(response.data);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar templates';
       setError(errorMessage);
+      console.log('Error fetching templates, using fallback templates:', errorMessage);
+      
+      // Use fallback templates on error
+      setTemplates(defaultTemplates);
+      
       toast.error('Erro ao carregar templates', {
         description: errorMessage
       });
