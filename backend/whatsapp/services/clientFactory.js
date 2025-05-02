@@ -8,6 +8,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const instanceModel = require('../models/instance');
 const errorTracker = require('./errorTracker');
+const metricsTracker = require('./metricsTracker');
 
 // Function to create and initialize a WhatsApp client for a specific instance
 const createClient = (instanceId) => {
@@ -57,12 +58,20 @@ const createClient = (instanceId) => {
     console.log(`WhatsApp connected for instance ${instanceId} with device: ${instance.device}`);
     instance.qrCodeDataUrl = null; // Clear QR code after successful connection
     errorTracker.resetRetryAttempts(instanceId);
+    
+    // Record connection started for metrics
+    metricsTracker.recordConnectionStart(instanceId);
   });
 
   // Event handler for disconnected state
   client.on('disconnected', (reason) => {
     instance.isConnected = false;
     instance.device = null;
+    
+    // Record connection ended for metrics
+    metricsTracker.recordConnectionEnd(instanceId);
+    
+    // Record the disconnection time
     instance.connectionTime = null;
     console.log(`WhatsApp disconnected for instance ${instanceId}. Reason: ${reason || 'Unknown'}`);
     
@@ -84,6 +93,30 @@ const createClient = (instanceId) => {
       'Authentication failure',
       error
     );
+  });
+  
+  // Message handling for metrics
+  client.on('message', () => {
+    metricsTracker.recordMessageReceived(instanceId);
+  });
+  
+  // Handling for rate limiting and throttling
+  client.on('message_ack', (msg, ack) => {
+    // Message sending has been acknowledged - update metrics
+    if (ack === 1 || ack === 2 || ack === 3) {
+      metricsTracker.recordMessageSent(instanceId);
+    } else if (ack === -1) {
+      metricsTracker.recordMessageFailed(instanceId);
+      
+      // Check for potential rate limiting
+      if (msg.body && msg.body.includes("can't send messages")) {
+        metricsTracker.recordRateLimitWarning(
+          instanceId, 
+          "WhatsApp rate limit detected", 
+          { messageId: msg.id._serialized, error: "Can't send messages" }
+        );
+      }
+    }
   });
 
   return client;

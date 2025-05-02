@@ -7,6 +7,7 @@
 const instanceModel = require('../models/instance');
 const { createClient } = require('./clientFactory');
 const errorTracker = require('./errorTracker');
+const metricsTracker = require('./metricsTracker');
 
 // Initialize WhatsApp client for a specific instance
 const initializeClient = (instanceId = 'default') => {
@@ -30,6 +31,9 @@ const initializeClient = (instanceId = 'default') => {
     );
   });
   
+  // Record reconnection attempt
+  metricsTracker.recordReconnection(instanceId);
+  
   return client;
 };
 
@@ -39,6 +43,9 @@ const destroyClient = async (instanceId = 'default') => {
   
   if (instance.client) {
     try {
+      // Record connection ended for metrics
+      metricsTracker.recordConnectionEnd(instanceId);
+      
       await instance.client.destroy();
       instance.client = null;
       instance.isConnected = false;

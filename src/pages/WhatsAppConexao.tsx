@@ -2,9 +2,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import ConnectionStatus from '@/components/whatsapp/ConnectionStatus';
+import ConnectionMetrics from '@/components/whatsapp/ConnectionMetrics';
 import Instructions from '@/components/whatsapp/Instructions';
 import useWhatsAppConnection from '@/hooks/useWhatsAppConnection';
-import { PlusCircle, BarChart } from 'lucide-react';
+import { PlusCircle, BarChart, Activity } from 'lucide-react';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
 import InstancesList from '@/components/whatsapp/InstancesList';
 import NewInstanceDialog from '@/components/whatsapp/NewInstanceDialog';
@@ -14,6 +15,7 @@ import { useState } from 'react';
 
 export default function WhatsAppConexao() {
   const [showErrorMonitor, setShowErrorMonitor] = useState(false);
+  const [showMetrics, setShowMetrics] = useState(false);
   
   const {
     instances,
@@ -49,6 +51,15 @@ export default function WhatsAppConexao() {
         <h1 className="text-3xl font-bold">WhatsApp Conexão</h1>
         <div className="flex items-center gap-2">
           <Button 
+            onClick={() => setShowMetrics(!showMetrics)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Activity size={16} />
+            {showMetrics ? 'Ocultar Métricas' : 'Ver Métricas'}
+          </Button>
+          <Button 
             onClick={() => setShowErrorMonitor(!showErrorMonitor)}
             variant="outline"
             size="sm"
@@ -74,6 +85,13 @@ export default function WhatsAppConexao() {
         handleInstanceSwitch={handleInstanceSwitch}
         openDeleteDialog={openDeleteDialog}
       />
+      
+      {showMetrics && (
+        <ConnectionMetrics 
+          instanceId={currentInstance}
+          showDetails={true}
+        />
+      )}
       
       {showErrorMonitor && (
         <ErrorMonitor 

@@ -8,6 +8,7 @@
 const connectionManager = require('./services/connectionManager');
 const stateManager = require('./services/stateManager');
 const errorTracker = require('./services/errorTracker');
+const metricsTracker = require('./services/metricsTracker');
 
 // Initialize default instance
 connectionManager.initializeClient('default');
@@ -38,5 +39,10 @@ module.exports = {
   // Error tracking
   getInstanceErrorStats: errorTracker.getInstanceErrorStats,
   getGlobalErrorStats: errorTracker.getGlobalErrorStats,
-  clearErrorHistory: errorTracker.clearErrorHistory
+  clearErrorHistory: errorTracker.clearErrorHistory,
+  
+  // Metrics tracking (NEW)
+  getMetrics: metricsTracker.getMetrics,
+  resetMetrics: metricsTracker.resetMetrics,
+  clearRateLimitWarnings: metricsTracker.clearRateLimitWarnings
 };

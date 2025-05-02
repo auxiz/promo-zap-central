@@ -197,7 +197,7 @@ router.delete('/send/:groupId', (req, res) => {
   }
 });
 
-// NEW API endpoint to get error stats
+// API endpoint to get error stats
 router.get('/errors', (req, res) => {
   try {
     const { instanceId } = req.query;
@@ -232,7 +232,7 @@ router.get('/errors', (req, res) => {
   }
 });
 
-// NEW API endpoint to clear error history
+// API endpoint to clear error history
 router.delete('/errors', (req, res) => {
   try {
     const { instanceId } = req.body;
@@ -259,5 +259,40 @@ router.delete('/errors', (req, res) => {
   }
 });
 
-module.exports = router;
+// NEW API endpoint to get metrics
+router.get('/metrics', (req, res) => {
+  try {
+    const { instanceId = 'default' } = req.query;
+    const metrics = whatsappClient.getMetrics(instanceId);
+    res.json({ metrics });
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    res.status(500).json({ error: 'Failed to fetch metrics' });
+  }
+});
 
+// NEW API endpoint to reset metrics
+router.delete('/metrics', (req, res) => {
+  try {
+    const { instanceId = 'default' } = req.body;
+    whatsappClient.resetMetrics(instanceId);
+    res.json({ success: true, message: `Metrics reset for instance ${instanceId}` });
+  } catch (error) {
+    console.error('Error resetting metrics:', error);
+    res.status(500).json({ error: 'Failed to reset metrics' });
+  }
+});
+
+// NEW API endpoint to clear rate limit warnings
+router.delete('/metrics/rate-limits', (req, res) => {
+  try {
+    const { instanceId = 'default' } = req.body;
+    whatsappClient.clearRateLimitWarnings(instanceId);
+    res.json({ success: true, message: `Rate limit warnings cleared for instance ${instanceId}` });
+  } catch (error) {
+    console.error('Error clearing rate limit warnings:', error);
+    res.status(500).json({ error: 'Failed to clear rate limit warnings' });
+  }
+});
+
+module.exports = router;

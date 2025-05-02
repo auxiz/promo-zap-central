@@ -1,13 +1,14 @@
 
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/sonner';
 import { RefreshCw } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useWhatsAppStatus } from '@/hooks/whatsapp/useWhatsAppStatus';
 import StatusCard from '@/components/dashboard/StatusCard';
 import ConnectionStatusCard from '@/components/dashboard/ConnectionStatusCard';
+import ConnectionStatsCard from '@/components/dashboard/ConnectionStatsCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import InfoCard from '@/components/dashboard/InfoCard';
+import { useEffect } from 'react';
 
 const Index = () => {
   const {
@@ -22,12 +23,22 @@ const Index = () => {
   const {
     isStatusLoading,
     whatsappStatus,
+    metricsData,
+    fetchWhatsappStatus,
+    fetchMetrics,
     handleCheckStatus
   } = useWhatsAppStatus();
 
   // Count today's conversions
   const todayConversions = getTodayConversions();
   const totalConversions = recentActivity.filter(e => e.type === 'converted').length;
+  
+  // Fetch metrics on load
+  useEffect(() => {
+    if (whatsappStatus.connected) {
+      fetchMetrics();
+    }
+  }, [whatsappStatus.connected, fetchMetrics]);
 
   return (
     <div className="space-y-6">
@@ -69,13 +80,22 @@ const Index = () => {
           badge={{ text: 'Hoje' }}
         />
         
-        <ConnectionStatusCard 
-          connected={whatsappStatus.connected}
-          device={whatsappStatus.device}
-          since={whatsappStatus.since}
-          isStatusLoading={isStatusLoading}
-          onCheckStatus={handleCheckStatus}
-        />
+        {metricsData ? (
+          <ConnectionStatsCard
+            metrics={metricsData}
+            connected={whatsappStatus.connected}
+            since={whatsappStatus.since}
+            isLoading={isStatusLoading}
+          />
+        ) : (
+          <ConnectionStatusCard 
+            connected={whatsappStatus.connected}
+            device={whatsappStatus.device}
+            since={whatsappStatus.since}
+            isStatusLoading={isStatusLoading}
+            onCheckStatus={handleCheckStatus}
+          />
+        )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
