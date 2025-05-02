@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const whatsappRoutes = require('./routes/whatsapp');
 const shopeeRoutes = require('./routes/shopee');
+const templatesRoutes = require('./routes/templates');
 const activityModule = require('./routes/activity');
 const whatsappClient = require('./whatsapp/client');
 const shopeeUtils = require('./utils/shopeeUtils');
@@ -22,6 +23,7 @@ const { addActivity } = activityModule;
 // Register routes
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/shopee', shopeeRoutes);
+app.use('/api/templates', templatesRoutes);
 app.use('/api/activity', activityRoutes);
 
 // Handle incoming messages for affiliate link conversion
