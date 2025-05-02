@@ -10,13 +10,13 @@ import Configuracoes from '@/pages/Configuracoes';
 import ConfigShopee from '@/pages/ConfigShopee';
 import ShopeeOAuthCallback from '@/pages/ShopeeOAuthCallback';
 import NotFound from '@/pages/NotFound';
+import { Outlet } from 'react-router-dom';
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout>
-      {/* Layout needs children */}
-      <NotFound />
+      <Outlet />
     </Layout>,
     errorElement: <NotFound />,
     children: [
