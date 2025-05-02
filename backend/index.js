@@ -6,7 +6,7 @@ const shopeeRoutes = require('./routes/shopee');
 const templatesRoutes = require('./routes/templates');
 const activityModule = require('./routes/activity');
 const whatsappClient = require('./whatsapp/client');
-const shopeeUtils = require('./utils/shopeeUtils');
+const shopeeUtils = require('./utils/shopee');
 
 // Initialize express app
 const app = express();

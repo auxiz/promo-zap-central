@@ -1,7 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
-const shopeeUtils = require('../utils/shopeeUtils');
+const shopeeUtils = require('../utils/shopee');
 
 // Get Shopee credentials (returns app ID and status for security)
 router.get('/credentials', (req, res) => {

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/components/ui/toast';
+import { toast } from 'sonner';
 import { AlertCircle, Lock } from 'lucide-react';
 import { API_BASE } from '@/utils/api-constants';
 
@@ -14,15 +14,10 @@ interface ShopeeOAuthSectionProps {
 
 export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAuthSectionProps) {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const { toast } = useToast();
   
   const startOAuthProcess = async () => {
     if (!appId) {
-      toast({
-        title: "Erro",
-        description: "Configure o APP ID e Secret Key antes de autenticar",
-        variant: "destructive"
-      });
+      toast.error("Configure o APP ID e Secret Key antes de autenticar");
       return;
     }
     
@@ -47,17 +42,12 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
       // Set up a listener for the OAuth callback
       window.addEventListener('message', handleOAuthCallback);
       
-      toast({
-        title: "Autenticação Iniciada",
+      toast.info("Autenticação Iniciada", {
         description: "Por favor, complete o processo de autenticação na janela aberta."
       });
     } catch (error) {
       console.error('Error starting OAuth process:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao iniciar processo de autenticação",
-        variant: "destructive"
-      });
+      toast.error("Falha ao iniciar processo de autenticação");
     } finally {
       setIsAuthenticating(false);
     }
@@ -89,8 +79,7 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
         const tokenData = await response.json();
         
         if (tokenData.success) {
-          toast({
-            title: "Autenticação Concluída",
+          toast.success("Autenticação Concluída", {
             description: `Autenticado com sucesso. Token válido até ${new Date(tokenData.token_expiry).toLocaleString()}`
           });
           
@@ -101,11 +90,7 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
         }
       } catch (error) {
         console.error('Error processing OAuth callback:', error);
-        toast({
-          title: "Erro",
-          description: "Falha ao completar processo de autenticação",
-          variant: "destructive"
-        });
+        toast.error("Falha ao completar processo de autenticação");
       }
     }
   };
@@ -119,7 +104,7 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
       
       {!hasToken ? (
         <>
-          <Alert variant="warning">
+          <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               É necessário autenticar-se com a Shopee para utilizar a API de afiliados.

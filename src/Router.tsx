@@ -14,7 +14,10 @@ import NotFound from '@/pages/NotFound';
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: <Layout>
+      {/* Layout needs children */}
+      <NotFound />
+    </Layout>,
     errorElement: <NotFound />,
     children: [
       {
