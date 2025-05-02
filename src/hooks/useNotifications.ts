@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 export type NotificationType = 'error' | 'warning' | 'info' | 'success';
+export type NotificationPriority = 'high' | 'low';
 
 export interface Notification {
   id: string;
@@ -11,6 +12,7 @@ export interface Notification {
   type: NotificationType;
   read: boolean;
   timestamp: Date;
+  priority: NotificationPriority;
 }
 
 export function useNotifications() {
@@ -27,7 +29,8 @@ export function useNotifications() {
   const addNotification = useCallback((
     title: string, 
     message: string, 
-    type: NotificationType = 'info'
+    type: NotificationType = 'info',
+    priority: NotificationPriority = 'low'
   ) => {
     const newNotification: Notification = {
       id: `notification-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -35,20 +38,23 @@ export function useNotifications() {
       message,
       type,
       read: false,
-      timestamp: new Date()
+      timestamp: new Date(),
+      priority
     };
     
     setNotifications(prev => [newNotification, ...prev].slice(0, 20)); // Keep only last 20 notifications
     
-    // Also show a toast for immediate visibility
-    if (type === 'error') {
-      toast.error(title, { description: message });
-    } else if (type === 'success') {
-      toast.success(title, { description: message });
-    } else if (type === 'warning') {
-      toast.warning(title, { description: message });
-    } else {
-      toast.info(title, { description: message });
+    // Only show toast for high priority notifications
+    if (priority === 'high') {
+      if (type === 'error') {
+        toast.error(title, { description: message });
+      } else if (type === 'success') {
+        toast.success(title, { description: message });
+      } else if (type === 'warning') {
+        toast.warning(title, { description: message });
+      } else {
+        toast.info(title, { description: message });
+      }
     }
     
     return newNotification.id;

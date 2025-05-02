@@ -24,7 +24,8 @@ export function useWhatsAppInstances() {
       addNotification(
         'Campo Obrigatório',
         'O nome da instância não pode estar vazio',
-        'error'
+        'error',
+        'low' // Low priority for validation errors
       );
       return;
     }
@@ -40,7 +41,8 @@ export function useWhatsAppInstances() {
     addNotification(
       'Nova Instância',
       `A instância "${instanceName}" foi adicionada com sucesso`,
-      'success'
+      'success',
+      'low' // Low priority for instance management confirmations
     );
   };
 
@@ -67,7 +69,8 @@ export function useWhatsAppInstances() {
     addNotification(
       'Instância Excluída',
       `A instância "${instanceToDelete.name}" foi excluída com sucesso`,
-      'success'
+      'success',
+      'low' // Low priority for instance management confirmations
     );
     setShowDeleteDialog(false);
     setInstanceToDelete(null);

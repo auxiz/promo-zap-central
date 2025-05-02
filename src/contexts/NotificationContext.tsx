@@ -1,11 +1,11 @@
 
 import { createContext, useContext, ReactNode } from 'react';
-import { useNotifications, Notification, NotificationType } from '@/hooks/useNotifications';
+import { useNotifications, Notification, NotificationType, NotificationPriority } from '@/hooks/useNotifications';
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  addNotification: (title: string, message: string, type?: NotificationType) => string;
+  addNotification: (title: string, message: string, type?: NotificationType, priority?: NotificationPriority) => string;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;

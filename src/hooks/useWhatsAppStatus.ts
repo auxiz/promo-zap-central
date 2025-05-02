@@ -37,7 +37,8 @@ export function useWhatsAppStatus() {
       addNotification(
         'Erro na API',
         'Não foi possível obter o status do WhatsApp. Verifique a conexão com o servidor.',
-        'error'
+        'error',
+        'high'
       );
       return null;
     }
@@ -53,20 +54,23 @@ export function useWhatsAppStatus() {
           addNotification(
             'WhatsApp Conectado',
             `Conectado ao dispositivo ${status.device}`,
-            'success'
+            'success',
+            'low' // Low priority for regular status checks
           );
         } else {
           addNotification(
             'WhatsApp Desconectado',
             'Nenhuma conexão ativa no momento',
-            'error'
+            'error',
+            'high' // High priority for disconnection status
           );
         }
       } else {
         addNotification(
           'Erro de Conexão',
           'Não foi possível verificar o status do WhatsApp. Servidor offline?',
-          'error'
+          'error',
+          'high'
         );
       }
     } catch (error) {
@@ -74,7 +78,8 @@ export function useWhatsAppStatus() {
       addNotification(
         'Falha na Verificação',
         'Ocorreu um erro ao verificar o status do WhatsApp.',
-        'error'
+        'error',
+        'high'
       );
     } finally {
       setIsStatusLoading(false);

@@ -43,7 +43,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
             addNotification(
               'WhatsApp Conectado',
               `Conectado ao dispositivo ${data.device}`,
-              'success'
+              'success',
+              'high'
             );
           }
         }
@@ -54,7 +55,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
           addNotification(
             'WhatsApp Desconectado',
             'A conexão com o WhatsApp foi perdida',
-            'error'
+            'error',
+            'high'
           );
         }
         setConnectionStatus('disconnected');
@@ -68,7 +70,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
         addNotification(
           'Erro de API',
           'Não foi possível conectar ao servidor WhatsApp',
-          'error'
+          'error',
+          'high'
         );
       }
     }
@@ -97,7 +100,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       addNotification(
         'Erro no QR Code',
         'Não foi possível obter o QR code para conexão',
-        'error'
+        'error',
+        'high'
       );
     }
   }, [instanceId, addNotification]);
@@ -150,14 +154,16 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       addNotification(
         'Conexão Iniciada',
         'Escaneie o código QR para conectar o WhatsApp',
-        'info'
+        'info',
+        'high'
       );
     } catch (error) {
       console.error('Error connecting WhatsApp:', error);
       addNotification(
         'Falha na Conexão',
         'Não foi possível iniciar a conexão com WhatsApp',
-        'error'
+        'error',
+        'high'
       );
       setConnectionStatus('disconnected');
     } finally {
@@ -193,7 +199,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       addNotification(
         'WhatsApp Desconectado',
         'WhatsApp desconectado com sucesso',
-        'success'
+        'success',
+        'high'
       );
       
       // Clear backend error if successful
@@ -203,7 +210,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       addNotification(
         'Falha ao Desconectar',
         'Falha ao desconectar WhatsApp',
-        'error'
+        'error',
+        'high'
       );
       setBackendError(true);
     } finally {
