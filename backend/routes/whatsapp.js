@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const whatsappClient = require('../whatsapp/client');
@@ -11,6 +10,7 @@ router.get('/qrcode', (req, res) => {
 // API endpoint to get connection status
 router.get('/status', (req, res) => {
   const { isConnected, device } = whatsappClient.getConnectionStatus();
+  const connectionTime = whatsappClient.getConnectionTime();
   
   let status = 'DISCONNECTED';
   if (isConnected) {
@@ -19,7 +19,12 @@ router.get('/status', (req, res) => {
     status = 'PENDING';
   }
   
-  res.json({ status, device });
+  res.json({ 
+    status, 
+    device,
+    connected: isConnected,
+    since: connectionTime
+  });
 });
 
 // API endpoint to disconnect WhatsApp
@@ -66,6 +71,28 @@ router.get('/groups', async (req, res) => {
     console.error('Error fetching WhatsApp groups:', error);
     res.status(500).json({ error: 'Failed to fetch WhatsApp groups' });
   }
+});
+
+// API endpoint to get monitored groups count
+router.get('/monitored/count', (req, res) => {
+  const monitoredGroups = whatsappClient.getMonitoredGroups();
+  const { isConnected } = whatsappClient.getConnectionStatus();
+  
+  res.json({
+    total: monitoredGroups.length,
+    active: isConnected ? monitoredGroups.length : 0
+  });
+});
+
+// API endpoint to get send groups count
+router.get('/send/count', (req, res) => {
+  const sendGroups = whatsappClient.getSendGroups();
+  const { isConnected } = whatsappClient.getConnectionStatus();
+  
+  res.json({
+    total: sendGroups.length,
+    active: isConnected ? sendGroups.length : 0
+  });
 });
 
 // API endpoint to get monitored groups

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const whatsappRoutes = require('./routes/whatsapp');
 const shopeeRoutes = require('./routes/shopee');
+const activityModule = require('./routes/activity');
 const whatsappClient = require('./whatsapp/client');
 const shopeeUtils = require('./utils/shopeeUtils');
 
@@ -14,9 +15,14 @@ const port = 4000;
 app.use(cors());
 app.use(express.json());
 
+// Extract routes and activity functions
+const activityRoutes = activityModule.router;
+const { addActivity } = activityModule;
+
 // Register routes
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/shopee', shopeeRoutes);
+app.use('/api/activity', activityRoutes);
 
 // Handle incoming messages for affiliate link conversion
 whatsappClient.client.on('message', async (message) => {
@@ -55,6 +61,10 @@ whatsappClient.client.on('message', async (message) => {
         if (affiliateUrl) {
           modifiedText = modifiedText.replace(shopeeUrl, affiliateUrl);
           console.log(`Converted URL: ${shopeeUrl} -> ${affiliateUrl}`);
+          
+          // Record activity for this conversion
+          const productTitle = shopeeUrl.split('/').pop() || 'Produto';
+          addActivity('converted', productTitle);
         }
       } catch (error) {
         console.error(`Error converting URL ${shopeeUrl}:`, error);

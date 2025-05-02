@@ -1,10 +1,15 @@
 
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { MessageSquare, Users, Send, Phone, Settings } from 'lucide-react';
+import { Home, MessageSquare, Users, Send, Phone, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigationItems = [
+  {
+    name: 'Home',
+    href: '/',
+    icon: Home,
+  },
   {
     name: 'Mensagens',
     href: '/mensagens',

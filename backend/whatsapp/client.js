@@ -6,6 +6,7 @@ const qrcode = require('qrcode');
 let qrCodeDataUrl = null;
 let isConnected = false;
 let device = null;
+let connectionTime = null;
 let monitoredGroups = []; // Store monitored group IDs
 let sendGroups = []; // Store send group IDs
 
@@ -42,6 +43,7 @@ client.on('qr', async (qrString) => {
 client.on('ready', () => {
   isConnected = true;
   device = client.info.wid.user;
+  connectionTime = Date.now();
   console.log(`WhatsApp connected with device: ${device}`);
   qrCodeDataUrl = null; // Clear QR code after successful connection
 });
@@ -50,6 +52,7 @@ client.on('ready', () => {
 client.on('disconnected', () => {
   isConnected = false;
   device = null;
+  connectionTime = null;
   console.log('WhatsApp disconnected');
 });
 
@@ -66,6 +69,7 @@ initializeClient();
 // Getters and setters for state
 const getQRCode = () => qrCodeDataUrl;
 const getConnectionStatus = () => ({ isConnected, device });
+const getConnectionTime = () => connectionTime;
 const getMonitoredGroups = () => monitoredGroups;
 const getSendGroups = () => sendGroups;
 const setMonitoredGroups = (groups) => { monitoredGroups = groups; };
@@ -91,6 +95,7 @@ module.exports = {
   client,
   getQRCode,
   getConnectionStatus,
+  getConnectionTime,
   getMonitoredGroups,
   getSendGroups,
   setMonitoredGroups,
