@@ -26,11 +26,20 @@ app.use('/api/shopee', shopeeRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/activity', activityRoutes);
 
+// Get the default client instance
+const defaultInstance = 'default';
+const connectionManager = require('./whatsapp/services/connectionManager');
+const stateManager = require('./whatsapp/services/stateManager');
+const instanceModel = require('./whatsapp/models/instance');
+
+// Initialize default client
+const defaultClient = connectionManager.initializeClient(defaultInstance);
+
 // Handle incoming messages for affiliate link conversion
-whatsappClient.client.on('message', async (message) => {
+defaultClient.on('message', async (message) => {
   try {
     // Check if message is from a monitored group
-    const monitoredGroups = whatsappClient.getMonitoredGroups();
+    const monitoredGroups = stateManager.getMonitoredGroups(defaultInstance);
     if (!monitoredGroups.includes(message.from)) {
       return; // Not from a monitored group, ignore
     }
@@ -40,7 +49,7 @@ whatsappClient.client.on('message', async (message) => {
 
     // Get Shopee credentials and send groups
     const credentials = shopeeUtils.getShopeeCredentials();
-    const sendGroups = whatsappClient.getSendGroups();
+    const sendGroups = stateManager.getSendGroups(defaultInstance);
     
     // Skip if no Shopee credentials or no send groups configured
     if (!credentials.appId || sendGroups.length === 0) {
@@ -76,12 +85,16 @@ whatsappClient.client.on('message', async (message) => {
     // Only forward if text was modified
     if (modifiedText !== originalText) {
       // Forward modified message to all send groups
-      for (const groupId of sendGroups) {
-        try {
-          await whatsappClient.client.sendMessage(groupId, modifiedText);
-          console.log(`Message forwarded to group: ${groupId}`);
-        } catch (error) {
-          console.error(`Error forwarding message to group ${groupId}:`, error);
+      const defaultInstance = instanceModel.getInstance('default');
+      if (defaultInstance.client && defaultInstance.isConnected) {
+        // Forward modified message to all send groups
+        for (const groupId of sendGroups) {
+          try {
+            await defaultInstance.client.sendMessage(groupId, modifiedText);
+            console.log(`Message forwarded to group: ${groupId}`);
+          } catch (error) {
+            console.error(`Error forwarding message to group ${groupId}:`, error);
+          }
         }
       }
     }
