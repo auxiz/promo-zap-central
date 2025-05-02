@@ -1,12 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { ShopeeSettings } from '@/components/configuracoes/ShopeeSettings';
-
-// API base URL
-const API_BASE = 'http://168.231.98.177:4000';
+import { API_BASE } from '@/utils/api-constants';
 
 export default function ConfigShopee() {
   const [shopeeAppId, setShopeeAppId] = useState('');
+  const [initialStatus, setInitialStatus] = useState<'online' | 'offline'>('offline');
 
   // Fetch current Shopee credentials on mount
   useEffect(() => {
@@ -18,6 +17,10 @@ export default function ConfigShopee() {
           
           if (data.appId) {
             setShopeeAppId(data.appId);
+          }
+          
+          if (data.status) {
+            setInitialStatus(data.status);
           }
         }
       } catch (error) {
@@ -31,7 +34,7 @@ export default function ConfigShopee() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Configurações Shopee</h1>
-      <ShopeeSettings initialAppId={shopeeAppId} />
+      <ShopeeSettings initialAppId={shopeeAppId} initialStatus={initialStatus} />
       
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-4">Como Funciona</h2>

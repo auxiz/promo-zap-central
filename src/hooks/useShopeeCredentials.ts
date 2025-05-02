@@ -10,11 +10,11 @@ export interface ShopeeCredentials {
   isLoading: boolean;
 }
 
-export function useShopeeCredentials(initialAppId: string) {
+export function useShopeeCredentials(initialAppId: string, initialStatus: 'online' | 'offline' = 'offline') {
   const [shopeeSettings, setShopeeSettings] = useState<ShopeeCredentials>({
     appId: initialAppId || '',
     secretKey: '',
-    status: 'offline',
+    status: initialStatus || 'offline',
     isLoading: false,
   });
   
@@ -37,11 +37,22 @@ export function useShopeeCredentials(initialAppId: string) {
       }
     };
     
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    // Only start the interval if we have an appId
+    if (shopeeSettings.appId) {
+      fetchStatus();
+      const interval = setInterval(fetchStatus, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [shopeeSettings.appId]);
+
+  // Update the component when initialAppId or initialStatus changes
+  useEffect(() => {
+    setShopeeSettings(prev => ({
+      ...prev,
+      appId: initialAppId || prev.appId,
+      status: initialStatus || prev.status
+    }));
+  }, [initialAppId, initialStatus]);
 
   const saveShopeeCredentials = async () => {
     if (!shopeeSettings.appId || !shopeeSettings.secretKey) return;

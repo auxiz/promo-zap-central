@@ -7,15 +7,16 @@ import { useShopeeCredentials } from '@/hooks/useShopeeCredentials';
 
 interface ShopeeSettingsProps {
   initialAppId: string;
+  initialStatus?: 'online' | 'offline';
 }
 
-export function ShopeeSettings({ initialAppId }: ShopeeSettingsProps) {
+export function ShopeeSettings({ initialAppId, initialStatus = 'offline' }: ShopeeSettingsProps) {
   const { 
     shopeeSettings, 
     setShopeeSettings, 
     saveShopeeCredentials, 
     testShopeeConnection 
-  } = useShopeeCredentials(initialAppId);
+  } = useShopeeCredentials(initialAppId, initialStatus);
   
   return (
     <Card className="dashboard-card overflow-hidden">
