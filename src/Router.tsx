@@ -25,7 +25,7 @@ const router = createBrowserRouter([
         element: <Index />
       },
       {
-        path: "/whatsapp",
+        path: "/whatsapp-conexao",
         element: <WhatsAppConexao />
       },
       {
