@@ -10,10 +10,30 @@ import { Save, Trash, PlusCircle } from 'lucide-react';
 import { useTemplates, Template } from '@/hooks/useTemplates';
 import { toast } from '@/components/ui/sonner';
 
+// Templates padrão
+const defaultTemplates = {
+  normal: `🔥 SUPER OFERTA 🔥
+--produtodescricao--
+🛒 COMPRAR: --linklojaoficial--
+⚠️ Promoção sujeita a alteração`,
+  desconto: `❌ DE: --precoantigo--
+🎉 POR: --precocomdesconto--
+🛒 COMPRAR: --linklojaoficial--`,
+  recorrencia: `🔁 PLANO RECORRENTE
+--produtodescricao--
+📅 A PARTIR DE: --precorecorrencia--/mês
+🛒 COMPRAR: --linklojaoficial--`,
+  descontoRecorrencia: `❌ DE: --precoantigo--
+🎉 POR: --precocomdesconto--
+ou 🔁 A PARTIR DE: --precorecorrencia--/mês
+🛒 COMPRAR: --linklojaoficial--`,
+};
+
 const messagePlaceholders = [
   { id: 'produtodescricao', label: '--produtodescricao--', description: 'Nome e descrição do produto' },
   { id: 'linklojaoficial', label: '--linklojaoficial--', description: 'Link para a loja oficial' },
   { id: 'precoantigo', label: '--precoantigo--', description: 'Preço antigo/original' },
+  { id: 'precocomdesconto', label: '--precocomdesconto--', description: 'Preço com desconto' },
   { id: 'precorecorrencia', label: '--precorecorrencia--', description: 'Preço com recorrência' },
 ];
 
@@ -29,7 +49,6 @@ export default function Mensagens() {
   const [templateContent, setTemplateContent] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [activeStyle, setActiveStyle] = useState(messageTemplateStyles[0]);
   
   const { templates, isLoading, saveTemplate, deleteTemplate } = useTemplates();
   
@@ -88,6 +107,12 @@ export default function Mensagens() {
       }
     }
   };
+
+  // Carrega um template padrão
+  const loadDefaultTemplate = (templateType: keyof typeof defaultTemplates) => {
+    setTemplateContent(defaultTemplates[templateType]);
+    setTemplateName(messageTemplateStyles.find(style => style.id === templateType)?.name || '');
+  };
   
   // Initialize with first template if available
   useEffect(() => {
@@ -100,8 +125,9 @@ export default function Mensagens() {
   const previewText = templateContent
     .replace(/--produtodescricao--/g, 'Echo Dot (5ª Geração) | Smart speaker com Alexa')
     .replace(/--linklojaoficial--/g, 'https://amzn.to/exemplo')
-    .replace(/--precoantigo--/g, '599,00')
-    .replace(/--precorecorrencia--/g, '323,10');
+    .replace(/--precoantigo--/g, 'R$ 599,00')
+    .replace(/--precocomdesconto--/g, 'R$ 399,00')
+    .replace(/--precorecorrencia--/g, 'R$ 323,10');
 
   return (
     <div className="space-y-6">
@@ -189,17 +215,14 @@ export default function Mensagens() {
                 
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                   {messageTemplateStyles.map((style) => (
-                    <button
+                    <Button
                       key={style.id}
-                      onClick={() => setActiveStyle(style)}
-                      className={`p-2 rounded-md border text-sm text-center transition-colors ${
-                        activeStyle.id === style.id
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'border-input hover:bg-accent'
-                      }`}
+                      onClick={() => loadDefaultTemplate(style.id as keyof typeof defaultTemplates)}
+                      className={`p-2 h-auto text-sm justify-center transition-colors whitespace-nowrap`}
+                      variant={style.id === 'normal' ? 'default' : 'outline'}
                     >
                       {style.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
