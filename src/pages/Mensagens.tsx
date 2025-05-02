@@ -23,6 +23,7 @@ export default function Mensagens() {
     handleDeleteTemplate,
     loadDefaultTemplate,
     getPreviewText,
+    activeStyleId,
   } = useTemplateUtils();
 
   const previewText = getPreviewText();
@@ -45,7 +46,7 @@ export default function Mensagens() {
             </TabsList>
           </div>
           
-          <TabsContent value="editor" className="p-6 space-y-6">
+          <TabsContent value="editor" className="p-6 space-y-6 text-foreground">
             <TemplateForm
               templateName={templateName}
               setTemplateName={setTemplateName}
@@ -59,10 +60,11 @@ export default function Mensagens() {
               templateStyles={messageTemplateStyles}
               defaultTemplates={defaultTemplateStyles}
               loadDefaultTemplate={loadDefaultTemplate}
+              activeStyleId={activeStyleId}
             />
           </TabsContent>
           
-          <TabsContent value="preview" className="p-6">
+          <TabsContent value="preview" className="p-6 text-foreground">
             <TemplatePreview previewText={previewText} />
           </TabsContent>
         </Tabs>

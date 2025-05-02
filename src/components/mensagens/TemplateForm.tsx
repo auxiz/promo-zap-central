@@ -4,6 +4,7 @@ import { TemplateContent } from './TemplateContent';
 import { TemplateStyleButtons } from './TemplateStyleButtons';
 import { PlaceholdersList } from './PlaceholdersList';
 import { EmojiSelector } from './EmojiSelector';
+import { RandomMessageButton } from './RandomMessageButton';
 import { Template } from '@/hooks/useTemplates';
 
 interface TemplateStyle {
@@ -31,6 +32,7 @@ interface TemplateFormProps {
   templateStyles: TemplateStyle[];
   defaultTemplates: Record<string, string>;
   loadDefaultTemplate: (templateType: string) => void;
+  activeStyleId?: string;
 }
 
 export function TemplateForm({
@@ -46,6 +48,7 @@ export function TemplateForm({
   templateStyles,
   defaultTemplates,
   loadDefaultTemplate,
+  activeStyleId,
 }: TemplateFormProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -67,13 +70,18 @@ export function TemplateForm({
         <TemplateStyleButtons
           templateStyles={templateStyles}
           loadDefaultTemplate={loadDefaultTemplate}
+          activeStyleId={activeStyleId}
         />
       </div>
       
-      <div>
+      <div className="space-y-6">
         <PlaceholdersList 
           placeholders={placeholders} 
           templateContent={templateContent}
+          setTemplateContent={setTemplateContent}
+        />
+        
+        <RandomMessageButton 
           setTemplateContent={setTemplateContent}
         />
         

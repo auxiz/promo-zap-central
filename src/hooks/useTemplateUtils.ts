@@ -48,6 +48,7 @@ export function useTemplateUtils() {
   const [templateContent, setTemplateContent] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [activeStyleId, setActiveStyleId] = useState<string>('normal');
   
   const { templates, isLoading, saveTemplate, deleteTemplate } = useTemplates();
   
@@ -89,7 +90,14 @@ export function useTemplateUtils() {
       content: templateContent
     };
     
-    await saveTemplate(templateData);
+    try {
+      await saveTemplate(templateData);
+      toast.success('Template salvo com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao salvar template', { 
+        description: error instanceof Error ? error.message : 'Tente novamente mais tarde'
+      });
+    }
   };
   
   // Delete current template
@@ -100,9 +108,16 @@ export function useTemplateUtils() {
     }
     
     if (confirm('Tem certeza que deseja excluir este template?')) {
-      const success = await deleteTemplate(selectedTemplateId);
-      if (success) {
-        handleNewTemplate(); // Reset form after deletion
+      try {
+        const success = await deleteTemplate(selectedTemplateId);
+        if (success) {
+          handleNewTemplate(); // Reset form after deletion
+          toast.success('Template excluído com sucesso');
+        }
+      } catch (error) {
+        toast.error('Erro ao excluir template', { 
+          description: error instanceof Error ? error.message : 'Tente novamente mais tarde'
+        });
       }
     }
   };
@@ -111,6 +126,8 @@ export function useTemplateUtils() {
   const loadDefaultTemplate = (templateType: keyof typeof defaultTemplateStyles) => {
     setTemplateContent(defaultTemplateStyles[templateType]);
     setTemplateName(messageTemplateStyles.find(style => style.id === templateType)?.name || '');
+    setActiveStyleId(templateType);
+    toast.success(`Template de estilo "${messageTemplateStyles.find(style => style.id === templateType)?.name}" aplicado`);
   };
   
   // Initialize with first template if available
@@ -146,5 +163,6 @@ export function useTemplateUtils() {
     handleDeleteTemplate,
     loadDefaultTemplate,
     getPreviewText,
+    activeStyleId,
   };
 }

@@ -17,16 +17,18 @@ interface TemplateStyle {
 interface TemplateStyleButtonsProps {
   templateStyles: TemplateStyle[];
   loadDefaultTemplate: (templateType: string) => void;
+  activeStyleId?: string;
 }
 
 export function TemplateStyleButtons({
   templateStyles,
-  loadDefaultTemplate
+  loadDefaultTemplate,
+  activeStyleId
 }: TemplateStyleButtonsProps) {
   return (
     <div className="mt-4">
       <h3 className="text-sm font-medium mb-2">Estilos de Template</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2">
+      <div className="flex flex-wrap gap-2">
         {templateStyles.map((style) => (
           <TooltipProvider key={style.id}>
             <Tooltip>
@@ -34,10 +36,10 @@ export function TemplateStyleButtons({
                 <Button
                   onClick={() => loadDefaultTemplate(style.id)}
                   className="p-2 h-auto text-sm justify-center transition-colors"
-                  variant={style.id === 'normal' ? 'default' : 'outline'}
+                  variant={style.id === activeStyleId ? "default" : "outline"}
                 >
                   {style.name}
-                  {style.id === 'normal' && (
+                  {style.id === 'normal' && activeStyleId !== style.id && (
                     <Badge variant="secondary" className="ml-2 text-xs py-0">Padrão</Badge>
                   )}
                 </Button>
