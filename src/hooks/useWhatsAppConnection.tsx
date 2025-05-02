@@ -1,110 +1,23 @@
 
-// Replace with your actual VPS IPv4 address and port
-const API_BASE = 'http://168.231.98.177:4000';
-
-import { useState, useEffect, useCallback } from 'react';
-import { useNotificationContext } from '@/contexts/NotificationContext';
-
-// API endpoint base URL
-const API_BASE_URL = `${API_BASE}/api/whatsapp`;
+import { useState, useEffect } from 'react';
+import { useWhatsAppConnectionStatus } from './whatsapp/useWhatsAppConnectionStatus';
+import { useWhatsAppQRCode } from './whatsapp/useWhatsAppQRCode';
+import { useWhatsAppActions } from './whatsapp/useWhatsAppActions';
 
 export default function useWhatsAppConnection(instanceId: string = 'default') {
-  const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected
   const [qrCode, setQrCode] = useState('');
-  const [deviceInfo, setDeviceInfo] = useState({ name: '', lastConnection: '' });
   const [isLoading, setIsLoading] = useState(false);
-  const [backendError, setBackendError] = useState(false);
   
-  const { addNotification } = useNotificationContext();
-
-  // Function to fetch connection status
-  const fetchStatus = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/status?instanceId=${instanceId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Clear any backend error if we got a successful response
-      setBackendError(false);
-
-      if (data.status === 'CONNECTED') {
-        setConnectionStatus('connected');
-        if (data.device) {
-          setDeviceInfo({
-            name: `WhatsApp (${data.device})`,
-            lastConnection: new Date().toLocaleString()
-          });
-          
-          if (connectionStatus !== 'connected') {
-            addNotification(
-              'WhatsApp Conectado',
-              `Conectado ao dispositivo ${data.device}`,
-              'success',
-              'high'
-            );
-          }
-        }
-      } else if (data.status === 'PENDING') {
-        setConnectionStatus('connecting');
-      } else {
-        if (connectionStatus === 'connected') {
-          addNotification(
-            'WhatsApp Desconectado',
-            'A conexão com o WhatsApp foi perdida',
-            'error',
-            'high'
-          );
-        }
-        setConnectionStatus('disconnected');
-      }
-    } catch (error) {
-      console.error('Error fetching WhatsApp status:', error);
-      setBackendError(true);
-      setConnectionStatus('disconnected');
-      
-      if (!backendError) {
-        addNotification(
-          'Erro de API',
-          'Não foi possível conectar ao servidor WhatsApp',
-          'error',
-          'high'
-        );
-      }
-    }
-  }, [instanceId, connectionStatus, backendError, addNotification]);
-
-  // Function to fetch QR code
-  const fetchQrCode = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/qrcode?instanceId=${instanceId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Clear backend error if successful
-      setBackendError(false);
-      
-      if (data.qr) {
-        setQrCode(data.qr);
-      }
-    } catch (error) {
-      console.error('Error fetching QR code:', error);
-      setBackendError(true);
-      addNotification(
-        'Erro no QR Code',
-        'Não foi possível obter o QR code para conexão',
-        'error',
-        'high'
-      );
-    }
-  }, [instanceId, addNotification]);
+  const { 
+    connectionStatus, 
+    deviceInfo, 
+    backendError, 
+    fetchStatus,
+    setConnectionStatus
+  } = useWhatsAppConnectionStatus(instanceId);
+  
+  const { fetchQrCode } = useWhatsAppQRCode(instanceId);
+  const { initiateConnection, disconnectWhatsApp } = useWhatsAppActions(instanceId);
 
   // Initial fetch of status on component mount
   useEffect(() => {
@@ -118,8 +31,15 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
 
     if (connectionStatus === 'connecting') {
       // Poll for QR code every 5 seconds
-      fetchQrCode();
-      qrInterval = window.setInterval(fetchQrCode, 5000);
+      const updateQRCode = async () => {
+        const newQrCode = await fetchQrCode();
+        if (newQrCode) {
+          setQrCode(newQrCode);
+        }
+      };
+      
+      updateQRCode();
+      qrInterval = window.setInterval(updateQRCode, 5000);
       
       // Also poll for status to detect connection
       statusInterval = window.setInterval(fetchStatus, 3000);
@@ -136,35 +56,14 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     setConnectionStatus('connecting');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ instanceId })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      await initiateConnection();
+      const newQrCode = await fetchQrCode();
+      if (newQrCode) {
+        setQrCode(newQrCode);
       }
-      
-      await fetchQrCode();
       await fetchStatus();
-      
-      addNotification(
-        'Conexão Iniciada',
-        'Escaneie o código QR para conectar o WhatsApp',
-        'info',
-        'high'
-      );
     } catch (error) {
-      console.error('Error connecting WhatsApp:', error);
-      addNotification(
-        'Falha na Conexão',
-        'Não foi possível iniciar a conexão com WhatsApp',
-        'error',
-        'high'
-      );
+      console.error('Error in connect flow:', error);
       setConnectionStatus('disconnected');
     } finally {
       setIsLoading(false);
@@ -181,39 +80,11 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/disconnect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ instanceId })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const success = await disconnectWhatsApp();
+      if (success) {
+        setConnectionStatus('disconnected');
+        setQrCode('');
       }
-      
-      setConnectionStatus('disconnected');
-      setQrCode('');
-      setDeviceInfo({ name: '', lastConnection: '' });
-      addNotification(
-        'WhatsApp Desconectado',
-        'WhatsApp desconectado com sucesso',
-        'success',
-        'high'
-      );
-      
-      // Clear backend error if successful
-      setBackendError(false);
-    } catch (error) {
-      console.error('Error disconnecting WhatsApp:', error);
-      addNotification(
-        'Falha ao Desconectar',
-        'Falha ao desconectar WhatsApp',
-        'error',
-        'high'
-      );
-      setBackendError(true);
     } finally {
       setIsLoading(false);
     }
