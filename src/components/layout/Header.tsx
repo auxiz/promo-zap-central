@@ -1,6 +1,11 @@
+
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Check, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import NotificationCenter from './NotificationCenter';
+import { Switch } from '@/components/ui/switch';
+
 const lojas = [{
   id: 'promo',
   name: 'PROMO'
@@ -17,9 +22,18 @@ const lojas = [{
   id: 'natura',
   name: 'Natura'
 }];
+
 export default function Header() {
   const [selectedLoja, setSelectedLoja] = useState(lojas[0]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+  
+  const isDarkMode = theme === 'dark';
+  
   return <header className="bg-background border-b border-border h-16 flex items-center px-6">
       <div className="flex-1">
         <div className="relative">
@@ -47,31 +61,17 @@ export default function Header() {
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
-        <button className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-        </button>
+      <div className="flex items-center gap-4">
+        <NotificationCenter />
         
-        <label className="inline-flex items-center gap-2 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5"></circle>
-            <path d="M12 1v2"></path>
-            <path d="M12 21v2"></path>
-            <path d="M4.22 4.22l1.42 1.42"></path>
-            <path d="M18.36 18.36l1.42 1.42"></path>
-            <path d="M1 12h2"></path>
-            <path d="M21 12h2"></path>
-            <path d="M4.22 19.78l1.42-1.42"></path>
-            <path d="M18.36 5.64l1.42-1.42"></path>
-          </svg>
-          
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-          </svg>
-        </label>
+        <div className="flex items-center gap-2">
+          <Sun size={18} className={cn("text-muted-foreground", !isDarkMode && "text-foreground")} />
+          <Switch 
+            checked={isDarkMode}
+            onCheckedChange={toggleTheme}
+          />
+          <Moon size={18} className={cn("text-muted-foreground", isDarkMode && "text-foreground")} />
+        </div>
       </div>
     </header>;
 }

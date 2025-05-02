@@ -3,7 +3,7 @@
 const API_BASE = 'http://168.231.98.177:4000';
 
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { useNotificationContext } from '@/contexts/NotificationContext';
 
 // API endpoint base URL
 const API_BASE_URL = `${API_BASE}/api/whatsapp`;
@@ -14,6 +14,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
   const [deviceInfo, setDeviceInfo] = useState({ name: '', lastConnection: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [backendError, setBackendError] = useState(false);
+  
+  const { addNotification } = useNotificationContext();
 
   // Function to fetch connection status
   const fetchStatus = useCallback(async () => {
@@ -36,18 +38,41 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
             name: `WhatsApp (${data.device})`,
             lastConnection: new Date().toLocaleString()
           });
+          
+          if (connectionStatus !== 'connected') {
+            addNotification(
+              'WhatsApp Conectado',
+              `Conectado ao dispositivo ${data.device}`,
+              'success'
+            );
+          }
         }
       } else if (data.status === 'PENDING') {
         setConnectionStatus('connecting');
       } else {
+        if (connectionStatus === 'connected') {
+          addNotification(
+            'WhatsApp Desconectado',
+            'A conexão com o WhatsApp foi perdida',
+            'error'
+          );
+        }
         setConnectionStatus('disconnected');
       }
     } catch (error) {
       console.error('Error fetching WhatsApp status:', error);
       setBackendError(true);
       setConnectionStatus('disconnected');
+      
+      if (!backendError) {
+        addNotification(
+          'Erro de API',
+          'Não foi possível conectar ao servidor WhatsApp',
+          'error'
+        );
+      }
     }
-  }, [instanceId]);
+  }, [instanceId, connectionStatus, backendError, addNotification]);
 
   // Function to fetch QR code
   const fetchQrCode = useCallback(async () => {
@@ -69,8 +94,13 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     } catch (error) {
       console.error('Error fetching QR code:', error);
       setBackendError(true);
+      addNotification(
+        'Erro no QR Code',
+        'Não foi possível obter o QR code para conexão',
+        'error'
+      );
     }
-  }, [instanceId]);
+  }, [instanceId, addNotification]);
 
   // Initial fetch of status on component mount
   useEffect(() => {
@@ -116,9 +146,19 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       
       await fetchQrCode();
       await fetchStatus();
+      
+      addNotification(
+        'Conexão Iniciada',
+        'Escaneie o código QR para conectar o WhatsApp',
+        'info'
+      );
     } catch (error) {
       console.error('Error connecting WhatsApp:', error);
-      toast.error('Falha ao iniciar conexão com WhatsApp');
+      addNotification(
+        'Falha na Conexão',
+        'Não foi possível iniciar a conexão com WhatsApp',
+        'error'
+      );
       setConnectionStatus('disconnected');
     } finally {
       setIsLoading(false);
@@ -150,13 +190,21 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       setConnectionStatus('disconnected');
       setQrCode('');
       setDeviceInfo({ name: '', lastConnection: '' });
-      toast.success('WhatsApp desconectado com sucesso');
+      addNotification(
+        'WhatsApp Desconectado',
+        'WhatsApp desconectado com sucesso',
+        'success'
+      );
       
       // Clear backend error if successful
       setBackendError(false);
     } catch (error) {
       console.error('Error disconnecting WhatsApp:', error);
-      toast.error('Falha ao desconectar WhatsApp');
+      addNotification(
+        'Falha ao Desconectar',
+        'Falha ao desconectar WhatsApp',
+        'error'
+      );
       setBackendError(true);
     } finally {
       setIsLoading(false);

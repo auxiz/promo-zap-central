@@ -1,6 +1,7 @@
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 function App({
   children,
@@ -9,8 +10,10 @@ function App({
 }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      {children}
-      <Toaster />
+      <NotificationProvider>
+        {children}
+        <Toaster />
+      </NotificationProvider>
     </ThemeProvider>
   )
 }

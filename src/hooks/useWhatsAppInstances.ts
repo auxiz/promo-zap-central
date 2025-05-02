@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { useNotificationContext } from '@/contexts/NotificationContext';
 
 export interface WhatsAppInstance {
   id: string;
@@ -16,12 +16,16 @@ export function useWhatsAppInstances() {
   const [showNewInstanceDialog, setShowNewInstanceDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [instanceToDelete, setInstanceToDelete] = useState<WhatsAppInstance | null>(null);
+  
+  const { addNotification } = useNotificationContext();
 
   const addNewInstance = () => {
     if (!instanceName.trim()) {
-      toast.error("Digite um nome para a instância", {
-        description: "O nome da instância não pode estar vazio",
-      });
+      addNotification(
+        'Campo Obrigatório',
+        'O nome da instância não pode estar vazio',
+        'error'
+      );
       return;
     }
 
@@ -33,9 +37,11 @@ export function useWhatsAppInstances() {
     setInstanceName('');
     setShowNewInstanceDialog(false);
     
-    toast.success("Nova instância adicionada", {
-      description: `A instância "${instanceName}" foi adicionada com sucesso`,
-    });
+    addNotification(
+      'Nova Instância',
+      `A instância "${instanceName}" foi adicionada com sucesso`,
+      'success'
+    );
   };
 
   const handleInstanceSwitch = (instanceId: string) => {
@@ -58,9 +64,11 @@ export function useWhatsAppInstances() {
     // Remova a instância da lista
     setInstances(prev => prev.filter(instance => instance.id !== instanceToDelete.id));
     
-    toast.success("Instância excluída", {
-      description: `A instância "${instanceToDelete.name}" foi excluída com sucesso`,
-    });
+    addNotification(
+      'Instância Excluída',
+      `A instância "${instanceToDelete.name}" foi excluída com sucesso`,
+      'success'
+    );
     setShowDeleteDialog(false);
     setInstanceToDelete(null);
   };

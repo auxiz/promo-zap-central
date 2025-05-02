@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { useNotificationContext } from '@/contexts/NotificationContext';
 
 // API base URL (using the same as other components)
 const API_BASE = 'http://168.231.98.177:4000';
@@ -20,6 +20,8 @@ export function useWhatsAppStatus() {
     since: null,
     status: 'DISCONNECTED'
   });
+  
+  const { addNotification } = useNotificationContext();
 
   const fetchWhatsappStatus = async () => {
     try {
@@ -32,6 +34,11 @@ export function useWhatsAppStatus() {
       return null;
     } catch (error) {
       console.error('Error fetching WhatsApp status:', error);
+      addNotification(
+        'Erro na API',
+        'Não foi possível obter o status do WhatsApp. Verifique a conexão com o servidor.',
+        'error'
+      );
       return null;
     }
   };
@@ -43,24 +50,32 @@ export function useWhatsAppStatus() {
       
       if (status) {
         if (status.connected) {
-          toast.success("WhatsApp Conectado", {
-            description: `Conectado ao dispositivo ${status.device}`,
-          });
+          addNotification(
+            'WhatsApp Conectado',
+            `Conectado ao dispositivo ${status.device}`,
+            'success'
+          );
         } else {
-          toast.error("WhatsApp Desconectado", {
-            description: "Nenhuma conexão ativa no momento",
-          });
+          addNotification(
+            'WhatsApp Desconectado',
+            'Nenhuma conexão ativa no momento',
+            'error'
+          );
         }
       } else {
-        toast.error("Erro de Conexão", {
-          description: "Não foi possível verificar o status do WhatsApp. Servidor offline?",
-        });
+        addNotification(
+          'Erro de Conexão',
+          'Não foi possível verificar o status do WhatsApp. Servidor offline?',
+          'error'
+        );
       }
     } catch (error) {
       console.error('Error checking status:', error);
-      toast.error("Falha na Verificação", {
-        description: "Ocorreu um erro ao verificar o status do WhatsApp.",
-      });
+      addNotification(
+        'Falha na Verificação',
+        'Ocorreu um erro ao verificar o status do WhatsApp.',
+        'error'
+      );
     } finally {
       setIsStatusLoading(false);
     }
