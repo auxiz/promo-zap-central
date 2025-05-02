@@ -19,9 +19,8 @@ export function useWhatsAppInstances() {
 
   const addNewInstance = () => {
     if (!instanceName.trim()) {
-      toast({
-        title: "Erro",
-        description: "Digite um nome para a instância",
+      toast("Digite um nome para a instância", {
+        description: "O nome da instância não pode estar vazio",
         variant: "destructive",
       });
       return;
@@ -35,9 +34,8 @@ export function useWhatsAppInstances() {
     setInstanceName('');
     setShowNewInstanceDialog(false);
     
-    toast({
-      title: "Sucesso",
-      description: `Nova instância "${instanceName}" adicionada`,
+    toast("Nova instância adicionada", {
+      description: `A instância "${instanceName}" foi adicionada com sucesso`,
     });
   };
 
@@ -61,9 +59,8 @@ export function useWhatsAppInstances() {
     // Remova a instância da lista
     setInstances(prev => prev.filter(instance => instance.id !== instanceToDelete.id));
     
-    toast({
-      title: "Sucesso",
-      description: `Instância "${instanceToDelete.name}" excluída com sucesso`,
+    toast("Instância excluída", {
+      description: `A instância "${instanceToDelete.name}" foi excluída com sucesso`,
     });
     setShowDeleteDialog(false);
     setInstanceToDelete(null);
