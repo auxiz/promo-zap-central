@@ -20,15 +20,53 @@ const getShopeeCredentials = () => {
   return { appId: shopeeCredentials.appId, status: shopeeCredentials.status };
 };
 
+// Function to verify API credentials
+const verifyApiCredentials = async (appId, secretKey) => {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const partnerId = parseInt(appId, 10);
+
+    // Generate signature
+    const baseString = `${partnerId}${timestamp}`;
+    const signature = crypto
+      .createHmac('sha256', secretKey)
+      .update(baseString)
+      .digest('hex');
+
+    // Make a simple API call to verify auth
+    const response = await axios({
+      method: 'get',
+      url: 'https://partner.shopeemobile.com/api/v1/merchant/get_merchant_info',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': signature
+      },
+      params: {
+        partner_id: partnerId,
+        timestamp: timestamp
+      },
+      timeout: 5000 // 5 seconds timeout for quick feedback
+    });
+
+    // If we get here, the request was successful (no exception thrown)
+    return true;
+  } catch (error) {
+    console.error('Error verifying API credentials:', error.message);
+    return false;
+  }
+};
+
 // Function to test Shopee connection
 const testShopeeConnection = async () => {
   try {
-    // Use a test URL to verify if the credentials work
-    const testUrl = 'https://shopee.com.br/product/123/456';
-    const result = await convertToAffiliateLink(testUrl);
+    // Use the verify credentials function with current credentials
+    const isConnected = await verifyApiCredentials(
+      shopeeCredentials.appId, 
+      shopeeCredentials.secretKey
+    );
     
     // Update status based on the result
-    if (result) {
+    if (isConnected) {
       updateShopeeCredentials(shopeeCredentials.appId, shopeeCredentials.secretKey, 'online');
       return true;
     }
@@ -108,5 +146,6 @@ module.exports = {
   getShopeeCredentials,
   extractShopeeUrls,
   convertToAffiliateLink,
-  testShopeeConnection
+  testShopeeConnection,
+  verifyApiCredentials
 };

@@ -1,9 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
-
-// API base URL
-const API_BASE = 'http://168.231.98.177:4000';
+import { API_BASE } from '@/utils/api-constants';
 
 export interface ShopeeCredentials {
   appId: string;
@@ -105,36 +103,27 @@ export function useShopeeCredentials(initialAppId: string) {
     setShopeeSettings({ ...shopeeSettings, isLoading: true });
     
     try {
-      // Test URL conversion - this validates the credentials work
-      const testUrl = 'https://shopee.com.br/product/123/456';
-      
-      const response = await fetch(`${API_BASE}/api/shopee/convert`, {
+      // Use the dedicated test endpoint instead of trying to convert a URL
+      const response = await fetch(`${API_BASE}/api/shopee/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: testUrl }),
+        body: JSON.stringify({ 
+          appId: shopeeSettings.appId,
+          secretKey: shopeeSettings.secretKey 
+        }),
       });
       
+      const result = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Credenciais inválidas');
+        throw new Error(result.error || 'Credenciais inválidas');
       }
       
-      // Refresh status after successful test
-      const statusResponse = await fetch(`${API_BASE}/api/shopee/credentials`);
-      if (statusResponse.ok) {
-        const data = await statusResponse.json();
-        setShopeeSettings({
-          ...shopeeSettings,
-          isLoading: false,
-          status: data.status || 'offline',
-        });
-      } else {
-        setShopeeSettings({
-          ...shopeeSettings,
-          isLoading: false,
-          status: 'online', // Assume online if test worked
-        });
-      }
+      setShopeeSettings({
+        ...shopeeSettings,
+        isLoading: false,
+        status: result.status || 'offline',
+      });
       
       toast.success('Conexão com a API da Shopee estabelecida com sucesso');
     } catch (error) {
