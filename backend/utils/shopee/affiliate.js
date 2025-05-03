@@ -10,6 +10,7 @@ const convertToAffiliateLink = async (originalUrl) => {
     // Ensure we have a valid token
     const tokenStatus = await ensureValidToken();
     if (!tokenStatus.success) {
+      console.error('Error ensuring valid token:', tokenStatus.error);
       return null;
     }
     

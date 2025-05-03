@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 const { getFullCredentials, updateOAuthTokens } = require('./credentials');
 const { SHOPEE_AUTH_URL, SHOPEE_API_BASE, generateSignature, isTokenExpired } = require('./utils');
@@ -16,7 +15,11 @@ const getAuthorizationUrl = (redirectUri) => {
     // Include timestamp for every request to avoid Shopee API errors
     const timestamp = Math.floor(Date.now() / 1000);
     
-    const authUrl = `https://partner.shopeemobile.com/api/v2/shop/auth_partner?partner_id=${partnerId}&redirect=${encodeURIComponent(redirectUri)}&timestamp=${timestamp}`;
+    // Generate signature for the auth URL
+    const endpoint = '/api/v2/shop/auth_partner';
+    const signature = generateSignature(endpoint, partnerId, timestamp, '', credentials.secretKey);
+    
+    const authUrl = `https://partner.shopeemobile.com/api/v2/shop/auth_partner?partner_id=${partnerId}&redirect=${encodeURIComponent(redirectUri)}&timestamp=${timestamp}&sign=${signature}`;
     console.log(`[Shopee OAuth] Generated auth URL with timestamp: ${timestamp}`);
     
     return authUrl;
@@ -27,7 +30,7 @@ const getAuthorizationUrl = (redirectUri) => {
 };
 
 // Exchange authorization code for access token
-const exchangeAuthCode = async (code, redirectUri) => {
+const exchangeAuthCode = async (code, redirectUri, shopId = 0) => {
   try {
     const credentials = getFullCredentials();
     const timestamp = Math.floor(Date.now() / 1000);
@@ -44,13 +47,16 @@ const exchangeAuthCode = async (code, redirectUri) => {
       throw new Error('Authorization code is required');
     }
     
+    // Parse shop_id from string to number
+    const shopIdNum = parseInt(shopId, 10) || 0;
+    
     // Generate signature
     const signature = generateSignature(endpoint, partnerId, timestamp, '', credentials.secretKey);
     
     const requestData = {
       code,
       partner_id: partnerId,
-      shop_id: 0, // Will be returned from auth response
+      shop_id: shopIdNum, // Use parsed shop ID
       timestamp
     };
     
@@ -66,18 +72,18 @@ const exchangeAuthCode = async (code, redirectUri) => {
     // Make API call to get access token
     const response = await axios({
       method: 'post',
-      url: SHOPEE_AUTH_URL,
+      url: `${SHOPEE_API_BASE}/auth/token/get`,
       headers: {
         'Content-Type': 'application/json'
       },
-      params: requestParams, // Include timestamp in URL params
+      params: requestParams,
       data: requestData
     });
     
     console.log(`[Shopee OAuth] Auth token response:`, JSON.stringify(response.data));
     
     if (response.data && response.data.error === '') {
-      const { access_token, refresh_token, expire_in, shop_id } = response.data;
+      const { access_token, refresh_token, expire_in, shop_id } = response.data.response;
       
       if (!access_token || !refresh_token || !expire_in) {
         throw new Error('Invalid OAuth response: missing required tokens');
@@ -87,7 +93,7 @@ const exchangeAuthCode = async (code, redirectUri) => {
       const expiryTime = Date.now() + (expire_in * 1000);
       
       // Update tokens in credentials
-      updateOAuthTokens(access_token, refresh_token, expiryTime);
+      updateOAuthTokens(access_token, refresh_token, expiryTime, shop_id);
       
       return {
         success: true,
@@ -142,6 +148,7 @@ const refreshAccessToken = async () => {
     const requestData = {
       refresh_token: credentials.refreshToken,
       partner_id: partnerId,
+      shop_id: parseInt(credentials.shopId, 10) || 0,
       timestamp
     };
     
@@ -168,7 +175,7 @@ const refreshAccessToken = async () => {
     console.log(`[Shopee OAuth] Refresh token response:`, JSON.stringify(response.data));
     
     if (response.data && response.data.error === '') {
-      const { access_token, refresh_token, expire_in } = response.data;
+      const { access_token, refresh_token, expire_in } = response.data.response;
       
       if (!access_token || !refresh_token || !expire_in) {
         throw new Error('Invalid OAuth response: missing required tokens');
@@ -177,8 +184,8 @@ const refreshAccessToken = async () => {
       // Calculate expiry time in milliseconds
       const expiryTime = Date.now() + (expire_in * 1000);
       
-      // Update tokens in credentials
-      updateOAuthTokens(access_token, refresh_token, expiryTime);
+      // Update tokens in credentials (keep existing shop ID)
+      updateOAuthTokens(access_token, refresh_token, expiryTime, credentials.shopId);
       
       return { 
         success: true, 

@@ -12,7 +12,8 @@ let shopeeCredentials = {
   status: 'offline',
   accessToken: '',
   refreshToken: '',
-  tokenExpiry: 0
+  tokenExpiry: 0,
+  shopId: 0  // Added shop ID field
 };
 
 // Ensure config directory exists
@@ -39,7 +40,8 @@ const loadCredentialsFromFile = () => {
         status: savedCredentials.status || 'offline',
         accessToken: savedCredentials.accessToken || '',
         refreshToken: savedCredentials.refreshToken || '',
-        tokenExpiry: savedCredentials.tokenExpiry || 0
+        tokenExpiry: savedCredentials.tokenExpiry || 0,
+        shopId: savedCredentials.shopId || 0  // Load shop ID from saved credentials
       };
       
       console.log('Shopee credentials loaded from file');
@@ -81,13 +83,14 @@ const updateShopeeCredentials = (appId, secretKey, status = 'offline') => {
 };
 
 // Function to update OAuth tokens
-const updateOAuthTokens = (accessToken, refreshToken, expiry) => {
+const updateOAuthTokens = (accessToken, refreshToken, expiry, shopId = null) => {
   shopeeCredentials = {
     ...shopeeCredentials,
     accessToken,
     refreshToken,
     tokenExpiry: expiry,
-    status: 'online'
+    status: 'online',
+    shopId: shopId || shopeeCredentials.shopId  // Keep existing shopId if not provided
   };
   saveCredentialsToFile();
 };
@@ -97,7 +100,8 @@ const getShopeeCredentials = () => {
   return { 
     appId: shopeeCredentials.appId, 
     status: shopeeCredentials.status,
-    hasToken: !!shopeeCredentials.accessToken && shopeeCredentials.tokenExpiry > Date.now()
+    hasToken: !!shopeeCredentials.accessToken && shopeeCredentials.tokenExpiry > Date.now(),
+    shopId: shopeeCredentials.shopId
   };
 };
 

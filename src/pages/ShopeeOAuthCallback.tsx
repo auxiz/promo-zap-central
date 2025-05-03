@@ -1,99 +1,142 @@
 
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { API_BASE } from '@/utils/api-constants';
+import { toast } from '@/components/ui/sonner';
 
 export default function ShopeeOAuthCallback() {
-  const location = useLocation();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
-  const [message, setMessage] = useState('Processando autenticação...');
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
-    const processCallback = async () => {
+    const processOAuthCallback = async () => {
       try {
-        // Extract code and error from URL query parameters
-        const queryParams = new URLSearchParams(location.search);
-        const code = queryParams.get('code');
-        const error = queryParams.get('error');
-        
-        if (error) {
-          setStatus('error');
-          setMessage(`Erro de autenticação: ${error}`);
-          return;
-        }
+        // Extract code and shop_id from URL parameters
+        const searchParams = new URLSearchParams(location.search);
+        const code = searchParams.get('code');
+        const shopId = searchParams.get('shop_id');
         
         if (!code) {
           setStatus('error');
-          setMessage('Código de autorização não encontrado na URL');
+          setErrorMessage('Código de autorização não encontrado na URL');
           return;
         }
         
-        // Send message to parent window with the authorization code
-        if (window.opener) {
-          // Post message to parent window
-          window.opener.postMessage({
-            type: 'SHOPEE_OAUTH_CALLBACK',
-            code
-          }, window.location.origin);
-          
+        // Exchange code for tokens
+        const response = await fetch(`${API_BASE}/api/shopee/auth/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            code,
+            shop_id: shopId,
+            redirect_uri: window.location.origin + '/config-shopee/callback'
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Falha ao trocar código por token');
+        }
+        
+        if (data.success) {
           setStatus('success');
-          setMessage('Autenticação realizada com sucesso! Esta janela será fechada em instantes.');
           
-          // Close the popup after short delay
+          // Notify parent window about successful authentication
+          window.opener?.postMessage(
+            { type: 'SHOPEE_OAUTH_SUCCESS', data: { tokenExpiry: data.token_expiry } },
+            window.location.origin
+          );
+          
+          // Wait a moment before redirecting
           setTimeout(() => {
-            window.close();
-          }, 3000);
+            toast.success('Autenticação Shopee concluída com sucesso');
+            navigate('/configuracoes');
+          }, 2000);
         } else {
-          // Handle case when opened directly (not in popup)
-          setStatus('error');
-          setMessage('Esta página deve ser aberta como uma janela pop-up durante o processo de autenticação.');
+          throw new Error(data.error || 'Falha na autenticação');
         }
       } catch (error) {
-        console.error('Error handling OAuth callback:', error);
+        console.error('Error processing OAuth callback:', error);
         setStatus('error');
-        setMessage(`Erro ao processar autenticação: ${error.message}`);
+        setErrorMessage(error.message || 'Ocorreu um erro durante o processamento da autenticação');
       }
     };
     
-    processCallback();
-  }, [location.search]);
+    processOAuthCallback();
+  }, [location.search, navigate]);
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md space-y-6 text-center">
-        <h1 className="text-2xl font-bold">Autenticação Shopee</h1>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8 bg-card rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold mb-6 text-center">Autenticação Shopee</h1>
         
-        <div className="flex justify-center">
-          {status === 'processing' && (
-            <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          )}
-          
-          {status === 'success' && (
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
-          )}
-          
-          {status === 'error' && (
-            <AlertCircle className="h-12 w-12 text-red-500" />
-          )}
-        </div>
-        
-        <p className={`text-lg ${status === 'error' ? 'text-red-600' : 'text-muted-foreground'}`}>
-          {message}
-        </p>
+        {status === 'processing' && (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-lg">Processando autenticação...</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Aguarde enquanto processamos sua autenticação com a API Shopee
+            </p>
+          </div>
+        )}
         
         {status === 'success' && (
-          <p className="text-sm text-muted-foreground mt-4">
-            Esta janela será fechada automaticamente.
-          </p>
+          <div className="text-center">
+            <div className="bg-green-100 text-green-800 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                className="w-8 h-8"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M5 13l4 4L19 7" 
+                />
+              </svg>
+            </div>
+            <p className="mt-4 text-lg font-medium">Autenticação concluída com sucesso!</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Redirecionando para o painel de configurações...
+            </p>
+          </div>
         )}
         
         {status === 'error' && (
-          <button 
-            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-            onClick={() => window.close()}
-          >
-            Fechar Janela
-          </button>
+          <div className="text-center">
+            <div className="bg-red-100 text-red-800 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                className="w-8 h-8"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M6 18L18 6M6 6l12 12" 
+                />
+              </svg>
+            </div>
+            <p className="mt-4 text-lg font-medium">Erro na autenticação</p>
+            <p className="text-sm text-red-600 mt-2">{errorMessage}</p>
+            <button 
+              className="mt-6 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              onClick={() => navigate('/configuracoes')}
+            >
+              Voltar para Configurações
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -4,9 +4,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, KeyRound } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { API_BASE } from '@/utils/api-constants';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useShopeeManualLogin } from '@/hooks/useShopeeManualLogin';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 export function ShopeeManualLogin() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -32,22 +33,27 @@ export function ShopeeManualLogin() {
     <Card className="dashboard-card overflow-hidden">
       <div className="border-b p-4 bg-card">
         <div className="flex items-center justify-between">
-          <h2 className="font-medium">Login Shopee Afiliados</h2>
+          <h2 className="font-medium">Login Manual Shopee Afiliados</h2>
           <div className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">
-            Solução Temporária
+            Solução Alternativa
           </div>
         </div>
       </div>
       
       <div className="p-6">
+        <Alert className="mb-6">
+          <InfoIcon className="h-4 w-4" />
+          <AlertDescription>
+            Este método é uma alternativa ao fluxo OAuth oficial. Recomendamos usar a autenticação OAuth 
+            quando possível para melhor integração com a API da Shopee.
+          </AlertDescription>
+        </Alert>
+        
         <div className="mb-6">
           <h3 className="text-lg font-medium mb-2">Login na Plataforma de Afiliados Shopee</h3>
           <p className="text-muted-foreground mb-4">
-            Esta é uma solução temporária para login na plataforma de afiliados Shopee enquanto aguardamos a integração completa via API OAuth.
-          </p>
-          <p className="text-muted-foreground mb-4">
-            Ao clicar no botão abaixo, será aberta uma janela pop-up com a página de afiliados da Shopee.
-            Após o login bem-sucedido, você poderá acessar o painel de afiliados e converter links de produtos.
+            Este método abre uma janela pop-up para login manual na plataforma de afiliados da Shopee.
+            Você precisará inserir suas credenciais e confirmar captchas manualmente.
           </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Button 
@@ -78,9 +84,13 @@ export function ShopeeManualLogin() {
             <li>Os cookies de autenticação serão salvos para uso nas funções de afiliados</li>
             <li>Use o botão "Verificar Status" para confirmar se o login está ativo</li>
           </ol>
-          <p className="text-amber-600 mt-3 text-xs">
-            Nota: Esta função será substituída pela autenticação via OAuth quando a integração API estiver completa
-          </p>
+          <div className="mt-4 flex items-start gap-2">
+            <ExternalLink size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <p className="text-amber-600 text-xs">
+              Recomendamos utilizar o método de autenticação OAuth na aba "Autenticação OAuth API" 
+              para acesso completo às funcionalidades de afiliado
+            </p>
+          </div>
         </div>
       </div>
       
