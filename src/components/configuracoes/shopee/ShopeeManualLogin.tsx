@@ -44,8 +44,8 @@ export function ShopeeManualLogin() {
             Esta é uma solução temporária para login na Shopee enquanto aguardamos a integração completa via API OAuth.
           </p>
           <p className="text-muted-foreground mb-4">
-            Ao clicar no botão abaixo, uma nova janela será aberta com a página de login da Shopee. 
-            Faça login com suas credenciais da Shopee normalmente.
+            Ao clicar no botão abaixo, um navegador Chromium será aberto com a página de login da Shopee. 
+            Faça login com suas credenciais e complete qualquer verificação CAPTCHA necessária.
           </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Button 
@@ -71,6 +71,7 @@ export function ShopeeManualLogin() {
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
             <li>Ao clicar em "Iniciar Login", uma janela do navegador Chromium será aberta</li>
             <li>Faça login com sua conta Shopee normalmente</li>
+            <li>Complete qualquer verificação CAPTCHA necessária</li>
             <li>Após o login bem-sucedido, você pode fechar o navegador</li>
             <li>Os cookies de autenticação serão salvos para uso nas funções de afiliados</li>
             <li>Use o botão "Verificar Status" para confirmar se o login está ativo</li>
@@ -87,15 +88,16 @@ export function ShopeeManualLogin() {
             <DialogTitle>Login Shopee em Andamento</DialogTitle>
             <DialogDescription>
               Uma janela de navegador foi aberta para você fazer login na Shopee.
-              Por favor, faça o login normalmente e feche o navegador quando terminar.
+              Por favor, faça o login normalmente, incluindo qualquer verificação CAPTCHA, e feche o navegador quando terminar.
             </DialogDescription>
           </DialogHeader>
           <div className="text-sm text-muted-foreground">
-            <p>Após fazer login:</p>
+            <p>Instruções de login:</p>
             <ol className="list-decimal pl-5 mt-2 space-y-1">
+              <li>Insira seu e-mail e senha da Shopee</li>
+              <li>Complete qualquer verificação CAPTCHA ou "Não sou um robô" se solicitado</li>
+              <li>Após fazer login com sucesso, você pode fechar a janela do navegador</li>
               <li>Verifique se o login foi bem-sucedido usando o botão "Verificar Status"</li>
-              <li>Os cookies de autenticação serão armazenados no servidor</li>
-              <li>Você poderá usar todas as funções de afiliados da Shopee</li>
             </ol>
           </div>
           <div className="flex justify-end">

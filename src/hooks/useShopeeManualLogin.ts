@@ -19,9 +19,13 @@ export function useShopeeManualLogin() {
     setIsLoading(true);
     
     try {
-      // This would call an API endpoint that launches a headless browser
+      // This will call an API endpoint that launches a visible Chromium browser
       const response = await fetch(`${API_BASE}/api/shopee/manual-login`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ headless: false }) // Specify non-headless mode
       });
       
       if (!response.ok) {
@@ -30,10 +34,10 @@ export function useShopeeManualLogin() {
       
       const data = await response.json();
       
-      // Check if the API returned a URL to open directly
-      if (data.loginUrl) {
-        window.open(data.loginUrl, '_blank', 'width=1024,height=768');
-      }
+      // Manual login notification
+      toast.info("Navegador aberto para login na Shopee", {
+        description: "Complete o login manualmente, incluindo qualquer verificação CAPTCHA"
+      });
       
       return true;
     } catch (error) {
