@@ -20,12 +20,16 @@ export function useShopeeManualLogin() {
     
     try {
       // Try the backend-managed Chromium browser approach first
+      // Make sure we're using the main Shopee login page, not affiliate page
       const response = await fetch(`${API_BASE}/api/shopee/manual-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ headless: false }) // Specify non-headless mode
+        body: JSON.stringify({ 
+          headless: false,
+          loginUrl: 'https://shopee.com.br/buyer/login'  // Explicitly specify main Shopee login URL
+        }) 
       });
       
       if (!response.ok) {
@@ -44,7 +48,7 @@ export function useShopeeManualLogin() {
       console.error("Error starting Shopee login:", error);
       
       // Fallback: Open Shopee login page directly in a popup window
-      const shopeeLoginUrl = "https://shopee.com.br/buyer/login";
+      const shopeeLoginUrl = "https://shopee.com.br/buyer/login";  // Main Shopee login page
       const popupWindow = window.open(
         shopeeLoginUrl, 
         "ShopeeLogin", 

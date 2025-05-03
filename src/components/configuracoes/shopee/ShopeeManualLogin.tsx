@@ -46,8 +46,8 @@ export function ShopeeManualLogin() {
             Esta é uma solução temporária para login na Shopee enquanto aguardamos a integração completa via API OAuth.
           </p>
           <p className="text-muted-foreground mb-4">
-            Ao clicar no botão abaixo, um navegador Chromium será aberto com a página de login da Shopee.
-            Se isso não funcionar, uma janela pop-up será aberta com o site da Shopee para login.
+            Ao clicar no botão abaixo, será aberta uma página de login direta na Shopee (não na área de afiliados).
+            Após o login bem-sucedido, você poderá acessar o dashboard completo da Shopee.
           </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Button 
@@ -71,7 +71,7 @@ export function ShopeeManualLogin() {
         <div className="bg-muted p-4 rounded text-sm">
           <p className="font-medium mb-2">Como funciona?</p>
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
-            <li>Ao clicar em "Iniciar Login", uma janela do navegador será aberta</li>
+            <li>Ao clicar em "Iniciar Login", uma janela do navegador será aberta com a página principal de login da Shopee</li>
             <li>Faça login com sua conta Shopee normalmente</li>
             <li>Complete qualquer verificação CAPTCHA necessária</li>
             <li>Após o login bem-sucedido, você pode fechar o navegador</li>
@@ -89,7 +89,7 @@ export function ShopeeManualLogin() {
           <DialogHeader>
             <DialogTitle>Login Shopee em Andamento</DialogTitle>
             <DialogDescription>
-              Uma janela para login na Shopee foi aberta.
+              Uma janela para login na página principal da Shopee foi aberta.
               Por favor, faça o login normalmente, incluindo qualquer verificação CAPTCHA, e feche a janela quando terminar.
             </DialogDescription>
           </DialogHeader>
