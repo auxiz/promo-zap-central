@@ -20,7 +20,7 @@ export function ShopeeManualLogin() {
       }
     } catch (error) {
       console.error("Error starting Shopee login:", error);
-      toast.error("Erro ao iniciar login na Shopee");
+      toast.error("Erro ao iniciar login na Shopee Afiliados");
     }
   };
   
@@ -32,7 +32,7 @@ export function ShopeeManualLogin() {
     <Card className="dashboard-card overflow-hidden">
       <div className="border-b p-4 bg-card">
         <div className="flex items-center justify-between">
-          <h2 className="font-medium">Login Manual Shopee</h2>
+          <h2 className="font-medium">Login Shopee Afiliados</h2>
           <div className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">
             Solução Temporária
           </div>
@@ -41,13 +41,13 @@ export function ShopeeManualLogin() {
       
       <div className="p-6">
         <div className="mb-6">
-          <h3 className="text-lg font-medium mb-2">Login Manual na Shopee</h3>
+          <h3 className="text-lg font-medium mb-2">Login na Plataforma de Afiliados Shopee</h3>
           <p className="text-muted-foreground mb-4">
-            Esta é uma solução temporária para login na Shopee enquanto aguardamos a integração completa via API OAuth.
+            Esta é uma solução temporária para login na plataforma de afiliados Shopee enquanto aguardamos a integração completa via API OAuth.
           </p>
           <p className="text-muted-foreground mb-4">
-            Ao clicar no botão abaixo, será aberta uma página de login direta na Shopee (não na área de afiliados).
-            Após o login bem-sucedido, você poderá acessar o dashboard completo da Shopee.
+            Ao clicar no botão abaixo, será aberta uma janela pop-up com a página de afiliados da Shopee.
+            Após o login bem-sucedido, você poderá acessar o painel de afiliados e converter links de produtos.
           </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Button 
@@ -56,7 +56,7 @@ export function ShopeeManualLogin() {
               className="flex items-center gap-2"
             >
               <KeyRound size={16} />
-              Iniciar Login na Shopee
+              Iniciar Login na Shopee Afiliados
             </Button>
             <Button 
               variant="outline"
@@ -71,10 +71,10 @@ export function ShopeeManualLogin() {
         <div className="bg-muted p-4 rounded text-sm">
           <p className="font-medium mb-2">Como funciona?</p>
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
-            <li>Ao clicar em "Iniciar Login", uma janela do navegador será aberta com a página principal de login da Shopee</li>
+            <li>Ao clicar em "Iniciar Login", uma janela pop-up será aberta com a plataforma de afiliados Shopee</li>
             <li>Faça login com sua conta Shopee normalmente</li>
             <li>Complete qualquer verificação CAPTCHA necessária</li>
-            <li>Após o login bem-sucedido, você pode fechar o navegador</li>
+            <li>Após o login bem-sucedido, você pode fechar a janela pop-up</li>
             <li>Os cookies de autenticação serão salvos para uso nas funções de afiliados</li>
             <li>Use o botão "Verificar Status" para confirmar se o login está ativo</li>
           </ol>
@@ -87,9 +87,9 @@ export function ShopeeManualLogin() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Login Shopee em Andamento</DialogTitle>
+            <DialogTitle>Login Shopee Afiliados em Andamento</DialogTitle>
             <DialogDescription>
-              Uma janela para login na página principal da Shopee foi aberta.
+              Uma janela pop-up para login na plataforma de afiliados Shopee foi aberta.
               Por favor, faça o login normalmente, incluindo qualquer verificação CAPTCHA, e feche a janela quando terminar.
             </DialogDescription>
           </DialogHeader>
@@ -98,7 +98,7 @@ export function ShopeeManualLogin() {
             <ol className="list-decimal pl-5 mt-2 space-y-1">
               <li>Insira seu e-mail e senha da Shopee</li>
               <li>Complete qualquer verificação CAPTCHA ou "Não sou um robô" se solicitado</li>
-              <li>Após fazer login com sucesso, você pode fechar a janela do navegador</li>
+              <li>Após fazer login com sucesso, você pode fechar a janela pop-up</li>
               <li>Verifique se o login foi bem-sucedido usando o botão "Verificar Status"</li>
             </ol>
           </div>
