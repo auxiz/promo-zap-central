@@ -14,8 +14,10 @@ export function ShopeeManualLogin() {
   
   const handleStartLogin = async () => {
     try {
-      await startLogin();
-      setDialogOpen(true);
+      const success = await startLogin();
+      if (success) {
+        setDialogOpen(true);
+      }
     } catch (error) {
       console.error("Error starting Shopee login:", error);
       toast.error("Erro ao iniciar login na Shopee");
@@ -44,8 +46,8 @@ export function ShopeeManualLogin() {
             Esta é uma solução temporária para login na Shopee enquanto aguardamos a integração completa via API OAuth.
           </p>
           <p className="text-muted-foreground mb-4">
-            Ao clicar no botão abaixo, um navegador Chromium será aberto com a página de login da Shopee. 
-            Faça login com suas credenciais e complete qualquer verificação CAPTCHA necessária.
+            Ao clicar no botão abaixo, um navegador Chromium será aberto com a página de login da Shopee.
+            Se isso não funcionar, uma janela pop-up será aberta com o site da Shopee para login.
           </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Button 
@@ -69,7 +71,7 @@ export function ShopeeManualLogin() {
         <div className="bg-muted p-4 rounded text-sm">
           <p className="font-medium mb-2">Como funciona?</p>
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
-            <li>Ao clicar em "Iniciar Login", uma janela do navegador Chromium será aberta</li>
+            <li>Ao clicar em "Iniciar Login", uma janela do navegador será aberta</li>
             <li>Faça login com sua conta Shopee normalmente</li>
             <li>Complete qualquer verificação CAPTCHA necessária</li>
             <li>Após o login bem-sucedido, você pode fechar o navegador</li>
@@ -87,8 +89,8 @@ export function ShopeeManualLogin() {
           <DialogHeader>
             <DialogTitle>Login Shopee em Andamento</DialogTitle>
             <DialogDescription>
-              Uma janela de navegador foi aberta para você fazer login na Shopee.
-              Por favor, faça o login normalmente, incluindo qualquer verificação CAPTCHA, e feche o navegador quando terminar.
+              Uma janela para login na Shopee foi aberta.
+              Por favor, faça o login normalmente, incluindo qualquer verificação CAPTCHA, e feche a janela quando terminar.
             </DialogDescription>
           </DialogHeader>
           <div className="text-sm text-muted-foreground">

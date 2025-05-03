@@ -19,7 +19,7 @@ export function useShopeeManualLogin() {
     setIsLoading(true);
     
     try {
-      // This will call an API endpoint that launches a visible Chromium browser
+      // Try the backend-managed Chromium browser approach first
       const response = await fetch(`${API_BASE}/api/shopee/manual-login`, {
         method: 'POST',
         headers: {
@@ -42,8 +42,26 @@ export function useShopeeManualLogin() {
       return true;
     } catch (error) {
       console.error("Error starting Shopee login:", error);
-      toast.error("Erro ao iniciar login na Shopee");
-      return false;
+      
+      // Fallback: Open Shopee login page directly in a popup window
+      const shopeeLoginUrl = "https://shopee.com.br/buyer/login";
+      const popupWindow = window.open(
+        shopeeLoginUrl, 
+        "ShopeeLogin", 
+        "width=1024,height=768,menubar=no,toolbar=no,location=no"
+      );
+      
+      if (popupWindow) {
+        toast.info("Página de login da Shopee aberta", {
+          description: "Complete o login manualmente em uma nova janela"
+        });
+        return true;
+      } else {
+        toast.error("Bloqueador de pop-ups ativo", {
+          description: "Por favor, permita pop-ups para este site e tente novamente"
+        });
+        return false;
+      }
     } finally {
       setIsLoading(false);
     }
