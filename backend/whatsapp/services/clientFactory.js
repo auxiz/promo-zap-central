@@ -1,4 +1,3 @@
-
 /**
  * Client factory for WhatsApp
  * Handles the creation and initialization of WhatsApp web.js clients
@@ -121,13 +120,12 @@ const createClient = (instanceId) => {
       );
     }
     
-    // Get reconnection manager
-    const connectionManager = require('./connectionManager');
-    
     // Don't attempt reconnection for intentional disconnections
     if (reason !== 'NAVIGATION' && reason !== 'LOGOUT') {
+      // Import reconnection manager dynamically to avoid circular dependency
+      const reconnectionManager = require('./connection/reconnectionManager');
       // Attempt reconnection
-      connectionManager.attemptReconnection(instanceId);
+      reconnectionManager.attemptReconnection(instanceId);
     }
   });
   
@@ -140,12 +138,12 @@ const createClient = (instanceId) => {
       error
     );
     
-    // Get reconnection manager
-    const connectionManager = require('./connectionManager');
+    // Import reconnection manager dynamically to avoid circular dependency
+    const reconnectionManager = require('./connection/reconnectionManager');
     
     // Attempt reconnection after auth failure
     setTimeout(() => {
-      connectionManager.attemptReconnection(instanceId);
+      reconnectionManager.attemptReconnection(instanceId);
     }, 15000); // Wait 15 seconds before reconnecting after auth failure
   });
   

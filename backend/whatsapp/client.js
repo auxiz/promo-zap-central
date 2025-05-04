@@ -1,4 +1,3 @@
-
 /**
  * WhatsApp client module
  * Main entry point for WhatsApp functionality
