@@ -7,20 +7,17 @@ export interface ShopeeCredentials {
   appId: string;
   secretKey: string;
   status: 'online' | 'offline';
-  hasToken: boolean;
   isLoading: boolean;
 }
 
 export function useShopeeCredentials(
   initialAppId: string, 
-  initialStatus: 'online' | 'offline' = 'offline',
-  initialHasToken: boolean = false
+  initialStatus: 'online' | 'offline' = 'offline'
 ) {
   const [shopeeSettings, setShopeeSettings] = useState<ShopeeCredentials>({
     appId: initialAppId || '',
     secretKey: '',
     status: initialStatus || 'offline',
-    hasToken: initialHasToken || false,
     isLoading: false,
   });
   
@@ -35,8 +32,7 @@ export function useShopeeCredentials(
           setShopeeSettings(prev => ({
             ...prev,
             appId: data.appId || prev.appId,
-            status: data.status || 'offline',
-            hasToken: data.hasToken || false
+            status: data.status || 'offline'
           }));
         }
       } catch (error) {
@@ -57,10 +53,9 @@ export function useShopeeCredentials(
     setShopeeSettings(prev => ({
       ...prev,
       appId: initialAppId || prev.appId,
-      status: initialStatus || prev.status,
-      hasToken: initialHasToken || prev.hasToken
+      status: initialStatus || prev.status
     }));
-  }, [initialAppId, initialStatus, initialHasToken]);
+  }, [initialAppId, initialStatus]);
 
   const saveShopeeCredentials = async () => {
     if (!shopeeSettings.appId || !shopeeSettings.secretKey) return;
@@ -92,21 +87,7 @@ export function useShopeeCredentials(
       toast.success('Credenciais da Shopee salvas com sucesso');
       
       // Refresh status after short delay
-      setTimeout(async () => {
-        try {
-          const statusResponse = await fetch(`${API_BASE}/api/shopee/credentials`);
-          if (statusResponse.ok) {
-            const data = await statusResponse.json();
-            setShopeeSettings(prev => ({
-              ...prev,
-              status: data.status || 'offline',
-              hasToken: data.hasToken || false
-            }));
-          }
-        } catch (error) {
-          console.error("Error refreshing Shopee status:", error);
-        }
-      }, 1000);
+      setTimeout(refreshShopeeStatus, 1000);
     } catch (error) {
       console.error("Error saving Shopee credentials:", error);
       toast.error('Erro ao salvar credenciais da Shopee');
@@ -123,8 +104,8 @@ export function useShopeeCredentials(
     setShopeeSettings({ ...shopeeSettings, isLoading: true });
     
     try {
-      // Use the dedicated test endpoint instead of trying to convert a URL
-      const response = await fetch(`${API_BASE}/api/shopee/test`, {
+      // Use the dedicated test endpoint
+      const response = await fetch(`${API_BASE}/api/shopee/credentials/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -166,8 +147,7 @@ export function useShopeeCredentials(
         
         setShopeeSettings(prev => ({
           ...prev,
-          status: data.status || prev.status,
-          hasToken: data.hasToken || prev.hasToken
+          status: data.status || prev.status
         }));
       }
     } catch (error) {

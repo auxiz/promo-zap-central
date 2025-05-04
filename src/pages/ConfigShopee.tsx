@@ -48,7 +48,7 @@ export default function ConfigShopee() {
         </p>
       </div>
       
-      <Alert variant="warning" className="bg-amber-50 border-amber-200 text-amber-800">
+      <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">
         <AlertCircle className="h-5 w-5" />
         <AlertTitle>Importante</AlertTitle>
         <AlertDescription>
@@ -67,48 +67,12 @@ export default function ConfigShopee() {
       />
       
       <div>
-        <h2 className="text-xl font-semibold mb-4">Métodos de Autenticação</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium">Autenticação OAuth (Recomendada)</h3>
-            <p className="text-muted-foreground text-sm">
-              Utiliza o fluxo OAuth oficial da Shopee para estabelecer uma conexão segura e duradoura com a API.
-              Permite acesso completo às funcionalidades de afiliado, incluindo conversão de links e relatórios.
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-              <li>Tokens de acesso gerenciados automaticamente</li>
-              <li>Renovação automática de tokens expirados</li>
-              <li>Integração completa com a API oficial</li>
-              <li>Maior segurança e confiabilidade</li>
-            </ul>
-          </div>
-          
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium">Login Manual (Alternativa)</h3>
-            <p className="text-muted-foreground text-sm">
-              Utiliza um navegador interno para realizar o login manual na plataforma de afiliados da Shopee.
-              Útil como solução temporária ou alternativa quando a autenticação OAuth não estiver disponível.
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-              <li>Não requer configuração de App ID e Secret Key</li>
-              <li>Pode ser mais simples para usuários iniciantes</li>
-              <li>Funcionalidade limitada comparada à integração OAuth</li>
-              <li>Requer login manual periódico</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      
-      <Separator />
-      
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Como Funciona</h2>
+        <h2 className="text-xl font-semibold mb-4">API de Afiliados Shopee</h2>
         
         <div className="space-y-4 text-muted-foreground">
           <p>
-            O sistema automaticamente monitora mensagens de grupos selecionados (Grupos Monitorados)
-            e converte links da Shopee para links de afiliado.
+            O sistema utiliza a API de Afiliados da Shopee para converter automaticamente links de produtos
+            em links de afiliado, permitindo rastreamento e comissões.
           </p>
           
           <p>
@@ -126,12 +90,28 @@ export default function ConfigShopee() {
             grupos que deseja monitorar e os grupos para onde deseja encaminhar as mensagens
             convertidas nas páginas de Grupos Monitorados e Grupos de Envio.
           </p>
-
-          <p className="mt-4">
-            <strong>Autenticação OAuth:</strong> Para utilizar a API de afiliados da Shopee, é 
-            necessário autenticar-se via OAuth após configurar o APP ID e Secret Key. Este processo 
-            permite que o sistema receba um token de acesso para converter links e acessar 
-            informações de desempenho dos seus links de afiliado.
+        </div>
+      </div>
+      
+      <Separator />
+      
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Como Funciona</h2>
+        
+        <div className="space-y-4 text-muted-foreground">
+          <p>
+            O sistema automaticamente monitora mensagens de grupos selecionados (Grupos Monitorados)
+            e converte links da Shopee para links de afiliado.
+          </p>
+          
+          <p>
+            Para gerar links de afiliado, o sistema utiliza suas credenciais da API da Shopee
+            (APP ID e Secret Key) para autenticar diretamente com a API de afiliados.
+          </p>
+          
+          <p>
+            A autenticação direta utiliza assinatura HMAC-SHA256 para garantir a segurança das
+            requisições, exigindo apenas que você configure suas credenciais uma vez.
           </p>
         </div>
       </div>

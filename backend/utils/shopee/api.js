@@ -3,52 +3,12 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { getFullCredentials, updateShopeeCredentials } = require('./credentials');
 const { SHOPEE_API_BASE, generateSignature } = require('./utils');
-const { ensureValidToken } = require('./oauth');
+const { verifyApiCredentialsDirect, makeDirectAuthRequest } = require('./directAuth');
 
 // Function to verify API credentials
 const verifyApiCredentials = async (appId, secretKey) => {
-  try {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const partnerId = parseInt(appId, 10);
-    const endpoint = '/api/v2/shop/get_activation_status';
-    console.log(`[Shopee API] Verifying credentials with timestamp: ${timestamp}`);
-
-    // Generate signature for authentication test
-    const baseString = `${partnerId}${endpoint}${timestamp}${secretKey}`;
-    const signature = crypto.createHash('sha256').update(baseString).digest('hex');
-
-    console.log(`[Shopee API] Verification request params:`, {
-      partner_id: partnerId,
-      timestamp,
-      sign: signature
-    });
-
-    // Make a simple API call to verify auth
-    const response = await axios({
-      method: 'get',
-      url: `${SHOPEE_API_BASE}/shop/get_activation_status`,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      params: {
-        partner_id: partnerId,
-        timestamp,
-        sign: signature
-      },
-      timeout: 5000 // 5 seconds timeout for quick feedback
-    });
-
-    console.log(`[Shopee API] Verification response:`, JSON.stringify(response.data));
-    
-    // If we get here without an exception, credentials are valid
-    return true;
-  } catch (error) {
-    console.error('Error verifying API credentials:', error.message);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-    }
-    return false;
-  }
+  // Use the direct authentication approach
+  return verifyApiCredentialsDirect(appId, secretKey);
 };
 
 // Function to test Shopee connection
@@ -78,56 +38,25 @@ const testShopeeConnection = async () => {
   }
 };
 
-// Get shop information
+// Get shop information using direct authentication
 const getShopInfo = async () => {
   try {
-    // Ensure we have a valid token
-    const tokenStatus = await ensureValidToken();
-    if (!tokenStatus.success) {
-      return { success: false, error: tokenStatus.error };
+    const credentials = getFullCredentials();
+    if (!credentials.appId || !credentials.secretKey) {
+      return { success: false, error: 'Missing Shopee API credentials' };
     }
     
-    const credentials = getFullCredentials();
-    const timestamp = Math.floor(Date.now() / 1000);
-    const partnerId = parseInt(credentials.appId, 10);
-    const endpoint = '/api/v2/shop/get_shop_info';
-    console.log(`[Shopee API] Getting shop info with timestamp: ${timestamp}`);
+    // Make the API request using direct authentication
+    const response = await makeDirectAuthRequest('get', '/shop/get_shop_info');
     
-    // Generate signature
-    const signature = generateSignature(
-      endpoint, 
-      partnerId, 
-      timestamp, 
-      credentials.accessToken,
-      credentials.secretKey
-    );
-    
-    const requestParams = {
-      partner_id: partnerId,
-      timestamp,
-      sign: signature,
-      access_token: credentials.accessToken
-    };
-    console.log(`[Shopee API] Get shop info request params:`, requestParams);
-    
-    // Make API call
-    const response = await axios({
-      method: 'get',
-      url: `${SHOPEE_API_BASE}/shop/get_shop_info`,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': credentials.accessToken
-      },
-      params: requestParams
-    });
-    
-    console.log(`[Shopee API] Get shop info response:`, JSON.stringify(response.data));
-    
-    if (response.data && response.data.error === '') {
-      return { success: true, shop_info: response.data.response };
+    if (response && response.response) {
+      return { success: true, shop_info: response.response };
     } else {
-      console.error('Error getting shop info:', response.data);
-      return { success: false, error: response.data.error || 'Failed to get shop info' };
+      console.error('Error getting shop info:', response);
+      return { 
+        success: false, 
+        error: response?.error || 'Failed to get shop info' 
+      };
     }
   } catch (error) {
     console.error('Error getting shop info:', error.message);

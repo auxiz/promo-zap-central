@@ -9,11 +9,7 @@ const CREDENTIALS_FILE = path.join(__dirname, '../../config/shopee.json');
 let shopeeCredentials = {
   appId: process.env.SHOPEE_APP_ID || '',
   secretKey: process.env.SHOPEE_SECRET_KEY || '',
-  status: 'offline',
-  accessToken: '',
-  refreshToken: '',
-  tokenExpiry: 0,
-  shopId: 0  // Added shop ID field
+  status: 'offline'
 };
 
 // Ensure config directory exists
@@ -37,11 +33,7 @@ const loadCredentialsFromFile = () => {
         ...shopeeCredentials,
         appId: savedCredentials.appId || shopeeCredentials.appId,
         secretKey: savedCredentials.secretKey || shopeeCredentials.secretKey,
-        status: savedCredentials.status || 'offline',
-        accessToken: savedCredentials.accessToken || '',
-        refreshToken: savedCredentials.refreshToken || '',
-        tokenExpiry: savedCredentials.tokenExpiry || 0,
-        shopId: savedCredentials.shopId || 0  // Load shop ID from saved credentials
+        status: savedCredentials.status || 'offline'
       };
       
       console.log('Shopee credentials loaded from file');
@@ -57,7 +49,7 @@ const loadCredentialsFromFile = () => {
 const saveCredentialsToFile = () => {
   try {
     ensureConfigDir();
-    // Save all credentials including tokens
+    // Save credentials
     fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(shopeeCredentials, null, 2));
     console.log('Shopee credentials saved to file');
     return true;
@@ -82,26 +74,11 @@ const updateShopeeCredentials = (appId, secretKey, status = 'offline') => {
   saveCredentialsToFile();
 };
 
-// Function to update OAuth tokens
-const updateOAuthTokens = (accessToken, refreshToken, expiry, shopId = null) => {
-  shopeeCredentials = {
-    ...shopeeCredentials,
-    accessToken,
-    refreshToken,
-    tokenExpiry: expiry,
-    status: 'online',
-    shopId: shopId || shopeeCredentials.shopId  // Keep existing shopId if not provided
-  };
-  saveCredentialsToFile();
-};
-
 // Function to get Shopee credentials (only appId for security and status)
 const getShopeeCredentials = () => {
   return { 
     appId: shopeeCredentials.appId, 
-    status: shopeeCredentials.status,
-    hasToken: !!shopeeCredentials.accessToken && shopeeCredentials.tokenExpiry > Date.now(),
-    shopId: shopeeCredentials.shopId
+    status: shopeeCredentials.status
   };
 };
 
@@ -114,6 +91,5 @@ module.exports = {
   updateShopeeCredentials,
   getShopeeCredentials,
   getFullCredentials,
-  updateOAuthTokens,
   shopeeCredentials
 };

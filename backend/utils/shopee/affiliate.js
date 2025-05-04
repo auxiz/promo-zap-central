@@ -1,74 +1,42 @@
 
 const axios = require('axios');
 const { getFullCredentials } = require('./credentials');
-const { SHOPEE_API_BASE, generateSignature, extractShopeeUrls } = require('./utils');
-const { ensureValidToken } = require('./oauth');
+const { SHOPEE_API_BASE, extractShopeeUrls } = require('./utils');
+const { makeDirectAuthRequest } = require('./directAuth');
 
-// Function to convert a Shopee URL to an affiliate link
+// Function to convert a Shopee URL to an affiliate link using direct authentication
 const convertToAffiliateLink = async (originalUrl) => {
   try {
-    // Ensure we have a valid token
-    const tokenStatus = await ensureValidToken();
-    if (!tokenStatus.success) {
-      console.error('Error ensuring valid token:', tokenStatus.error);
+    const credentials = getFullCredentials();
+    if (!credentials.appId || !credentials.secretKey) {
+      console.error('[Shopee Affiliate] Missing credentials');
       return null;
     }
     
-    const credentials = getFullCredentials();
-    const timestamp = Math.floor(Date.now() / 1000);
-    const partnerId = parseInt(credentials.appId, 10);
-    const endpoint = '/api/v2/affiliate/link_generate';
-    console.log(`[Shopee Affiliate] Converting URL with timestamp: ${timestamp}`);
-
-    // Generate signature
-    const signature = generateSignature(
-      endpoint, 
-      partnerId, 
-      timestamp, 
-      credentials.accessToken,
-      credentials.secretKey
-    );
-
+    console.log(`[Shopee Affiliate] Converting URL: ${originalUrl}`);
+    
     // Prepare request body
     const requestBody = {
       requests: [{ url: originalUrl }]
     };
-
-    const requestParams = {
-      partner_id: partnerId,
-      timestamp,
-      sign: signature,
-      access_token: credentials.accessToken
-    };
     
-    console.log(`[Shopee Affiliate] Convert URL request params:`, requestParams);
-    console.log(`[Shopee Affiliate] Convert URL request body:`, JSON.stringify(requestBody));
-
-    // Make API call
-    const response = await axios({
-      method: 'post',
-      url: `${SHOPEE_API_BASE}/affiliate/link_generate`,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': credentials.accessToken
-      },
-      params: requestParams,
-      data: requestBody
-    });
-
-    console.log(`[Shopee Affiliate] Convert URL response:`, JSON.stringify(response.data));
-
+    // Make the API request using direct authentication
+    const response = await makeDirectAuthRequest(
+      'post', 
+      '/affiliate/link_generate', 
+      requestBody
+    );
+    
     // Check response
-    if (response.data && 
-        response.data.error === '' && 
-        response.data.response && 
-        response.data.response.urls && 
-        response.data.response.urls[0] && 
-        response.data.response.urls[0].affiliate_link) {
-      return response.data.response.urls[0].affiliate_link;
+    if (response && 
+        response.response && 
+        response.response.urls && 
+        response.response.urls[0] && 
+        response.response.urls[0].affiliate_link) {
+      return response.response.urls[0].affiliate_link;
     }
 
-    console.log('Unexpected response format:', response.data);
+    console.log('Unexpected response format:', response);
     return null;
   } catch (error) {
     console.error('Error converting to affiliate link:', error.message);
@@ -77,59 +45,32 @@ const convertToAffiliateLink = async (originalUrl) => {
   }
 };
 
-// Get affiliate performance data
+// Get affiliate performance data using direct authentication
 const getAffiliatePerformance = async (start_date, end_date) => {
   try {
-    // Ensure we have a valid token
-    const tokenStatus = await ensureValidToken();
-    if (!tokenStatus.success) {
-      return { success: false, error: tokenStatus.error };
+    const credentials = getFullCredentials();
+    if (!credentials.appId || !credentials.secretKey) {
+      return { success: false, error: 'Missing Shopee API credentials' };
     }
     
-    const credentials = getFullCredentials();
-    const timestamp = Math.floor(Date.now() / 1000);
-    const partnerId = parseInt(credentials.appId, 10);
-    const endpoint = '/api/v2/affiliate/get_report';
-    console.log(`[Shopee Affiliate] Getting performance data with timestamp: ${timestamp}`);
+    console.log(`[Shopee Affiliate] Getting performance data for ${start_date} to ${end_date}`);
     
-    // Generate signature
-    const signature = generateSignature(
-      endpoint, 
-      partnerId, 
-      timestamp, 
-      credentials.accessToken,
-      credentials.secretKey
+    // Make the API request using direct authentication with additional query parameters
+    const response = await makeDirectAuthRequest(
+      'get', 
+      '/affiliate/get_report', 
+      null, 
+      { start_date, end_date }
     );
     
-    const requestParams = {
-      partner_id: partnerId,
-      timestamp,
-      sign: signature,
-      access_token: credentials.accessToken,
-      start_date,
-      end_date
-    };
-    
-    console.log(`[Shopee Affiliate] Get performance request params:`, requestParams);
-    
-    // Make API call
-    const response = await axios({
-      method: 'get',
-      url: `${SHOPEE_API_BASE}/affiliate/get_report`,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': credentials.accessToken
-      },
-      params: requestParams
-    });
-    
-    console.log(`[Shopee Affiliate] Get performance response:`, JSON.stringify(response.data));
-    
-    if (response.data && response.data.error === '') {
-      return { success: true, performance_data: response.data.response };
+    if (response && response.response) {
+      return { success: true, performance_data: response.response };
     } else {
-      console.error('Error getting affiliate performance:', response.data);
-      return { success: false, error: response.data.error || 'Failed to get affiliate performance' };
+      console.error('Error getting affiliate performance:', response);
+      return { 
+        success: false, 
+        error: response?.error || 'Failed to get affiliate performance' 
+      };
     }
   } catch (error) {
     console.error('Error getting affiliate performance:', error.message);
