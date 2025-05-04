@@ -1,3 +1,4 @@
+
 const axios = require('axios');
 const crypto = require('crypto');
 const { getFullCredentials } = require('./credentials');
@@ -186,144 +187,10 @@ const makeGraphQLRequestWithCredentials = async (query, variables = {}, appId, s
   }
 };
 
-// Function to make a direct authenticated request to Shopee API
-const makeDirectAuthRequest = async (method, endpoint, data = null, params = {}) => {
-  try {
-    const credentials = getFullCredentials();
-    if (!credentials.appId || !credentials.secretKey) {
-      return { error: 'Missing Shopee API credentials' };
-    }
-
-    // Generate timestamp (seconds since epoch)
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    // Generate signature
-    const signature = generateSignature(
-      credentials.appId,
-      timestamp,
-      JSON.stringify(data || {}), // Ensure data is stringified for signature
-      credentials.secretKey
-    );
-
-    // Construct the URL with query parameters
-    let apiUrl = `${SHOPEE_API_BASE}${endpoint}`;
-    const queryParams = {
-      partner_id: credentials.appId,
-      timestamp: timestamp,
-      sign: signature,
-      ...params
-    };
-
-    // Append query parameters to the URL
-    const urlWithParams = new URL(apiUrl);
-    Object.keys(queryParams).forEach(key => urlWithParams.searchParams.append(key, queryParams[key]));
-    apiUrl = urlWithParams.toString();
-
-    console.log(`[Shopee API] Making ${method.toUpperCase()} request to: ${apiUrl}`);
-
-    // Make the API request
-    const response = await axios({
-      method: method,
-      url: apiUrl,
-      data: data,
-      validateStatus: function (status) {
-        return status < 500;  // Resolve all status codes less than 500
-      }
-    });
-
-    // Check if the response is HTML (error page) instead of JSON
-    const contentType = response.headers['content-type'];
-    if (contentType && contentType.includes('text/html')) {
-      console.error('[Shopee API] Received HTML response instead of JSON');
-      return {
-        error: 'Received HTML response',
-        message: 'The API returned an HTML page instead of JSON. This might indicate an issue with the API endpoint.',
-        status: response.status
-      };
-    }
-
-    // Handle error status codes
-    if (response.status >= 400) {
-      console.error(`[Shopee API] API Error: ${response.status}`, response.data);
-      return {
-        error: `API Error: ${response.status}`,
-        message: response.data?.message || 'An error occurred with the API request',
-        status: response.status,
-        data: response.data
-      };
-    }
-
-    // Return the successful response data
-    return response.data;
-  } catch (error) {
-    console.error('[Shopee API] Request error:', error.message);
-    return formatApiError(error);
-  }
-};
-
-// Function to verify API credentials directly with Shopee API
-const verifyApiCredentialsDirect = async (appId, secretKey) => {
-  try {
-    // Generate timestamp (seconds since epoch)
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    // Generate signature
-    const signature = generateSignature(
-      appId,
-      timestamp,
-      JSON.stringify({}), // Empty data for verification
-      secretKey
-    );
-
-    // Construct the URL with query parameters for the shop info endpoint
-    let apiUrl = `${SHOPEE_API_BASE}/shop/get_shop_info`;
-    const queryParams = {
-      partner_id: appId,
-      timestamp: timestamp,
-      sign: signature
-    };
-
-    const urlWithParams = new URL(apiUrl);
-    Object.keys(queryParams).forEach(key => urlWithParams.searchParams.append(key, queryParams[key]));
-    apiUrl = urlWithParams.toString();
-
-    console.log(`[Shopee API] Verifying credentials with: ${apiUrl}`);
-
-    // Make the API request
-    const response = await axios({
-      method: 'GET',
-      url: apiUrl,
-      validateStatus: function (status) {
-        return status < 500;  // Resolve all status codes less than 500
-      }
-    });
-
-    // Check if the response is HTML (error page) instead of JSON
-    const contentType = response.headers['content-type'];
-    if (contentType && contentType.includes('text/html')) {
-      console.error('[Shopee API] Received HTML response instead of JSON');
-      return false;
-    }
-
-    // Check for successful response
-    if (response.status === 200 && response.data && response.data.response) {
-      console.log('[Shopee API] Credentials verified successfully');
-      return true;
-    } else {
-      console.error('[Shopee API] Credentials verification failed:', response.data);
-      return false;
-    }
-  } catch (error) {
-    console.error('Error verifying API credentials:', error.message);
-    return false;
-  }
-};
-
+// Export necessary functions
 module.exports = {
-  makeDirectAuthRequest: makeGraphQLRequest, // Replace old REST API with GraphQL
-  verifyApiCredentials: verifyApiCredentialsGraphQL, // Replace old verification with GraphQL
   makeGraphQLRequest,
   verifyApiCredentialsGraphQL,
   makeGraphQLRequestWithCredentials,
-  verifyApiCredentialsDirect
+  generateSignature
 };
