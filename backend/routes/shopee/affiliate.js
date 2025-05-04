@@ -78,7 +78,7 @@ router.post('/convert', async (req, res) => {
     // Check connection status before proceeding
     if (credentials.status !== 'online') {
       // Try to verify credentials first
-      const isConnected = await shopeeUtils.verifyApiCredentials(
+      const isConnected = await shopeeUtils.verifyApiCredentialsGraphQL(
         fullCredentials.appId, 
         fullCredentials.secretKey
       );
@@ -91,7 +91,7 @@ router.post('/convert', async (req, res) => {
       }
     }
     
-    // Try to convert the URL
+    // Try to convert the URL using GraphQL
     const result = await shopeeUtils.convertToAffiliateLink(originalUrl);
     
     if (!result || !result.affiliateUrl) {

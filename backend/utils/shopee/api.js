@@ -3,12 +3,12 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { getFullCredentials, updateShopeeCredentials } = require('./credentials');
 const { SHOPEE_API_BASE, generateSignature } = require('./utils');
-const { verifyApiCredentialsDirect, makeDirectAuthRequest } = require('./directAuth');
+const { verifyApiCredentialsGraphQL, makeGraphQLRequest } = require('./directAuth');
 
 // Function to verify API credentials
 const verifyApiCredentials = async (appId, secretKey) => {
-  // Use the direct authentication approach
-  return verifyApiCredentialsDirect(appId, secretKey);
+  // Use the GraphQL authentication approach
+  return verifyApiCredentialsGraphQL(appId, secretKey);
 };
 
 // Function to test Shopee connection
@@ -38,7 +38,7 @@ const testShopeeConnection = async () => {
   }
 };
 
-// Get shop information using direct authentication
+// Get shop information using GraphQL
 const getShopInfo = async () => {
   try {
     const credentials = getFullCredentials();
@@ -46,18 +46,58 @@ const getShopInfo = async () => {
       return { success: false, error: 'Missing Shopee API credentials' };
     }
     
-    // Make the API request using direct authentication
-    const response = await makeDirectAuthRequest('get', '/shop/get_shop_info');
+    // GraphQL query for shop info
+    const query = `
+      query {
+        affiliate {
+          shopInfo {
+            name
+            id
+            region
+            status
+          }
+        }
+      }
+    `;
     
-    if (response && response.response) {
-      return { success: true, shop_info: response.response };
-    } else {
-      console.error('Error getting shop info:', response);
+    // Make the GraphQL request
+    const response = await makeGraphQLRequest(query);
+    
+    if (!response || response.error) {
+      console.error('[Shopee GraphQL] Shop Info Error:', response?.error || 'Unknown error');
       return { 
-        success: false, 
-        error: response?.error || 'Failed to get shop info' 
+        success: false,
+        error: response?.error || 'Failed to get shop info'
       };
     }
+    
+    // Check for GraphQL errors
+    if (response.errors && response.errors.length > 0) {
+      const errorMessage = response.errors[0].message || 'GraphQL error';
+      console.error('[Shopee GraphQL] Shop Info GraphQL Error:', errorMessage);
+      
+      return {
+        success: false,
+        error: 'GraphQL error',
+        message: errorMessage
+      };
+    }
+    
+    // Extract shop info from response
+    if (response.data && 
+        response.data.affiliate && 
+        response.data.affiliate.shopInfo) {
+      return { 
+        success: true, 
+        shop_info: response.data.affiliate.shopInfo 
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: 'Invalid response format', 
+      message: 'The API returned shop data in an unexpected format'
+    };
   } catch (error) {
     console.error('Error getting shop info:', error.message);
     if (error.response) {

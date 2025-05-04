@@ -30,13 +30,13 @@ export function ShopeeTestConnection({
     // First test the basic connection
     try {
       await onTest();
+      
+      // If connection test passed, try to convert the link
+      await convertTestLink();
     } catch (error) {
       console.error("Connection test failed:", error);
-      return; // If the basic test fails, don't proceed with link conversion
+      toast.error("Falha ao testar conexão com a API GraphQL da Shopee");
     }
-    
-    // If connection test passed, try to convert the link
-    await convertTestLink();
   };
   
   const convertTestLink = async () => {
@@ -67,7 +67,7 @@ export function ShopeeTestConnection({
       
       if (result.success && result.affiliate_url) {
         setConvertedUrl(result.affiliate_url);
-        toast.success('Link convertido com sucesso!');
+        toast.success('Link convertido com sucesso via GraphQL API!');
       } else {
         throw new Error('Formato de resposta inválido');
       }
@@ -94,6 +94,9 @@ export function ShopeeTestConnection({
           className="w-full"
           disabled={isLoading || isConverting}
         />
+        <p className="text-xs text-muted-foreground">
+          Cole um link de produto da Shopee para converter para link de afiliado via GraphQL API
+        </p>
       </div>
       
       <div className="flex justify-end">
@@ -123,6 +126,9 @@ export function ShopeeTestConnection({
             <div>
               <p className="font-medium text-green-800">Link convertido com sucesso!</p>
               <p className="text-sm text-green-600 mt-1 break-all">{convertedUrl}</p>
+              <p className="text-xs text-green-500 mt-2">
+                Link gerado usando a API GraphQL da Shopee Afiliados
+              </p>
             </div>
           </div>
         </div>
@@ -135,6 +141,9 @@ export function ShopeeTestConnection({
             <div>
               <p className="font-medium text-red-800">Erro na conversão</p>
               <p className="text-sm text-red-600 mt-1">{conversionError}</p>
+              <p className="text-xs text-red-500 mt-2">
+                Verifique se as credenciais estão corretas e se o link é válido
+              </p>
             </div>
           </div>
         </div>

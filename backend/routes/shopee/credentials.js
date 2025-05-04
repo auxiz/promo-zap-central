@@ -47,20 +47,20 @@ router.post('/test', async (req, res) => {
       return res.status(400).json({ error: 'Both App ID and Secret Key are required' });
     }
     
-    // Test the connection with provided credentials (temporarily)
-    const isConnected = await shopeeUtils.verifyApiCredentials(appId, secretKey);
+    // Test the connection with provided credentials using GraphQL
+    const isConnected = await shopeeUtils.verifyApiCredentialsGraphQL(appId, secretKey);
     
     if (isConnected) {
       res.json({ 
         success: true,
         status: 'online',
-        message: 'Successfully connected to Shopee API'
+        message: 'Successfully connected to Shopee GraphQL API'
       });
     } else {
       res.status(401).json({ 
         success: false, 
         status: 'offline',
-        error: 'Invalid credentials or API connection failed'
+        error: 'Invalid credentials or GraphQL API connection failed'
       });
     }
   } catch (error) {
@@ -68,7 +68,7 @@ router.post('/test', async (req, res) => {
     res.status(500).json({ 
       success: false,
       status: 'offline',
-      error: 'Failed to connect to Shopee API'
+      error: 'Failed to connect to Shopee GraphQL API'
     });
   }
 });

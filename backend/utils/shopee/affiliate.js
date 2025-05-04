@@ -1,11 +1,10 @@
 
-const axios = require('axios');
 const { getFullCredentials } = require('./credentials');
-const { SHOPEE_API_BASE, extractShopeeUrls } = require('./utils');
-const { makeDirectAuthRequest } = require('./directAuth');
+const { extractShopeeUrls } = require('./utils');
+const { makeGraphQLRequest } = require('./directAuth');
 const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
 
-// Function to convert a Shopee URL to an affiliate link using direct authentication
+// Function to convert a Shopee URL to an affiliate link using GraphQL
 const convertToAffiliateLink = async (originalUrl) => {
   try {
     const credentials = getFullCredentials();
@@ -16,17 +15,28 @@ const convertToAffiliateLink = async (originalUrl) => {
     
     console.log(`[Shopee Affiliate] Converting URL: ${originalUrl}`);
     
-    // Prepare request body
-    const requestBody = {
-      requests: [{ url: originalUrl }]
+    // GraphQL query for link conversion
+    const query = `
+      mutation GenerateShortLink($shortLinkRequest: ShortLinkRequest!) {
+        affiliate {
+          generateShortLink(shortLinkRequest: $shortLinkRequest) {
+            shortLink
+            originalLink
+            offerLink
+          }
+        }
+      }
+    `;
+    
+    // Query variables
+    const variables = {
+      shortLinkRequest: {
+        originalLink: originalUrl
+      }
     };
     
-    // Make the API request using direct authentication
-    const response = await makeDirectAuthRequest(
-      'post', 
-      '/affiliate/link_generate', 
-      requestBody
-    );
+    // Make the GraphQL request
+    const response = await makeGraphQLRequest(query, variables);
     
     // Check if the response is valid
     if (!response || response.error) {
@@ -37,18 +47,41 @@ const convertToAffiliateLink = async (originalUrl) => {
       };
     }
     
-    // Check response structure
-    if (response.response && 
-        response.response.urls && 
-        response.response.urls[0] && 
-        response.response.urls[0].affiliate_link) {
+    // Check for GraphQL errors
+    if (response.errors && response.errors.length > 0) {
+      const errorMessage = response.errors[0].message || 'GraphQL error';
+      console.error('[Shopee Affiliate] GraphQL Error:', errorMessage);
+      
       return {
-        affiliateUrl: response.response.urls[0].affiliate_link,
+        error: 'GraphQL error',
+        message: errorMessage
+      };
+    }
+    
+    // Extract the affiliate link from the response
+    if (response.data &&
+        response.data.affiliate &&
+        response.data.affiliate.generateShortLink) {
+      
+      const linkData = response.data.affiliate.generateShortLink;
+      
+      // Prefer offerLink if available, otherwise use shortLink
+      const affiliateUrl = linkData.offerLink || linkData.shortLink;
+      
+      if (!affiliateUrl) {
+        return {
+          error: 'No affiliate link in response',
+          message: 'The API did not return an affiliate link'
+        };
+      }
+      
+      return {
+        affiliateUrl: affiliateUrl,
         originalUrl: originalUrl,
         success: true
       };
     }
-
+    
     console.log('Unexpected response format:', JSON.stringify(response));
     
     return { 
@@ -57,9 +90,10 @@ const convertToAffiliateLink = async (originalUrl) => {
     };
   } catch (error) {
     console.error('Error converting to affiliate link:', error.message);
+    
+    // Check for specific types of errors
     if (error.response) {
       console.error('Error response status:', error.response.status);
-      console.error('Error response headers:', error.response.headers);
       
       // Check if the response is HTML instead of JSON
       const contentType = error.response.headers['content-type'];
@@ -88,7 +122,7 @@ const convertToAffiliateLink = async (originalUrl) => {
   }
 };
 
-// Get affiliate performance data using direct authentication
+// Get affiliate performance data using GraphQL
 const getAffiliatePerformance = async (start_date, end_date) => {
   try {
     const credentials = getFullCredentials();
@@ -98,23 +132,63 @@ const getAffiliatePerformance = async (start_date, end_date) => {
     
     console.log(`[Shopee Affiliate] Getting performance data for ${start_date} to ${end_date}`);
     
-    // Make the API request using direct authentication with additional query parameters
-    const response = await makeDirectAuthRequest(
-      'get', 
-      '/affiliate/get_report', 
-      null, 
-      { start_date, end_date }
-    );
+    // GraphQL query for performance data
+    const query = `
+      query AffiliatePerformance($startDate: String!, $endDate: String!) {
+        affiliate {
+          performance(startDate: $startDate, endDate: $endDate) {
+            totalCommission
+            totalClicks
+            totalOrders
+            totalSales
+          }
+        }
+      }
+    `;
     
-    if (response && response.response) {
-      return { success: true, performance_data: response.response };
-    } else {
-      console.error('Error getting affiliate performance:', response);
+    const variables = {
+      startDate: start_date,
+      endDate: end_date
+    };
+    
+    // Make the GraphQL request
+    const response = await makeGraphQLRequest(query, variables);
+    
+    if (!response || response.error) {
+      console.error('[Shopee Affiliate] Performance Error:', response?.error || 'Unknown error');
       return { 
-        success: false, 
-        error: response?.error || 'Failed to get affiliate performance' 
+        success: false,
+        error: response?.error || 'Failed to get affiliate performance'
       };
     }
+    
+    // Check for GraphQL errors
+    if (response.errors && response.errors.length > 0) {
+      const errorMessage = response.errors[0].message || 'GraphQL error';
+      console.error('[Shopee Affiliate] Performance GraphQL Error:', errorMessage);
+      
+      return {
+        success: false,
+        error: 'GraphQL error',
+        message: errorMessage
+      };
+    }
+    
+    // Extract performance data from response
+    if (response.data && 
+        response.data.affiliate && 
+        response.data.affiliate.performance) {
+      return { 
+        success: true, 
+        performance_data: response.data.affiliate.performance 
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: 'Invalid response format', 
+      message: 'The API returned data in an unexpected format'
+    };
   } catch (error) {
     console.error('Error getting affiliate performance:', error.message);
     
