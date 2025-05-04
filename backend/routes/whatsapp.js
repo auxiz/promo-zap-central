@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const whatsappClient = require('../whatsapp/client');
@@ -14,21 +13,26 @@ router.get('/qrcode', (req, res) => {
 router.get('/status', (req, res) => {
   // Get the instanceId from query params, default to 'default'
   const { instanceId = 'default' } = req.query;
-  const { isConnected, device } = whatsappClient.getConnectionStatus(instanceId);
+  const status = whatsappClient.getConnectionStatus(instanceId);
   const connectionTime = whatsappClient.getConnectionTime(instanceId);
+  const disconnectionTime = whatsappClient.getDisconnectionTime(instanceId);
   
-  let status = 'DISCONNECTED';
-  if (isConnected) {
-    status = 'CONNECTED';
+  let connectionState = 'DISCONNECTED';
+  if (status.isConnected) {
+    connectionState = 'CONNECTED';
   } else if (whatsappClient.getQRCode(instanceId)) {
-    status = 'PENDING';
+    connectionState = 'PENDING';
+  } else if (status.reconnection && status.reconnection.isActive) {
+    connectionState = 'RECONNECTING';
   }
   
   res.json({ 
-    status, 
-    device,
-    connected: isConnected,
-    since: connectionTime
+    status: connectionState, 
+    device: status.device,
+    connected: status.isConnected,
+    since: connectionTime,
+    disconnectedAt: disconnectionTime,
+    reconnection: status.reconnection
   });
 });
 
@@ -68,6 +72,93 @@ router.post('/disconnect', async (req, res) => {
   } catch (error) {
     console.error('Error disconnecting WhatsApp:', error);
     res.status(500).json({ error: 'Failed to disconnect WhatsApp' });
+  }
+});
+
+// New API endpoint for manual reconnection
+router.post('/reconnect', async (req, res) => {
+  try {
+    const { instanceId = 'default' } = req.body;
+    
+    // Get current connection status
+    const status = whatsappClient.getConnectionStatus(instanceId);
+    
+    // Only try to reconnect if not already connected
+    if (status.isConnected) {
+      return res.json({ 
+        status: 'ALREADY_CONNECTED', 
+        message: 'WhatsApp is already connected'
+      });
+    }
+    
+    // Trigger reconnection
+    whatsappClient.attemptReconnection(instanceId);
+    
+    res.json({ 
+      status: 'RECONNECTING',
+      message: 'Reconnection process started'
+    });
+  } catch (error) {
+    console.error('Error initiating WhatsApp reconnection:', error);
+    res.status(500).json({ error: 'Failed to reconnect WhatsApp' });
+  }
+});
+
+// New API endpoint to configure reconnection parameters
+router.post('/reconnect/config', async (req, res) => {
+  try {
+    const { 
+      instanceId = 'default', 
+      maxAttempts = 5, 
+      baseDelay = 5000 
+    } = req.body;
+    
+    // Validate input
+    if (maxAttempts < 1 || maxAttempts > 20) {
+      return res.status(400).json({ 
+        error: 'maxAttempts must be between 1 and 20' 
+      });
+    }
+    
+    if (baseDelay < 1000 || baseDelay > 60000) {
+      return res.status(400).json({ 
+        error: 'baseDelay must be between 1000 and 60000 ms' 
+      });
+    }
+    
+    // Configure reconnection
+    whatsappClient.configureReconnection(instanceId, maxAttempts, baseDelay);
+    
+    res.json({
+      status: 'SUCCESS',
+      message: 'Reconnection configuration updated',
+      config: {
+        instanceId,
+        maxAttempts,
+        baseDelay
+      }
+    });
+  } catch (error) {
+    console.error('Error configuring WhatsApp reconnection:', error);
+    res.status(500).json({ error: 'Failed to configure reconnection' });
+  }
+});
+
+// New API endpoint to get session information
+router.get('/session', async (req, res) => {
+  try {
+    const { instanceId = 'default' } = req.query;
+    
+    // Get state manager
+    const stateManager = require('../whatsapp/services/stateManager');
+    
+    // Get session information
+    const sessionInfo = stateManager.getSessionInfo(instanceId);
+    
+    res.json({ session: sessionInfo });
+  } catch (error) {
+    console.error('Error fetching session information:', error);
+    res.status(500).json({ error: 'Failed to get session information' });
   }
 });
 
@@ -259,7 +350,7 @@ router.delete('/errors', (req, res) => {
   }
 });
 
-// NEW API endpoint to get metrics
+// API endpoint to get metrics
 router.get('/metrics', (req, res) => {
   try {
     const { instanceId = 'default' } = req.query;
@@ -271,7 +362,7 @@ router.get('/metrics', (req, res) => {
   }
 });
 
-// NEW API endpoint to reset metrics
+// API endpoint to reset metrics
 router.delete('/metrics', (req, res) => {
   try {
     const { instanceId = 'default' } = req.body;
@@ -283,7 +374,7 @@ router.delete('/metrics', (req, res) => {
   }
 });
 
-// NEW API endpoint to clear rate limit warnings
+// API endpoint to clear rate limit warnings
 router.delete('/metrics/rate-limits', (req, res) => {
   try {
     const { instanceId = 'default' } = req.body;

@@ -10,9 +10,18 @@ const createInstanceObject = (instanceId) => ({
   isConnected: false,
   device: null,
   connectionTime: null,
+  disconnectionTime: null,
   monitoredGroups: [],
   sendGroups: [],
-  client: null
+  client: null,
+  // New fields for advanced session management
+  sessionData: {
+    lastActive: null,
+    reconnectAttempts: 0,
+    maxReconnectAttempts: 5,
+    reconnectDelay: 5000, // 5 seconds initial delay
+    isReconnecting: false
+  }
 });
 
 // Store instances state
@@ -33,8 +42,31 @@ const getInstance = (instanceId = 'default') => {
   return instances[instanceId];
 };
 
+// Update session data for an instance
+const updateSessionData = (instanceId, updates) => {
+  const instance = getInstance(instanceId);
+  instance.sessionData = {
+    ...instance.sessionData,
+    ...updates
+  };
+  return instance;
+};
+
+// Get all instance IDs
+const getAllInstanceIds = () => {
+  return Object.keys(instances);
+};
+
+// Check if an instance exists
+const instanceExists = (instanceId) => {
+  return !!instances[instanceId];
+};
+
 module.exports = {
   getInstance,
   ensureInstance,
-  instances
+  instances,
+  updateSessionData,
+  getAllInstanceIds,
+  instanceExists
 };

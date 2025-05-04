@@ -20,10 +20,17 @@ module.exports = {
   destroyClient: connectionManager.destroyClient,
   clearQRCode: connectionManager.clearQRCode,
   
+  // New connection management functions
+  attemptReconnection: connectionManager.attemptReconnection,
+  restoreInstances: connectionManager.restoreInstances,
+  configureReconnection: connectionManager.configureReconnection,
+  getReconnectionStatus: connectionManager.getReconnectionStatus,
+  
   // State getters
   getQRCode: stateManager.getQRCode,
   getConnectionStatus: stateManager.getConnectionStatus,
   getConnectionTime: stateManager.getConnectionTime,
+  getDisconnectionTime: stateManager.getDisconnectionTime,
   getChats: stateManager.getChats,
   
   // Group management
@@ -41,7 +48,7 @@ module.exports = {
   getGlobalErrorStats: errorTracker.getGlobalErrorStats,
   clearErrorHistory: errorTracker.clearErrorHistory,
   
-  // Metrics tracking (NEW)
+  // Metrics tracking
   getMetrics: metricsTracker.getMetrics,
   resetMetrics: metricsTracker.resetMetrics,
   clearRateLimitWarnings: metricsTracker.clearRateLimitWarnings
