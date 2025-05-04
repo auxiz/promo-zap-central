@@ -3,7 +3,9 @@ import { type ShopeeCredentials } from '@/hooks/useShopeeCredentials';
 import { ShopeeAppIdField } from './ShopeeAppIdField';
 import { ShopeeSecretKeyField } from './ShopeeSecretKeyField';
 import { ShopeeFormActions } from './ShopeeFormActions';
+import { ShopeeTestConnection } from './ShopeeTestConnection';
 import { useShopeeForm } from '@/hooks/useShopeeForm';
+import { Separator } from '@/components/ui/separator';
 
 interface ShopeeCredentialFormProps {
   shopeeSettings: ShopeeCredentials;
@@ -46,6 +48,22 @@ export function ShopeeCredentialForm({
         onSave={saveShopeeCredentials}
         onTest={testShopeeConnection}
       />
+      
+      <Separator className="my-6" />
+      
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium">Teste de Conversão de Link</h3>
+        <p className="text-sm text-muted-foreground">
+          Teste suas credenciais convertendo um link da Shopee para um link de afiliado
+        </p>
+        
+        <ShopeeTestConnection
+          appId={shopeeSettings.appId}
+          secretKey={shopeeSettings.secretKey}
+          isLoading={shopeeSettings.isLoading}
+          onTest={testShopeeConnection}
+        />
+      </div>
     </>
   );
 }

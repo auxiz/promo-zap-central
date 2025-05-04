@@ -8,6 +8,7 @@
 const connectionState = require('./state/connectionState');
 const chatState = require('./state/chatState');
 const groupState = require('./state/groupState');
+const errorTracker = require('./errorTracker');
 
 // Export all state management functions through a unified interface
 module.exports = {
@@ -29,5 +30,10 @@ module.exports = {
   addMonitoredGroup: groupState.addMonitoredGroup,
   removeMonitoredGroup: groupState.removeMonitoredGroup,
   addSendGroup: groupState.addSendGroup,
-  removeSendGroup: groupState.removeSendGroup
+  removeSendGroup: groupState.removeSendGroup,
+  
+  // Error tracking
+  trackError: errorTracker.trackError,
+  trackShopeeError: errorTracker.trackShopeeError,
+  getErrorStats: errorTracker.getGlobalErrorStats
 };

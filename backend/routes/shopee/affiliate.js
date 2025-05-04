@@ -48,6 +48,14 @@ router.post('/convert', async (req, res) => {
       });
     }
     
+    // Validate Shopee URL
+    if (!originalUrl.includes('shopee')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Shopee URL. The URL must be from Shopee.'
+      });
+    }
+    
     const credentials = shopeeUtils.getShopeeCredentials();
     if (!credentials.appId) {
       return res.status(400).json({ 
@@ -56,21 +64,67 @@ router.post('/convert', async (req, res) => {
       });
     }
     
+    // Get the full credentials for secure conversion
+    const fullCredentials = shopeeUtils.getFullCredentials();
+    if (!fullCredentials.secretKey) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Shopee Secret Key not configured' 
+      });
+    }
+    
+    // Check connection status
+    if (credentials.status !== 'online') {
+      // Try to verify credentials first
+      const isConnected = await shopeeUtils.verifyApiCredentials(
+        fullCredentials.appId, 
+        fullCredentials.secretKey
+      );
+      
+      if (!isConnected) {
+        return res.status(401).json({
+          success: false,
+          error: 'Shopee API connection failed. Please verify your credentials.'
+        });
+      }
+    }
+    
+    // Try to convert the URL
     const affiliateUrl = await shopeeUtils.convertToAffiliateLink(originalUrl);
     
     if (!affiliateUrl) {
       return res.status(500).json({ 
         success: false,
-        error: 'Failed to convert URL' 
+        error: 'Failed to convert URL. The API might be experiencing issues.' 
       });
     }
     
     res.json({ 
       success: true,
-      affiliate_url: affiliateUrl 
+      affiliate_url: affiliateUrl,
+      original_url: originalUrl
     });
   } catch (error) {
     console.error('Error converting URL:', error);
+    
+    // Check for rate limiting errors
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        error: 'Rate limit exceeded. Please try again later.',
+        message: 'The Shopee API rate limit has been reached. Please wait before making more requests.'
+      });
+    }
+    
+    // Handle authentication errors
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication failed',
+        message: 'Invalid credentials or expired authentication. Please update your Shopee API credentials.'
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
       error: 'Failed to convert URL',

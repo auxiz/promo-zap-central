@@ -12,6 +12,7 @@ const errorState = {
     qrCodeErrors: 0,
     connectionErrors: 0,
     disconnectionErrors: 0,
+    shopeeErrors: 0,
     lastError: null,
     totalErrors: 0
   }
@@ -24,6 +25,7 @@ const initializeErrorTracking = (instanceId = 'default') => {
       qrCodeErrors: 0,
       connectionErrors: 0,
       disconnectionErrors: 0,
+      shopeeErrors: 0,
       retryAttempts: 0,
       lastError: null,
       errorHistory: []
@@ -56,6 +58,9 @@ const trackError = (instanceId = 'default', errorType, errorMessage, errorObject
     case 'DISCONNECTION':
       instanceErrors.disconnectionErrors++;
       break;
+    case 'SHOPEE_API':
+      instanceErrors.shopeeErrors++;
+      break;
     default:
       // Other errors
       break;
@@ -84,15 +89,23 @@ const trackError = (instanceId = 'default', errorType, errorMessage, errorObject
     case 'DISCONNECTION':
       errorState.globalStats.disconnectionErrors++;
       break;
+    case 'SHOPEE_API':
+      errorState.globalStats.shopeeErrors++;
+      break;
     default:
       // Other errors
       break;
   }
   
   // Log the error
-  console.error(`WhatsApp Error [${instanceId}] [${errorType}]: ${errorMessage}`);
+  console.error(`Error [${instanceId}] [${errorType}]: ${errorMessage}`);
   
   return errorEntry;
+};
+
+// Track specifically Shopee API errors
+const trackShopeeError = (errorType, errorMessage, errorObject = null) => {
+  return trackError('shopee', 'SHOPEE_API', `${errorType}: ${errorMessage}`, errorObject);
 };
 
 // Track retry attempt for QR code generation
@@ -127,6 +140,7 @@ const clearErrorHistory = (instanceId = 'default') => {
 
 module.exports = {
   trackError,
+  trackShopeeError,
   trackRetryAttempt,
   resetRetryAttempts,
   getInstanceErrorStats,
