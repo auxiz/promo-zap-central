@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const shopeeUtils = require('../../utils/shopee');
 const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
+const { convertUsingAlternativeApi } = require('../../utils/shopee/directAuth');
 
 // Get affiliate performance
 router.get('/performance', async (req, res) => {
@@ -75,6 +76,21 @@ router.post('/convert', async (req, res) => {
       });
     }
     
+    // First try the alternative API 
+    const alternativeResult = await convertUsingAlternativeApi(originalUrl);
+    
+    if (alternativeResult && alternativeResult.affiliateUrl) {
+      return res.json({ 
+        success: true,
+        affiliate_url: alternativeResult.affiliateUrl,
+        original_url: originalUrl,
+        source: 'alternative'
+      });
+    }
+    
+    console.log('Alternative API failed, falling back to original implementation');
+    
+    // Fall back to the original GraphQL API if the alternative API fails
     // Check connection status before proceeding
     if (credentials.status !== 'online') {
       // Try to verify credentials first
@@ -104,7 +120,8 @@ router.post('/convert', async (req, res) => {
     res.json({ 
       success: true,
       affiliate_url: result.affiliateUrl,
-      original_url: originalUrl
+      original_url: originalUrl,
+      source: 'graphql'
     });
   } catch (error) {
     console.error('Error converting URL:', error);

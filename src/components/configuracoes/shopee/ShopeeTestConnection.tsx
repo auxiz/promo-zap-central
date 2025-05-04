@@ -23,6 +23,7 @@ export function ShopeeTestConnection({
   const [convertedUrl, setConvertedUrl] = useState('');
   const [isConverting, setIsConverting] = useState(false);
   const [conversionError, setConversionError] = useState('');
+  const [apiSource, setApiSource] = useState<'alternative' | 'graphql' | ''>('');
   
   const isFormValid = !!appId && !!secretKey && !!testUrl;
   
@@ -35,7 +36,7 @@ export function ShopeeTestConnection({
       await convertTestLink();
     } catch (error) {
       console.error("Connection test failed:", error);
-      toast.error("Falha ao testar conexão com a API GraphQL da Shopee");
+      toast.error("Falha ao testar conexão com a API Shopee");
     }
   };
   
@@ -45,6 +46,7 @@ export function ShopeeTestConnection({
     setIsConverting(true);
     setConvertedUrl('');
     setConversionError('');
+    setApiSource('');
     
     try {
       const response = await fetch(`${API_BASE}/api/shopee/affiliate/convert`, {
@@ -67,7 +69,8 @@ export function ShopeeTestConnection({
       
       if (result.success && result.affiliate_url) {
         setConvertedUrl(result.affiliate_url);
-        toast.success('Link convertido com sucesso via GraphQL API!');
+        setApiSource(result.source || '');
+        toast.success('Link convertido com sucesso!');
       } else {
         throw new Error('Formato de resposta inválido');
       }
@@ -95,7 +98,7 @@ export function ShopeeTestConnection({
           disabled={isLoading || isConverting}
         />
         <p className="text-xs text-muted-foreground">
-          Cole um link de produto da Shopee para converter para link de afiliado via GraphQL API
+          Cole um link de produto da Shopee para converter para link de afiliado
         </p>
       </div>
       
@@ -127,7 +130,7 @@ export function ShopeeTestConnection({
               <p className="font-medium text-green-800">Link convertido com sucesso!</p>
               <p className="text-sm text-green-600 mt-1 break-all">{convertedUrl}</p>
               <p className="text-xs text-green-500 mt-2">
-                Link gerado usando a API GraphQL da Shopee Afiliados
+                Link gerado usando a API {apiSource === 'alternative' ? 'alternativa' : 'GraphQL da Shopee Afiliados'}
               </p>
             </div>
           </div>
