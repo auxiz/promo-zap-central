@@ -31,6 +31,7 @@ export function ShopeeTestConnection({
     try {
       await onTest();
     } catch (error) {
+      console.error("Connection test failed:", error);
       return; // If the basic test fails, don't proceed with link conversion
     }
     
@@ -51,6 +52,12 @@ export function ShopeeTestConnection({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: testUrl })
       });
+      
+      // Check if the response is valid JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Received non-JSON response from server. Please verify the API endpoint.');
+      }
       
       const result = await response.json();
       

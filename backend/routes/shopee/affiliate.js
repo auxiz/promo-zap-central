@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const shopeeUtils = require('../../utils/shopee');
+const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
 
 // Get affiliate performance
 router.get('/performance', async (req, res) => {
@@ -28,6 +29,7 @@ router.get('/performance', async (req, res) => {
     }
   } catch (error) {
     console.error('Error getting affiliate performance:', error);
+    trackShopeeError('PERFORMANCE', 'Failed to get affiliate performance', error);
     res.status(500).json({ 
       success: false,
       error: 'Failed to get affiliate performance',
@@ -73,7 +75,7 @@ router.post('/convert', async (req, res) => {
       });
     }
     
-    // Check connection status
+    // Check connection status before proceeding
     if (credentials.status !== 'online') {
       // Try to verify credentials first
       const isConnected = await shopeeUtils.verifyApiCredentials(
@@ -90,22 +92,23 @@ router.post('/convert', async (req, res) => {
     }
     
     // Try to convert the URL
-    const affiliateUrl = await shopeeUtils.convertToAffiliateLink(originalUrl);
+    const result = await shopeeUtils.convertToAffiliateLink(originalUrl);
     
-    if (!affiliateUrl) {
+    if (!result || !result.affiliateUrl) {
       return res.status(500).json({ 
         success: false,
-        error: 'Failed to convert URL. The API might be experiencing issues.' 
+        error: result?.error || 'Failed to convert URL. The API might be experiencing issues.' 
       });
     }
     
     res.json({ 
       success: true,
-      affiliate_url: affiliateUrl,
+      affiliate_url: result.affiliateUrl,
       original_url: originalUrl
     });
   } catch (error) {
     console.error('Error converting URL:', error);
+    trackShopeeError('CONVERSION', 'Failed to convert URL', error);
     
     // Check for rate limiting errors
     if (error.response && error.response.status === 429) {
@@ -122,6 +125,17 @@ router.post('/convert', async (req, res) => {
         success: false,
         error: 'Authentication failed',
         message: 'Invalid credentials or expired authentication. Please update your Shopee API credentials.'
+      });
+    }
+    
+    // Handle HTML responses (non-JSON)
+    if (error.response && error.response.headers && 
+        error.response.headers['content-type'] && 
+        error.response.headers['content-type'].includes('text/html')) {
+      return res.status(502).json({
+        success: false,
+        error: 'Received HTML response instead of JSON',
+        message: 'The Shopee API returned an HTML page instead of JSON. This might indicate a network issue or API endpoint problem.'
       });
     }
     

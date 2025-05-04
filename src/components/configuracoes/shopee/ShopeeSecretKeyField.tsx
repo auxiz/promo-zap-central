@@ -30,16 +30,18 @@ export function ShopeeSecretKeyField({ secretKey, onChange, disabled }: ShopeeSe
           placeholder="Insira a Secret Key da API Shopee"
           className="w-full pr-10"
           disabled={disabled}
+          autoComplete="off"
         />
         <button
           type="button"
           onClick={toggleSecretVisibility}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+          aria-label={showSecretKey ? "Ocultar Secret Key" : "Mostrar Secret Key"}
         >
           {showSecretKey ? (
-            <EyeOff className="h-4 w-4 text-gray-400" />
+            <EyeOff className="h-4 w-4" />
           ) : (
-            <Eye className="h-4 w-4 text-gray-400" />
+            <Eye className="h-4 w-4" />
           )}
         </button>
       </div>

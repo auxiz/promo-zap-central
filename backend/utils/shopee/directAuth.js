@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const { getFullCredentials } = require('./credentials');
 const { SHOPEE_API_BASE } = require('./utils');
+const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
 
 /**
  * Generate HMAC-SHA256 signature for Shopee API requests
@@ -39,9 +40,10 @@ const generateDirectSignature = (partnerId, apiPath, timestamp, secretKey) => {
  * @param {string} method - HTTP method (get, post, etc.)
  * @param {string} endpoint - API endpoint (e.g., "/affiliate/link_generate")
  * @param {object} data - Request body for POST requests
+ * @param {object} queryParams - Additional query parameters
  * @returns {Promise<object>} - API response
  */
-const makeDirectAuthRequest = async (method, endpoint, data = null) => {
+const makeDirectAuthRequest = async (method, endpoint, data = null, queryParams = {}) => {
   const credentials = getFullCredentials();
   
   if (!credentials.appId || !credentials.secretKey) {
@@ -65,36 +67,63 @@ const makeDirectAuthRequest = async (method, endpoint, data = null) => {
   const requestParams = {
     partner_id: partnerId,
     timestamp,
-    sign: signature
+    sign: signature,
+    ...queryParams
   };
   
   console.log(`[Shopee Direct Auth] Making ${method} request to ${endpoint}`);
   console.log(`[Shopee Direct Auth] Request params:`, requestParams);
   
   try {
-    // Make API call
+    // Make API call with explicit content type validation
     const response = await axios({
       method: method.toLowerCase(),
       url: `${SHOPEE_API_BASE}${endpoint}`,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       params: requestParams,
-      data: data
+      data: data,
+      validateStatus: false, // Handle HTTP errors ourselves
+      timeout: 10000 // 10 second timeout
     });
     
-    console.log(`[Shopee Direct Auth] Response:`, JSON.stringify(response.data));
+    // Check for non-JSON response (HTML pages, etc.)
+    const contentType = response.headers['content-type'];
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error(`[Shopee Direct Auth] Received non-JSON response: ${contentType}`);
+      trackShopeeError('API', 'Received non-JSON response', { contentType });
+      throw new Error(`Received non-JSON response: ${contentType}`);
+    }
     
+    // Log short response summary (for debugging)
+    console.log(`[Shopee Direct Auth] Response status: ${response.status}`);
+    console.log(`[Shopee Direct Auth] Response error: ${response.data.error || 'None'}`);
+    
+    // Check for API errors
     if (response.data && response.data.error !== '') {
       console.error(`[Shopee Direct Auth] API Error: ${response.data.error}`);
+      trackShopeeError('API', response.data.error, response.data);
       throw new Error(response.data.error || 'Shopee API error');
+    }
+    
+    // Check for HTTP errors
+    if (response.status >= 400) {
+      console.error(`[Shopee Direct Auth] HTTP Error: ${response.status}`);
+      trackShopeeError('API', `HTTP Error ${response.status}`, response.data);
+      throw new Error(`HTTP Error: ${response.status}`);
     }
     
     return response.data;
   } catch (error) {
     console.error('[Shopee Direct Auth] Request failed:', error.message);
     if (error.response) {
-      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+      console.error('Error headers:', error.response.headers);
+      if (error.response.data) {
+        console.error('Error data:', error.response.data);
+      }
     }
     throw error;
   }
@@ -123,24 +152,37 @@ const verifyApiCredentialsDirect = async (appId, secretKey) => {
       method: 'get',
       url: `${SHOPEE_API_BASE}/public/get_merchant_id_list`,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       params: {
         partner_id: partnerId,
         timestamp,
         sign: signature
       },
-      timeout: 5000 // 5 seconds timeout for quick feedback
+      timeout: 5000, // 5 seconds timeout for quick feedback
+      validateStatus: false // Handle HTTP errors ourselves
     });
     
-    console.log(`[Shopee Direct Auth] Verification response:`, JSON.stringify(response.data));
+    // Check for non-JSON response
+    const contentType = response.headers['content-type'];
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error(`[Shopee Direct Auth] Verification received non-JSON response: ${contentType}`);
+      return false;
+    }
     
-    // If we get here without an error, the credentials are valid
-    return response.data && response.data.error === '';
+    console.log(`[Shopee Direct Auth] Verification status: ${response.status}`);
+    
+    // If we get a successful response with no error, the credentials are valid
+    return response.status === 200 && response.data && response.data.error === '';
   } catch (error) {
     console.error('[Shopee Direct Auth] Verification failed:', error.message);
     if (error.response) {
-      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+      console.error('Error headers:', error.response.headers);
+      if (error.response.data) {
+        console.error('Error data:', error.response.data);
+      }
     }
     return false;
   }

@@ -3,6 +3,7 @@ const axios = require('axios');
 const { getFullCredentials } = require('./credentials');
 const { SHOPEE_API_BASE, extractShopeeUrls } = require('./utils');
 const { makeDirectAuthRequest } = require('./directAuth');
+const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
 
 // Function to convert a Shopee URL to an affiliate link using direct authentication
 const convertToAffiliateLink = async (originalUrl) => {
@@ -10,7 +11,7 @@ const convertToAffiliateLink = async (originalUrl) => {
     const credentials = getFullCredentials();
     if (!credentials.appId || !credentials.secretKey) {
       console.error('[Shopee Affiliate] Missing credentials');
-      return null;
+      return { error: 'Missing Shopee API credentials' };
     }
     
     console.log(`[Shopee Affiliate] Converting URL: ${originalUrl}`);
@@ -27,21 +28,63 @@ const convertToAffiliateLink = async (originalUrl) => {
       requestBody
     );
     
-    // Check response
-    if (response && 
-        response.response && 
+    // Check if the response is valid
+    if (!response || response.error) {
+      console.error('[Shopee Affiliate] API Error:', response?.error || 'Unknown error');
+      return { 
+        error: response?.error || 'API returned an error',
+        message: response?.message || 'Failed to convert link'
+      };
+    }
+    
+    // Check response structure
+    if (response.response && 
         response.response.urls && 
         response.response.urls[0] && 
         response.response.urls[0].affiliate_link) {
-      return response.response.urls[0].affiliate_link;
+      return {
+        affiliateUrl: response.response.urls[0].affiliate_link,
+        originalUrl: originalUrl,
+        success: true
+      };
     }
 
-    console.log('Unexpected response format:', response);
-    return null;
+    console.log('Unexpected response format:', JSON.stringify(response));
+    
+    return { 
+      error: 'Invalid response format from API',
+      message: 'The API returned data in an unexpected format'
+    };
   } catch (error) {
     console.error('Error converting to affiliate link:', error.message);
-    console.error('Error details:', error.response?.data || error.message);
-    return null;
+    if (error.response) {
+      console.error('Error response status:', error.response.status);
+      console.error('Error response headers:', error.response.headers);
+      
+      // Check if the response is HTML instead of JSON
+      const contentType = error.response.headers['content-type'];
+      if (contentType && contentType.includes('text/html')) {
+        console.error('Received HTML response instead of JSON');
+        trackShopeeError('CONVERSION', 'Received HTML instead of JSON', error);
+        return { 
+          error: 'Received HTML response instead of JSON',
+          message: 'The API returned an HTML page instead of the expected JSON response'
+        };
+      }
+      
+      // Log detailed error data for debugging
+      if (error.response.data) {
+        console.error('Error response data:', error.response.data);
+      }
+    }
+    
+    // Track the error for monitoring
+    trackShopeeError('CONVERSION', error.message, error);
+    
+    return { 
+      error: error.message,
+      message: 'Failed to convert link'
+    };
   }
 };
 
@@ -74,6 +117,10 @@ const getAffiliatePerformance = async (start_date, end_date) => {
     }
   } catch (error) {
     console.error('Error getting affiliate performance:', error.message);
+    
+    // Track the error
+    trackShopeeError('PERFORMANCE', 'Failed to get performance data', error);
+    
     if (error.response) {
       console.error('Error response:', error.response.data);
     }
