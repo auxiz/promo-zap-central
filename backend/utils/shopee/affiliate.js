@@ -3,6 +3,7 @@ const { getFullCredentials } = require('./credentials');
 const { extractShopeeUrls } = require('./utils');
 const { makeGraphQLRequest } = require('./directAuth');
 const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
+const { convertUsingAlternativeApi } = require('./directAuth');
 
 // Function to convert a Shopee URL to an affiliate link using GraphQL
 const convertToAffiliateLink = async (originalUrl) => {
@@ -14,6 +15,20 @@ const convertToAffiliateLink = async (originalUrl) => {
     }
     
     console.log(`[Shopee Affiliate] Converting URL: ${originalUrl}`);
+    
+    // First try the alternative API 
+    const alternativeResult = await convertUsingAlternativeApi(originalUrl);
+    
+    if (alternativeResult && alternativeResult.affiliateUrl) {
+      return {
+        affiliateUrl: alternativeResult.affiliateUrl,
+        originalUrl: originalUrl,
+        source: 'alternative',
+        success: true
+      };
+    }
+    
+    console.log('[Shopee Affiliate] Alternative API failed, falling back to GraphQL API');
     
     // GraphQL query for link conversion
     const query = `
@@ -78,6 +93,7 @@ const convertToAffiliateLink = async (originalUrl) => {
       return {
         affiliateUrl: affiliateUrl,
         originalUrl: originalUrl,
+        source: 'graphql',
         success: true
       };
     }
