@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader, Check, AlertTriangle, Link } from 'lucide-react';
-import { API_BASE } from '@/utils/api-constants';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { useShopeeConversion } from '@/hooks/useShopeeConversion';
 
 interface ShopeeTestConnectionProps {
   appId: string;
@@ -20,10 +20,13 @@ export function ShopeeTestConnection({
   onTest 
 }: ShopeeTestConnectionProps) {
   const [testUrl, setTestUrl] = useState('https://s.shopee.com.br/7Kk8W2vbwM');
-  const [convertedUrl, setConvertedUrl] = useState('');
-  const [isConverting, setIsConverting] = useState(false);
-  const [conversionError, setConversionError] = useState('');
-  const [apiSource, setApiSource] = useState<'alternative' | 'graphql' | ''>('');
+  const { 
+    convertUrl, 
+    convertedUrl, 
+    isConverting, 
+    error,
+    apiSource 
+  } = useShopeeConversion();
   
   const isFormValid = !!appId && !!secretKey && !!testUrl;
   
@@ -43,43 +46,10 @@ export function ShopeeTestConnection({
   const convertTestLink = async () => {
     if (!isFormValid || !testUrl) return;
     
-    setIsConverting(true);
-    setConvertedUrl('');
-    setConversionError('');
-    setApiSource('');
-    
     try {
-      const response = await fetch(`${API_BASE}/api/shopee/affiliate/convert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: testUrl })
-      });
-      
-      // Check if the response is valid JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Received non-JSON response from server. Please verify the API endpoint.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Falha ao converter link');
-      }
-      
-      if (result.success && result.affiliate_url) {
-        setConvertedUrl(result.affiliate_url);
-        setApiSource(result.source || '');
-        toast.success('Link convertido com sucesso!');
-      } else {
-        throw new Error('Formato de resposta inválido');
-      }
+      await convertUrl(testUrl);
     } catch (error) {
       console.error('Erro ao converter link:', error);
-      setConversionError(error.message || 'Erro ao converter link');
-      toast.error(`Falha na conversão: ${error.message || 'Verifique as credenciais'}`);
-    } finally {
-      setIsConverting(false);
     }
   };
   
@@ -137,13 +107,13 @@ export function ShopeeTestConnection({
         </div>
       )}
       
-      {conversionError && (
+      {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
             <div>
               <p className="font-medium text-red-800">Erro na conversão</p>
-              <p className="text-sm text-red-600 mt-1">{conversionError}</p>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
               <p className="text-xs text-red-500 mt-2">
                 Verifique se as credenciais estão corretas e se o link é válido
               </p>

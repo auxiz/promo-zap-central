@@ -1,73 +1,37 @@
-# Welcome to your Lovable project
 
-## Project info
+# Promozap Central
 
-**URL**: https://lovable.dev/projects/84c94cc0-176b-4da2-bd4c-8ad76c953c8d
+Integration between WhatsApp and Shopee Affiliate APIs for automated link conversion.
 
-## How can I edit this code?
+## Environment Setup
 
-There are several ways of editing your application.
+1. Create a `.env` file in the root directory with the following variables:
+   ```
+   VITE_BACKEND_API_URL=http://168.231.98.177:4000
+   ```
 
-**Use Lovable**
+2. For production deployment, set the appropriate backend API URL:
+   ```
+   VITE_BACKEND_API_URL=https://your-production-backend.com
+   ```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/84c94cc0-176b-4da2-bd4c-8ad76c953c8d) and start prompting.
+## Important Security Note
 
-Changes made via Lovable will be committed automatically to this repo.
+Shopee API credentials (AppID and Secret Key) are **NEVER** stored in the frontend code. 
+These credentials are securely managed by the backend service only.
 
-**Use your preferred IDE**
+## Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+To run the development server:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Building
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+To build the application:
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/84c94cc0-176b-4da2-bd4c-8ad76c953c8d) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+npm run build
+```
