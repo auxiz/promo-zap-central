@@ -1,46 +1,18 @@
 
+/**
+ * Routes for handling Shopee affiliate link conversions
+ */
 const express = require('express');
 const router = express.Router();
-const shopeeUtils = require('../../utils/shopee');
-const { trackShopeeError } = require('../../whatsapp/services/errorTracker');
-const { convertUsingAlternativeApi } = require('../../utils/shopee/directAuth');
+const shopeeUtils = require('../../../utils/shopee');
+const { trackShopeeError } = require('../../../whatsapp/services/errorTracker');
+const { convertUsingAlternativeApi } = require('../../../utils/shopee/directAuth');
 
-// Get affiliate performance
-router.get('/performance', async (req, res) => {
-  try {
-    const { start_date, end_date } = req.query;
-    
-    if (!start_date || !end_date) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Start date and end date are required' 
-      });
-    }
-    
-    const result = await shopeeUtils.getAffiliatePerformance(start_date, end_date);
-    
-    if (result.success) {
-      res.json(result.performance_data);
-    } else {
-      res.status(401).json({ 
-        success: false,
-        error: result.error,
-        message: result.message || 'Failed to get affiliate performance'
-      });
-    }
-  } catch (error) {
-    console.error('Error getting affiliate performance:', error);
-    trackShopeeError('PERFORMANCE', 'Failed to get affiliate performance', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to get affiliate performance',
-      message: error.message
-    });
-  }
-});
-
-// Convert a URL to Shopee affiliate link
-router.post('/convert', async (req, res) => {
+/**
+ * POST /api/shopee/affiliate/convert
+ * @description Convert a Shopee product URL to an affiliate link
+ */
+router.post('/', async (req, res) => {
   try {
     const { url: originalUrl } = req.body;
     
