@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
@@ -41,8 +42,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start the server
+// Start the server - bind to all network interfaces (0.0.0.0)
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`Server is running on ${HOST}:${PORT}`);
+  console.log(`Server accessible at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
 });

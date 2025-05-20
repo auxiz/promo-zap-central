@@ -16,9 +16,10 @@ const generateClientOptions = (instanceId) => {
       }
     },
     puppeteer: {
-      executablePath: '/usr/bin/chromium',
+      // Use appropriate Chromium path for Debian
+      executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium' || '/usr/bin/chromium-browser',
       headless: true,
-      // Enhanced args for better stability
+      // Enhanced args for better stability in headless environments
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -29,7 +30,8 @@ const generateClientOptions = (instanceId) => {
         '--no-first-run',
         '--no-zygote',
         '--single-process', // Helps with memory issues
-        '--disable-web-security'
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process' // Help with WebKit issues
       ],
       // Browser timeout settings
       timeout: 120000, // 2 minutes

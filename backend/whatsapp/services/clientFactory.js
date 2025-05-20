@@ -24,13 +24,35 @@ const createClient = async (instanceId) => {
   const tokenPath = path.join(TOKEN_DIR, instanceId);
   
   try {
+    // Find appropriate Chromium path
+    const chromiumPaths = [
+      process.env.CHROMIUM_PATH,
+      '/usr/bin/chromium', 
+      '/usr/bin/chromium-browser',
+      '/usr/bin/google-chrome',
+      '/usr/bin/chrome'
+    ];
+    
+    let executablePath = null;
+    for (const path of chromiumPaths) {
+      if (path && fs.existsSync(path)) {
+        executablePath = path;
+        console.log(`Using browser at: ${executablePath}`);
+        break;
+      }
+    }
+    
+    if (!executablePath) {
+      console.warn('No Chromium/Chrome executable found. WPPConnect will attempt to use system default.');
+    }
+    
     // Initialize WPPConnect client
     const client = await wppconnect.create({
       session: instanceId,
       autoClose: false,
       puppeteerOptions: {
-        executablePath: '/usr/bin/chromium',
-        // Enhanced args for better stability
+        executablePath,
+        // Enhanced args for better stability in headless environments
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -41,7 +63,8 @@ const createClient = async (instanceId) => {
           '--no-first-run',
           '--no-zygote',
           '--single-process', // Helps with memory issues
-          '--disable-web-security'
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process' // Help with WebKit issues
         ],
         headless: true,
         defaultViewport: {
