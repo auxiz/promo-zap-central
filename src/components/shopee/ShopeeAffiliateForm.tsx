@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ShopeeDirectConversionRequest } from '@/services/shopee-direct-api';
 
 const formSchema = z.object({
   appId: z.string().min(1, 'App ID é obrigatório'),
@@ -31,7 +32,14 @@ export function ShopeeAffiliateForm() {
   });
   
   const onSubmit = async (data: FormValues) => {
-    await convertUrl(data);
+    // Explicitly ensure the data matches the required ShopeeDirectConversionRequest type
+    const conversionData: ShopeeDirectConversionRequest = {
+      appId: data.appId,
+      secretKey: data.secretKey,
+      originalUrl: data.originalUrl
+    };
+    
+    await convertUrl(conversionData);
   };
   
   const toggleSecretVisibility = () => {
