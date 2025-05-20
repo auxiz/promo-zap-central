@@ -1,39 +1,20 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWhatsAppConnectionStatus } from './whatsapp/useWhatsAppConnectionStatus';
-import { useWhatsAppQRCode } from './whatsapp/useWhatsAppQRCode';
+import { useWhatsAppQRHandler } from './whatsapp/useWhatsAppQRHandler';
 import { useWhatsAppActions } from './whatsapp/useWhatsAppActions';
+import { useWhatsAppPolling } from './whatsapp/useWhatsAppPolling';
 import { useNotificationContext } from '@/contexts/NotificationContext';
-
-// Configuration for connection attempts
-const CONNECTION_CONFIG = {
-  maxStatusAttempts: 30,      // Maximum number of times to check status before giving up
-  maxQrAttempts: 10,          // Maximum number of QR code fetch attempts
-  basePollingInterval: 5000,  // Base polling interval when everything is normal (5 seconds)
-  maxPollingInterval: 300000, // Maximum polling interval when backend is down (5 minutes)
-  reconnectLimit: 5,          // Number of automatic reconnection attempts
-};
+import { CONNECTION_CONFIG } from './whatsapp/config/connectionConfig';
 
 export default function useWhatsAppConnection(instanceId: string = 'default') {
-  const [qrCode, setQrCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [qrCodeAttempts, setQrCodeAttempts] = useState(0);
-  const [lastQrFetchTime, setLastQrFetchTime] = useState(0);
   const [statusAttempts, setStatusAttempts] = useState(0);
-  
-  // Use refs to track polling state and intervals
-  const pollingIntervalsRef = useRef<{
-    status: number | null,
-    qrCode: number | null,
-  }>({
-    status: null,
-    qrCode: null
-  });
   
   // Track reconnection attempts
   const reconnectAttemptsRef = useRef<number>(0);
   
-  const { addNotification, resetSnooze } = useNotificationContext();
+  const { addNotification } = useNotificationContext();
   
   const { 
     connectionStatus, 
@@ -44,8 +25,24 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     consecutiveErrors
   } = useWhatsAppConnectionStatus(instanceId);
   
-  const { fetchQrCode } = useWhatsAppQRCode(instanceId);
+  const { 
+    qrCode, 
+    fetchQrCodeWithRateLimit,
+    resetQrState
+  } = useWhatsAppQRHandler(instanceId, connectionStatus);
+
   const { initiateConnection, disconnectWhatsApp } = useWhatsAppActions(instanceId);
+
+  const { 
+    getPollingIntervals,
+    clearPollingIntervals,
+    setStatusPollingInterval,
+    setQrCodePollingInterval 
+  } = useWhatsAppPolling({ 
+    backendError, 
+    connectionStatus, 
+    consecutiveErrors 
+  });
 
   // Initial fetch of status on component mount - only once
   useEffect(() => {
@@ -54,98 +51,10 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
-  // Function to fetch QR code with rate limiting and error handling
-  const fetchQrCodeWithRateLimit = useCallback(async () => {
-    // Only fetch QR code when in connecting state
-    if (connectionStatus !== 'connecting') {
-      return;
-    }
-    
-    // Check if we've reached the maximum number of attempts
-    if (qrCodeAttempts >= CONNECTION_CONFIG.maxQrAttempts) {
-      console.log(`Reached maximum QR code fetch attempts (${CONNECTION_CONFIG.maxQrAttempts}). Giving up.`);
-      return;
-    }
-    
-    // Rate limiting - only fetch QR code every 30 seconds maximum
-    const now = Date.now();
-    if (now - lastQrFetchTime < 30000) {
-      return;
-    }
-    
-    setLastQrFetchTime(now);
-    setQrCodeAttempts(prev => prev + 1);
-    
-    try {
-      const newQrCode = await fetchQrCode();
-      if (newQrCode) {
-        setQrCode(newQrCode);
-        // Reset attempts on success
-        setQrCodeAttempts(0);
-      } else if (connectionStatus === 'connecting') {
-        // Only show warning if still in connecting state and no QR after multiple attempts
-        if (qrCodeAttempts > 2) {
-          addNotification(
-            'Verificando sessão existente',
-            'Sistema está verificando se existe uma sessão salva. Aguarde um momento.',
-            'info',
-            'silent'  // Changed from 'low' to 'silent' to prevent toasts
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching QR code:', error);
-      if (qrCodeAttempts > 2) {
-        addNotification(
-          'Erro ao gerar QR Code',
-          'Houve um erro ao gerar o QR code. O sistema pode estar restaurando uma sessão anterior.',
-          'warning',
-          'silent'  // Changed from 'low' to 'silent' to prevent toasts
-        );
-      }
-    }
-  }, [fetchQrCode, lastQrFetchTime, qrCodeAttempts, addNotification, connectionStatus]);
-
-  // Clear existing intervals when changing states
-  const clearPollingIntervals = useCallback(() => {
-    if (pollingIntervalsRef.current.status) {
-      window.clearInterval(pollingIntervalsRef.current.status);
-      pollingIntervalsRef.current.status = null;
-    }
-    
-    if (pollingIntervalsRef.current.qrCode) {
-      window.clearInterval(pollingIntervalsRef.current.qrCode);
-      pollingIntervalsRef.current.qrCode = null;
-    }
-  }, []);
-
   // Adaptive polling based on backend status and connection state
   useEffect(() => {
     // Clear any existing intervals when state changes
     clearPollingIntervals();
-    
-    // Calculate polling intervals based on backend status and consecutive errors
-    const getPollingIntervals = () => {
-      // If backend is having issues, increase the interval based on consecutive errors
-      if (backendError) {
-        // Start with 15 seconds, then increase exponentially up to maximum interval
-        const calculatedDelay = CONNECTION_CONFIG.basePollingInterval * 3 * Math.pow(2, Math.min(consecutiveErrors, 6));
-        const baseDelay = Math.min(calculatedDelay, CONNECTION_CONFIG.maxPollingInterval);
-        
-        return {
-          statusInterval: baseDelay,
-          qrInterval: baseDelay * 2
-        };
-      }
-      
-      // Normal intervals when backend is responding
-      return {
-        statusInterval: connectionStatus === 'connecting' ? 
-          CONNECTION_CONFIG.basePollingInterval : 
-          CONNECTION_CONFIG.basePollingInterval * 6,
-        qrInterval: CONNECTION_CONFIG.basePollingInterval * 6
-      };
-    };
     
     // Check if we should stop polling due to too many failed attempts
     if (statusAttempts >= CONNECTION_CONFIG.maxStatusAttempts && backendError) {
@@ -168,30 +77,31 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       fetchQrCodeWithRateLimit();
       
       // Set new polling intervals
-      pollingIntervalsRef.current.status = window.setInterval(() => {
+      setStatusPollingInterval(() => {
         setStatusAttempts(prev => prev + 1);
         fetchStatus();
       }, statusInterval);
       
-      pollingIntervalsRef.current.qrCode = window.setInterval(fetchQrCodeWithRateLimit, qrInterval);
+      setQrCodePollingInterval(fetchQrCodeWithRateLimit, qrInterval);
     } else if (connectionStatus === 'connected') {
       // When connected, only poll status occasionally to verify connection
       setStatusAttempts(0); // Reset attempts counter when successfully connected
-      resetSnooze('error', 'Erro de API'); // Reset API error snooze when connected
       
-      pollingIntervalsRef.current.status = window.setInterval(() => {
+      setStatusPollingInterval(() => {
         fetchStatus();
       }, 60000); // Check once per minute when connected
     } else {
       // When disconnected, check status occasionally in case backend comes back
-      pollingIntervalsRef.current.status = window.setInterval(() => {
+      setStatusPollingInterval(() => {
         setStatusAttempts(prev => prev + 1);
         fetchStatus();
       }, statusInterval);
     }
 
     return clearPollingIntervals;
-  }, [connectionStatus, backendError, fetchStatus, fetchQrCodeWithRateLimit, clearPollingIntervals, consecutiveErrors, statusAttempts, addNotification, resetSnooze]);
+  }, [connectionStatus, backendError, fetchStatus, fetchQrCodeWithRateLimit, clearPollingIntervals, 
+      consecutiveErrors, statusAttempts, addNotification, getPollingIntervals, setStatusPollingInterval, 
+      setQrCodePollingInterval]);
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -230,7 +140,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       const success = await disconnectWhatsApp();
       if (success) {
         setConnectionStatus('disconnected');
-        setQrCode(''); // Clear QR code after disconnection
+        resetQrState(); // Clear QR code after disconnection
         setStatusAttempts(0); // Reset attempts counter when manually disconnecting
         addNotification(
           'WhatsApp Desconectado',

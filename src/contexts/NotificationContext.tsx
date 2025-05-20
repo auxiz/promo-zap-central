@@ -10,6 +10,7 @@ interface NotificationContextType {
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
   clearAllNotifications: () => void;
+  resetSnooze: (type: string, title: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
