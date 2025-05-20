@@ -62,7 +62,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
             'Verificando sessão existente',
             'Sistema está verificando se existe uma sessão salva. Aguarde um momento.',
             'info',
-            'medium'
+            'low'  // Changed from 'medium' to 'low'
           );
         }
       }
@@ -73,7 +73,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
           'Erro ao gerar QR Code',
           'Houve um erro ao gerar o QR code. O sistema pode estar restaurando uma sessão anterior.',
           'warning',
-          'medium'
+          'low'  // Changed from 'medium' to 'low'
         );
       }
     }
