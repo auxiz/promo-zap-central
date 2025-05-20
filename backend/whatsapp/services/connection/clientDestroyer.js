@@ -1,7 +1,7 @@
 
 /**
  * Client destroyer for WhatsApp connections
- * Handles the graceful destruction of WhatsApp clients
+ * Handles the graceful destruction of WPPConnect clients
  */
 
 const instanceModel = require('../../models/instance');
@@ -25,7 +25,8 @@ const destroyClient = async (instanceId = 'default') => {
       // Record disconnection time
       instance.disconnectionTime = Date.now();
       
-      await instance.client.destroy();
+      // WPPConnect uses a different method to close connections
+      await instance.client.close();
       instance.client = null;
       instance.isConnected = false;
       instance.device = null;

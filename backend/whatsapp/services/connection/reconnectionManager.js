@@ -2,6 +2,7 @@
 /**
  * Reconnection manager for WhatsApp
  * Handles automatic reconnection with exponential backoff
+ * Optimized for WPPConnect's session persistence
  */
 
 const instanceModel = require('../../models/instance');
@@ -52,13 +53,14 @@ const attemptReconnection = (instanceId = 'default') => {
     // Wait for delay then attempt reconnection
     setTimeout(async () => {
       try {
-        // Destroy existing client if any
+        // WPPConnect handles token restoration automatically
+        // We only need to destroy the existing client if it exists
         if (instance.client) {
           try {
-            await instance.client.destroy();
+            await instance.client.close();
           } catch (error) {
             // Ignore errors during cleanup
-            console.error(`Error destroying client during reconnection for instance ${instanceId}:`, error);
+            console.error(`Error closing client during reconnection for instance ${instanceId}:`, error);
           }
         }
         
@@ -66,9 +68,9 @@ const attemptReconnection = (instanceId = 'default') => {
         instance.client = null;
         instance.isConnected = false;
         
-        // Create new client
+        // Create new client with WPPConnect
         const clientInitializer = require('./clientInitializer');
-        clientInitializer.initializeClient(instanceId);
+        await clientInitializer.initializeClient(instanceId);
       } catch (error) {
         errorTracker.trackError(
           instanceId,

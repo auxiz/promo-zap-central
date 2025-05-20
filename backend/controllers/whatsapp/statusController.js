@@ -2,6 +2,7 @@
 /**
  * WhatsApp Status Controller
  * Handles all status-related API endpoints for WhatsApp
+ * Updated for WPPConnect integration
  */
 
 const whatsappClient = require('../../whatsapp/client');
@@ -44,7 +45,7 @@ const connect = async (req, res) => {
     const { instanceId = 'default' } = req.body;
     
     // Initialize the client for this instance
-    whatsappClient.initializeClient(instanceId);
+    await whatsappClient.initializeClient(instanceId);
     
     res.json({ status: 'CONNECTING' });
   } catch (error) {

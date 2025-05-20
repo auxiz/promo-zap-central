@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, PhoneOff, ServerCrash } from 'lucide-react';
+import { Check, PhoneOff, ServerCrash, History } from 'lucide-react';
 
 type StatusIndicatorProps = {
   connectionStatus: string;
@@ -48,6 +48,9 @@ export default function StatusIndicator({
           <p className="text-muted-foreground mt-2">
             Conecte-se ao WhatsApp para começar a monitorar e enviar mensagens.
           </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Suas sessões anteriores são salvas e podem ser restauradas automaticamente.
+          </p>
         </div>
       )}
 
@@ -60,6 +63,9 @@ export default function StatusIndicator({
           <p className="text-green-500 font-medium mt-1">{deviceInfo?.name}</p>
           <p className="text-sm text-muted-foreground mt-2">
             Conectado desde {deviceInfo?.lastConnection}
+          </p>
+          <p className="text-xs text-green-600 mt-1">
+            Sua sessão está salva e será restaurada automaticamente
           </p>
         </div>
       )}

@@ -1,7 +1,7 @@
 
 /**
  * Client initializer for WhatsApp connections
- * Handles the initialization of WhatsApp clients
+ * Handles the initialization of WPPConnect clients
  */
 
 const instanceModel = require('../../models/instance');
@@ -10,7 +10,7 @@ const errorTracker = require('../errorTracker');
 const metricsTracker = require('../metricsTracker');
 
 // Initialize WhatsApp client for a specific instance
-const initializeClient = (instanceId = 'default') => {
+const initializeClient = async (instanceId = 'default') => {
   const instance = instanceModel.getInstance(instanceId);
   
   // If client already exists and is connected, return it
@@ -25,16 +25,20 @@ const initializeClient = (instanceId = 'default') => {
     lastActive: Date.now()
   });
   
-  // Create and initialize new client
-  const client = createClient(instanceId);
-  instance.client = client;
-  
-  // Initialize client with proper error handling
-  client.initialize().catch(error => {
+  try {
+    // Create and initialize new client
+    const client = await createClient(instanceId);
+    instance.client = client;
+    
+    // Record reconnection attempt in metrics
+    metricsTracker.recordReconnection(instanceId);
+    
+    return client;
+  } catch (error) {
     errorTracker.trackError(
       instanceId,
       'CONNECTION', 
-      `Error initializing WhatsApp client for instance ${instanceId}`, 
+      `Error initializing WPPConnect client for instance ${instanceId}`, 
       error
     );
     
@@ -45,12 +49,9 @@ const initializeClient = (instanceId = 'default') => {
     if (!instance.sessionData.isReconnecting) {
       reconnectionManager.attemptReconnection(instanceId);
     }
-  });
-  
-  // Record reconnection attempt in metrics
-  metricsTracker.recordReconnection(instanceId);
-  
-  return client;
+    
+    throw error;
+  }
 };
 
 // Clear QR code for a specific instance

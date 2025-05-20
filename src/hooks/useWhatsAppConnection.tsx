@@ -33,9 +33,15 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
 
   // Function to fetch QR code with rate limiting and error handling
   const fetchQrCodeWithRateLimit = useCallback(async () => {
-    // Rate limiting - only fetch QR code every 10 seconds maximum
+    // WPPConnect optimization: Only fetch QR code when in connecting state
+    if (connectionStatus !== 'connecting') {
+      return;
+    }
+    
+    // Rate limiting - only fetch QR code every 15 seconds maximum
+    // (Increased from 10 seconds since WPPConnect has better session persistence)
     const now = Date.now();
-    if (now - lastQrFetchTime < 10000) {
+    if (now - lastQrFetchTime < 15000) {
       return;
     }
     
@@ -48,31 +54,32 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
         setQrCode(newQrCode);
         // Reset attempts on success
         setQrCodeAttempts(0);
-      } else {
-        // Handle empty QR code
-        if (qrCodeAttempts > 3) {
+      } else if (connectionStatus === 'connecting') {
+        // Only show warning if still in connecting state and no QR after multiple attempts
+        if (qrCodeAttempts > 2) {
+          // Reduced from 3 to 2 attempts since WPPConnect may be restoring session
           addNotification(
-            'QR Code não disponível',
-            'Não foi possível obter um novo QR code. Tente novamente mais tarde.',
-            'warning',
-            'high'
+            'Verificando sessão existente',
+            'Sistema está verificando se existe uma sessão salva. Aguarde um momento.',
+            'info',
+            'medium'
           );
         }
       }
     } catch (error) {
       console.error('Error fetching QR code:', error);
-      if (qrCodeAttempts > 3) {
+      if (qrCodeAttempts > 2) {
         addNotification(
           'Erro ao gerar QR Code',
-          'Houve um erro ao gerar o QR code. O sistema pode estar sobrecarregado.',
-          'error',
-          'high'
+          'Houve um erro ao gerar o QR code. O sistema pode estar restaurando uma sessão anterior.',
+          'warning',
+          'medium'
         );
       }
     }
-  }, [fetchQrCode, lastQrFetchTime, qrCodeAttempts, addNotification]);
+  }, [fetchQrCode, lastQrFetchTime, qrCodeAttempts, addNotification, connectionStatus]);
 
-  // Periodic status check when in connecting state
+  // Periodic status check when in connecting state - optimized for WPPConnect
   useEffect(() => {
     let statusInterval: number | undefined;
     let qrInterval: number | undefined;
@@ -81,23 +88,25 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       // Initial QR code fetch
       fetchQrCodeWithRateLimit();
       
-      // Poll for QR code every 20 seconds (reduced frequency)
-      qrInterval = window.setInterval(fetchQrCodeWithRateLimit, 20000);
+      // Poll for QR code every 30 seconds (reduced frequency for WPPConnect)
+      // WPPConnect has better session management so we don't need to poll as frequently
+      qrInterval = window.setInterval(fetchQrCodeWithRateLimit, 30000);
       
       // Poll for status to detect connection
       statusInterval = window.setInterval(fetchStatus, 5000);
       
-      // After 2 minutes (120000ms), slow down polling to reduce load
+      // After 1 minute (60000ms), slow down polling to reduce load
+      // Reduced from 2 minutes since WPPConnect resolves sessions faster
       setTimeout(() => {
         if (qrInterval) {
           window.clearInterval(qrInterval);
-          qrInterval = window.setInterval(fetchQrCodeWithRateLimit, 30000); // 30 seconds
+          qrInterval = window.setInterval(fetchQrCodeWithRateLimit, 60000); // 60 seconds
         }
         if (statusInterval) {
           window.clearInterval(statusInterval);
-          statusInterval = window.setInterval(fetchStatus, 10000); // 10 seconds
+          statusInterval = window.setInterval(fetchStatus, 15000); // 15 seconds
         }
-      }, 120000);
+      }, 60000);
     }
 
     return () => {
@@ -112,8 +121,9 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     
     try {
       await initiateConnection();
-      await fetchQrCodeWithRateLimit();
+      // WPPConnect may restore session without needing QR code
       await fetchStatus();
+      await fetchQrCodeWithRateLimit();
     } catch (error) {
       console.error('Error in connect flow:', error);
       setConnectionStatus('disconnected');
@@ -129,8 +139,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
   };
   
   const handleQrCodeScanned = async () => {
-    // This is a no-op in the real implementation as the backend
-    // will automatically detect when the QR code is scanned
+    // With WPPConnect this is handled automatically on the backend
     await fetchStatus();
   };
   

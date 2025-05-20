@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Loader2, ServerCrash, AlertTriangle, Ban } from 'lucide-react';
+import { Loader2, ServerCrash, AlertTriangle, Ban, History } from 'lucide-react';
 import { useWhatsAppErrorMonitor } from '@/hooks/whatsapp/useWhatsAppErrorMonitor';
 
 type QRCodeScannerProps = {
@@ -64,9 +64,12 @@ export default function QRCodeScanner({
             />
           ) : connectionStatus === 'connecting' ? (
             <div className="flex flex-col items-center justify-center">
-              <Loader2 size={48} className="text-gray-300 animate-spin" />
-              <p className="text-sm text-gray-400 mt-2">Gerando QR Code, aguarde...</p>
-              <p className="text-xs text-muted-foreground mt-1">Isso pode levar alguns instantes</p>
+              {/* Show different message for potential session restore */}
+              <History size={48} className="text-blue-400 animate-pulse" />
+              <p className="text-sm text-blue-600 mt-2">Verificando sessão existente...</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                A sessão anterior pode ser restaurada automaticamente
+              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center">
@@ -82,6 +85,18 @@ export default function QRCodeScanner({
         <div className="mt-4 text-sm text-muted-foreground">
           <p>Aguardando leitura do QR Code...</p>
           <p className="mt-1">O QR Code expira em 60 segundos</p>
+          <p className="mt-2 text-xs">Após escanear, a sessão será salva e você não precisará escanear novamente ao reconectar</p>
+        </div>
+      )}
+      
+      {/* Show session restoration message when connecting without a QR code */}
+      {!backendError && connectionStatus === 'connecting' && !qrCode && (
+        <div className="mt-4 p-3 bg-blue-50 border-blue-200 border rounded-md text-blue-800">
+          <p className="text-sm font-medium">Restaurando sessão anterior</p>
+          <p className="text-xs mt-1">
+            O sistema está tentando recuperar sua sessão anterior do WhatsApp.
+            Se existir uma sessão válida, a conexão será feita automaticamente em instantes.
+          </p>
         </div>
       )}
       
