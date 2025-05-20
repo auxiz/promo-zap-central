@@ -9,24 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      profiles: {
+      vehicles: {
         Row: {
-          affiliate_id: string | null
-          created_at: string
+          brand: string | null
+          city: string | null
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          description: string | null
+          engine_size: string | null
+          features: string[] | null
+          fuel_type: string | null
           id: string
-          updated_at: string
+          image_url: string | null
+          images: string[] | null
+          license_plate: string | null
+          mileage: string | null
+          model: string | null
+          name: string
+          options: string[] | null
+          power: string | null
+          price: number | null
+          state: string | null
+          status: string | null
+          stock: number | null
+          torque: string | null
+          transmission: string | null
+          updated_at: string | null
+          vin: string | null
+          xml_id: string | null
+          year: number | null
         }
         Insert: {
-          affiliate_id?: string | null
-          created_at?: string
-          id: string
-          updated_at?: string
+          brand?: string | null
+          city?: string | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          engine_size?: string | null
+          features?: string[] | null
+          fuel_type?: string | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          license_plate?: string | null
+          mileage?: string | null
+          model?: string | null
+          name: string
+          options?: string[] | null
+          power?: string | null
+          price?: number | null
+          state?: string | null
+          status?: string | null
+          stock?: number | null
+          torque?: string | null
+          transmission?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          xml_id?: string | null
+          year?: number | null
         }
         Update: {
-          affiliate_id?: string | null
-          created_at?: string
+          brand?: string | null
+          city?: string | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          engine_size?: string | null
+          features?: string[] | null
+          fuel_type?: string | null
           id?: string
-          updated_at?: string
+          image_url?: string | null
+          images?: string[] | null
+          license_plate?: string | null
+          mileage?: string | null
+          model?: string | null
+          name?: string
+          options?: string[] | null
+          power?: string | null
+          price?: number | null
+          state?: string | null
+          status?: string | null
+          stock?: number | null
+          torque?: string | null
+          transmission?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          xml_id?: string | null
+          year?: number | null
         }
         Relationships: []
       }
