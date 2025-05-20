@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -63,8 +62,8 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
     setIsAuthenticating(true);
     
     try {
-      // Create a redirect URI for the current domain
-      const redirectUri = `${window.location.origin}/config-shopee/callback`;
+      // Updated redirect URI to use the new route
+      const redirectUri = `${window.location.origin}/configuracoes/callback`;
       
       // Get the authorization URL
       const response = await fetch(`${API_BASE}/api/shopee/auth/url?redirect_uri=${encodeURIComponent(redirectUri)}`);
@@ -122,7 +121,6 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
     }
   };
   
-  // Handle the OAuth callback message from the popup window
   const handleOAuthCallback = async (event: MessageEvent) => {
     // Validate the origin of the message
     if (event.origin !== window.location.origin) return;
@@ -133,13 +131,14 @@ export function ShopeeOAuthSection({ appId, hasToken, onAuthSuccess }: ShopeeOAu
     if (event.data && event.data.type === 'SHOPEE_OAUTH_CALLBACK' && event.data.code) {
       try {
         // Exchange the code for an access token
-        const redirectUri = `${window.location.origin}/config-shopee/callback`;
+        const redirectUri = `${window.location.origin}/configuracoes/callback`;
         
         const response = await fetch(`${API_BASE}/api/shopee/auth/token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             code: event.data.code,
+            shop_id: event.data.shop_id,
             redirect_uri: redirectUri
           })
         });

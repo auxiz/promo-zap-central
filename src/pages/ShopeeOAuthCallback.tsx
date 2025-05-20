@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE } from '@/utils/api-constants';
@@ -33,7 +32,7 @@ export default function ShopeeOAuthCallback() {
           body: JSON.stringify({
             code,
             shop_id: shopId,
-            redirect_uri: window.location.origin + '/config-shopee/callback'
+            redirect_uri: window.location.origin + '/configuracoes/callback'
           })
         });
         
@@ -52,7 +51,7 @@ export default function ShopeeOAuthCallback() {
             window.location.origin
           );
           
-          // Wait a moment before redirecting
+          // Wait a moment before redirecting - updated to go to configuracoes
           setTimeout(() => {
             toast.success('Autenticação Shopee concluída com sucesso');
             navigate('/configuracoes');
