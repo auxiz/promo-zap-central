@@ -3,8 +3,8 @@ const crypto = require('crypto');
 const url = require('url');
 
 // Base URLs for Shopee API
-const SHOPEE_AUTH_URL = 'https://partner.shopeemobile.com/api/v2/auth/token/get';
 const SHOPEE_API_BASE = 'https://partner.shopeemobile.com/api/v2';
+const SHOPEE_GRAPHQL_API = 'https://open-api.affiliate.shopee.com.br/graphql';
 
 // Generate signature required for Shopee API v2
 const generateSignature = (endpoint, partnerId, timestamp, accessToken = '', secretKey) => {
@@ -88,8 +88,8 @@ const formatApiError = (error) => {
 };
 
 module.exports = {
-  SHOPEE_AUTH_URL,
   SHOPEE_API_BASE,
+  SHOPEE_GRAPHQL_API,
   generateSignature,
   isTokenExpired,
   extractShopeeUrls,

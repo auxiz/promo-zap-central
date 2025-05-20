@@ -1,9 +1,7 @@
 
-const axios = require('axios');
-const crypto = require('crypto');
 const { getFullCredentials, updateShopeeCredentials } = require('./credentials');
-const { SHOPEE_API_BASE, generateSignature } = require('./utils');
-const { verifyApiCredentialsGraphQL, makeGraphQLRequest } = require('./directAuth');
+const { verifyApiCredentialsGraphQL } = require('./auth/verifyCredentials');
+const { makeGraphQLRequest } = require('./auth/graphqlClient');
 
 // Function to verify API credentials
 const verifyApiCredentials = async (appId, secretKey) => {

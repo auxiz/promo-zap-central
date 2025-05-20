@@ -6,7 +6,6 @@ import { ShopeeInfoText } from './shopee/ShopeeInfoText';
 import { useShopeeCredentials } from '@/hooks/useShopeeCredentials';
 import { Separator } from '@/components/ui/separator';
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 
 interface ShopeeSettingsProps {
   initialAppId: string;
@@ -16,11 +15,8 @@ interface ShopeeSettingsProps {
 
 export function ShopeeSettings({ 
   initialAppId, 
-  initialStatus = 'offline',
-  initialHasToken = false
+  initialStatus = 'offline'
 }: ShopeeSettingsProps) {
-  const location = useLocation();
-  
   const { 
     shopeeSettings, 
     setShopeeSettings, 
