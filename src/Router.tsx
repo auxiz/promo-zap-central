@@ -12,6 +12,7 @@ import GruposMonitorados from './pages/GruposMonitorados';
 import GruposEnvio from './pages/GruposEnvio';
 import WhatsAppConexao from './pages/WhatsAppConexao';
 import ConversionTool from './pages/ConversionTool';
+import ShopeeAffiliate from './pages/ShopeeAffiliate';
 import NotFound from './pages/NotFound';
 
 export default function AppRouter() {
@@ -28,6 +29,7 @@ export default function AppRouter() {
           <Route path="grupos-envio" element={<GruposEnvio />} />
           <Route path="whatsapp-conexao" element={<WhatsAppConexao />} />
           <Route path="conversor-links" element={<ConversionTool />} />
+          <Route path="conversor-links-direto" element={<ShopeeAffiliate />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
