@@ -8,10 +8,7 @@ const shopeeUtils = require('../../../utils/shopee');
 const { trackShopeeError } = require('../../../whatsapp/services/errorTracker');
 const { convertUsingAlternativeApi } = require('../../../utils/shopee/directAuth');
 
-/**
- * POST /api/shopee/affiliate/convert
- * @description Convert a Shopee product URL to an affiliate link
- */
+// Convert a URL to Shopee affiliate link
 router.post('/', async (req, res) => {
   try {
     const { url: originalUrl } = req.body;
