@@ -19,6 +19,8 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
   const lastErrorNotificationRef = useRef<number>(0);
   const consecutiveErrorsRef = useRef<number>(0);
   const lastNotificationTypeRef = useRef<string>('');
+  const maxApiErrorsRef = useRef<number>(3); // Maximum API error notifications to show per session
+  const apiErrorCountRef = useRef<number>(0); // Count of API error notifications shown
   
   const { addNotification } = useNotificationContext();
 
@@ -80,20 +82,24 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
       const now = Date.now();
       const timeSinceLastNotification = now - lastErrorNotificationRef.current;
       
-      // Only show notification if it's been more than 60 seconds since the last one
-      // or if this is the first error after successful connection
+      // Only show notification if:
+      // 1. It's been more than 5 minutes since the last one OR
+      // 2. This is the first error after successful connection
+      // 3. We haven't shown too many API error notifications
       if (
-        (timeSinceLastNotification > 60000 || consecutiveErrorsRef.current === 1) && 
-        lastNotificationTypeRef.current !== 'backend-error'
+        apiErrorCountRef.current < maxApiErrorsRef.current &&
+        ((timeSinceLastNotification > 300000) || // 5 minutes
+         (consecutiveErrorsRef.current === 1 && lastNotificationTypeRef.current !== 'backend-error'))
       ) {
         addNotification(
           'Erro de API',
           'Não foi possível conectar ao servidor WhatsApp',
           'error',
-          'high'
+          'silent' // Changed from 'high' to 'silent' to prevent toasts
         );
         lastNotificationTypeRef.current = 'backend-error';
         lastErrorNotificationRef.current = now;
+        apiErrorCountRef.current += 1;
       }
     }
   }, [instanceId, connectionStatus, addNotification]);

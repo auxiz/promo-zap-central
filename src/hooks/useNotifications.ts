@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 export type NotificationType = 'error' | 'warning' | 'info' | 'success';
-export type NotificationPriority = 'high' | 'low';
+export type NotificationPriority = 'high' | 'low' | 'silent';
 
 export interface Notification {
   id: string;
@@ -15,15 +15,29 @@ export interface Notification {
   priority: NotificationPriority;
 }
 
+// Configuration for notification behaviors
+const notificationConfig = {
+  deduplicationTime: 300000, // 5 minutes (300 seconds) in milliseconds
+  maxNotificationsPerType: 3, // Maximum number of notifications of the same type in a session
+  errorSnoozeTime: 1800000, // 30 minutes in milliseconds for "snoozing" error notifications
+};
+
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   
-  // Use a ref to track the last notification for deduplication
+  // Use refs to track notification history for deduplication and rate limiting
   const lastNotificationRef = useRef<{
     title: string;
+    type: string;
     timestamp: number;
-  }>({ title: '', timestamp: 0 });
+  }>({ title: '', type: '', timestamp: 0 });
+  
+  // Track counts of each notification type to implement "snooze" after too many
+  const notificationCountsRef = useRef<Record<string, number>>({});
+  
+  // Track if we're in a "snooze" period for specific notification types
+  const snoozedNotificationsRef = useRef<Record<string, number>>({});
 
   // Update unread count whenever notifications change
   useEffect(() => {
@@ -39,11 +53,20 @@ export function useNotifications() {
     priority: NotificationPriority = 'low'
   ) => {
     const now = Date.now();
+    const notificationType = `${type}-${title}`;
     
-    // Check for duplicate notifications (same title within 60 seconds)
+    // Check if we're in a snooze period for this notification type
+    if (snoozedNotificationsRef.current[notificationType] && 
+        now < snoozedNotificationsRef.current[notificationType]) {
+      // Skip notification during snooze period
+      return '';
+    }
+    
+    // Check for duplicate notifications (same title and type within deduplication time)
     if (
-      title === lastNotificationRef.current.title && 
-      now - lastNotificationRef.current.timestamp < 60000
+      title === lastNotificationRef.current.title &&
+      type === lastNotificationRef.current.type &&
+      now - lastNotificationRef.current.timestamp < notificationConfig.deduplicationTime
     ) {
       // Skip duplicate notification
       return '';
@@ -52,8 +75,21 @@ export function useNotifications() {
     // Update last notification reference
     lastNotificationRef.current = {
       title, 
+      type,
       timestamp: now
     };
+    
+    // Increment count for this notification type
+    notificationCountsRef.current[notificationType] = 
+      (notificationCountsRef.current[notificationType] || 0) + 1;
+    
+    // If we've shown too many of this notification, snooze it
+    if (type === 'error' && 
+        notificationCountsRef.current[notificationType] > notificationConfig.maxNotificationsPerType) {
+      snoozedNotificationsRef.current[notificationType] = now + notificationConfig.errorSnoozeTime;
+      console.log(`Snoozing "${title}" notifications for ${notificationConfig.errorSnoozeTime/60000} minutes`);
+      return '';
+    }
     
     const newNotification: Notification = {
       id: `notification-${now}-${Math.random().toString(36).substring(2, 9)}`,
@@ -111,6 +147,19 @@ export function useNotifications() {
   // Clear all notifications
   const clearAllNotifications = useCallback(() => {
     setNotifications([]);
+    // Also reset the notification counts and snooze states
+    notificationCountsRef.current = {};
+    snoozedNotificationsRef.current = {};
+  }, []);
+  
+  // Reset the snooze state for a specific notification type
+  const resetSnooze = useCallback((type: string, title: string) => {
+    const notificationType = `${type}-${title}`;
+    if (snoozedNotificationsRef.current[notificationType]) {
+      delete snoozedNotificationsRef.current[notificationType];
+      notificationCountsRef.current[notificationType] = 0;
+      console.log(`Reset snooze for "${title}" notifications`);
+    }
   }, []);
   
   return {
@@ -120,6 +169,7 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     clearNotification,
-    clearAllNotifications
+    clearAllNotifications,
+    resetSnooze
   };
 }
