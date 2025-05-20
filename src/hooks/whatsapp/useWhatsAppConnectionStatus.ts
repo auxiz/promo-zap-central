@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
 
@@ -15,6 +15,11 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
   const [deviceInfo, setDeviceInfo] = useState({ name: '', lastConnection: '' });
   const [backendError, setBackendError] = useState(false);
   
+  // References to track notification times and backend status
+  const lastErrorNotificationRef = useRef<number>(0);
+  const consecutiveErrorsRef = useRef<number>(0);
+  const lastNotificationTypeRef = useRef<string>('');
+  
   const { addNotification } = useNotificationContext();
 
   // Function to fetch connection status
@@ -28,7 +33,8 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
       
       const data = await response.json();
       
-      // Clear any backend error if we got a successful response
+      // Backend is responsive, reset error counters
+      consecutiveErrorsRef.current = 0;
       setBackendError(false);
 
       if (data.status === 'CONNECTED') {
@@ -46,6 +52,7 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
               'success',
               'high'
             );
+            lastNotificationTypeRef.current = 'connected';
           }
         }
       } else if (data.status === 'PENDING') {
@@ -58,24 +65,38 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
             'error',
             'high'
           );
+          lastNotificationTypeRef.current = 'disconnected';
         }
         setConnectionStatus('disconnected');
       }
     } catch (error) {
       console.error('Error fetching WhatsApp status:', error);
+      
+      // Increment consecutive errors counter
+      consecutiveErrorsRef.current += 1;
       setBackendError(true);
       setConnectionStatus('disconnected');
       
-      if (!backendError) {
+      const now = Date.now();
+      const timeSinceLastNotification = now - lastErrorNotificationRef.current;
+      
+      // Only show notification if it's been more than 60 seconds since the last one
+      // or if this is the first error after successful connection
+      if (
+        (timeSinceLastNotification > 60000 || consecutiveErrorsRef.current === 1) && 
+        lastNotificationTypeRef.current !== 'backend-error'
+      ) {
         addNotification(
           'Erro de API',
           'Não foi possível conectar ao servidor WhatsApp',
           'error',
           'high'
         );
+        lastNotificationTypeRef.current = 'backend-error';
+        lastErrorNotificationRef.current = now;
       }
     }
-  }, [instanceId, connectionStatus, backendError, addNotification]);
+  }, [instanceId, connectionStatus, addNotification]);
 
   return {
     connectionStatus,
@@ -84,6 +105,7 @@ export function useWhatsAppConnectionStatus(instanceId: string = 'default') {
     fetchStatus,
     setConnectionStatus,
     setDeviceInfo,
-    setBackendError
+    setBackendError,
+    consecutiveErrors: consecutiveErrorsRef.current
   };
 }

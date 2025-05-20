@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 export type NotificationType = 'error' | 'warning' | 'info' | 'success';
@@ -18,6 +18,12 @@ export interface Notification {
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Use a ref to track the last notification for deduplication
+  const lastNotificationRef = useRef<{
+    title: string;
+    timestamp: number;
+  }>({ title: '', timestamp: 0 });
 
   // Update unread count whenever notifications change
   useEffect(() => {
@@ -32,8 +38,25 @@ export function useNotifications() {
     type: NotificationType = 'info',
     priority: NotificationPriority = 'low'
   ) => {
+    const now = Date.now();
+    
+    // Check for duplicate notifications (same title within 60 seconds)
+    if (
+      title === lastNotificationRef.current.title && 
+      now - lastNotificationRef.current.timestamp < 60000
+    ) {
+      // Skip duplicate notification
+      return '';
+    }
+    
+    // Update last notification reference
+    lastNotificationRef.current = {
+      title, 
+      timestamp: now
+    };
+    
     const newNotification: Notification = {
-      id: `notification-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      id: `notification-${now}-${Math.random().toString(36).substring(2, 9)}`,
       title,
       message,
       type,

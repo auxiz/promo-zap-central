@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWhatsAppConnectionStatus } from './whatsapp/useWhatsAppConnectionStatus';
 import { useWhatsAppQRCode } from './whatsapp/useWhatsAppQRCode';
 import { useWhatsAppActions } from './whatsapp/useWhatsAppActions';
@@ -11,6 +11,15 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
   const [qrCodeAttempts, setQrCodeAttempts] = useState(0);
   const [lastQrFetchTime, setLastQrFetchTime] = useState(0);
   
+  // Use a ref to track the backend status for interval adjustments
+  const pollingIntervalsRef = useRef<{
+    status: number | null,
+    qrCode: number | null,
+  }>({
+    status: null,
+    qrCode: null
+  });
+  
   const { addNotification } = useNotificationContext();
   
   const { 
@@ -18,7 +27,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     deviceInfo, 
     backendError, 
     fetchStatus,
-    setConnectionStatus
+    setConnectionStatus,
+    consecutiveErrors
   } = useWhatsAppConnectionStatus(instanceId);
   
   const { fetchQrCode } = useWhatsAppQRCode(instanceId);
@@ -79,41 +89,75 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     }
   }, [fetchQrCode, lastQrFetchTime, qrCodeAttempts, addNotification, connectionStatus]);
 
-  // Periodic status check when in connecting state - optimized for WPPConnect
-  useEffect(() => {
-    let statusInterval: number | undefined;
-    let qrInterval: number | undefined;
+  // Clear existing intervals when changing states
+  const clearPollingIntervals = useCallback(() => {
+    if (pollingIntervalsRef.current.status) {
+      window.clearInterval(pollingIntervalsRef.current.status);
+      pollingIntervalsRef.current.status = null;
+    }
+    
+    if (pollingIntervalsRef.current.qrCode) {
+      window.clearInterval(pollingIntervalsRef.current.qrCode);
+      pollingIntervalsRef.current.qrCode = null;
+    }
+  }, []);
 
+  // Adaptive polling based on backend status and connection state
+  useEffect(() => {
+    // Clear any existing intervals when state changes
+    clearPollingIntervals();
+    
+    // Calculate polling intervals based on backend status and consecutive errors
+    const getPollingIntervals = () => {
+      // If backend is having issues, increase the interval based on consecutive errors
+      if (backendError) {
+        // Start with 15 seconds, then increase up to 60 seconds maximum
+        const baseDelay = Math.min(15000 * Math.pow(1.5, consecutiveErrors), 60000);
+        return {
+          statusInterval: baseDelay,
+          qrInterval: baseDelay * 2
+        };
+      }
+      
+      // Normal intervals when backend is responding
+      return {
+        statusInterval: connectionStatus === 'connecting' ? 5000 : 30000,
+        qrInterval: 30000
+      };
+    };
+    
+    const { statusInterval, qrInterval } = getPollingIntervals();
+    
+    // Set up new intervals based on connection status and backend health
     if (connectionStatus === 'connecting') {
       // Initial QR code fetch
       fetchQrCodeWithRateLimit();
       
-      // Poll for QR code every 30 seconds (reduced frequency for WPPConnect)
-      // WPPConnect has better session management so we don't need to poll as frequently
-      qrInterval = window.setInterval(fetchQrCodeWithRateLimit, 30000);
+      // Set new polling intervals
+      pollingIntervalsRef.current.status = window.setInterval(fetchStatus, statusInterval);
+      pollingIntervalsRef.current.qrCode = window.setInterval(fetchQrCodeWithRateLimit, qrInterval);
       
-      // Poll for status to detect connection
-      statusInterval = window.setInterval(fetchStatus, 5000);
-      
-      // After 1 minute (60000ms), slow down polling to reduce load
-      // Reduced from 2 minutes since WPPConnect resolves sessions faster
+      // After 1 minute, adjust polling frequency to reduce load
       setTimeout(() => {
-        if (qrInterval) {
-          window.clearInterval(qrInterval);
-          qrInterval = window.setInterval(fetchQrCodeWithRateLimit, 60000); // 60 seconds
-        }
-        if (statusInterval) {
-          window.clearInterval(statusInterval);
-          statusInterval = window.setInterval(fetchStatus, 15000); // 15 seconds
-        }
+        clearPollingIntervals();
+        
+        const slowIntervals = getPollingIntervals();
+        const slowStatusInterval = Math.min(slowIntervals.statusInterval * 2, 60000); // Max 60 seconds
+        const slowQrInterval = Math.min(slowIntervals.qrInterval * 2, 120000); // Max 2 minutes
+        
+        pollingIntervalsRef.current.status = window.setInterval(fetchStatus, slowStatusInterval);
+        pollingIntervalsRef.current.qrCode = window.setInterval(fetchQrCodeWithRateLimit, slowQrInterval);
       }, 60000);
+    } else if (connectionStatus === 'connected') {
+      // When connected, only poll status occasionally to verify connection
+      pollingIntervalsRef.current.status = window.setInterval(fetchStatus, 30000);
+    } else {
+      // When disconnected, check status occasionally in case backend comes back
+      pollingIntervalsRef.current.status = window.setInterval(fetchStatus, statusInterval);
     }
 
-    return () => {
-      if (statusInterval) window.clearInterval(statusInterval);
-      if (qrInterval) window.clearInterval(qrInterval);
-    };
-  }, [connectionStatus, fetchQrCodeWithRateLimit, fetchStatus]);
+    return clearPollingIntervals;
+  }, [connectionStatus, backendError, fetchStatus, fetchQrCodeWithRateLimit, clearPollingIntervals, consecutiveErrors]);
 
   const handleConnect = async () => {
     setIsLoading(true);
