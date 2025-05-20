@@ -8,4 +8,6 @@ export const CONNECTION_CONFIG = {
   basePollingInterval: 5000,  // Base polling interval when everything is normal (5 seconds)
   maxPollingInterval: 300000, // Maximum polling interval when backend is down (5 minutes)
   reconnectLimit: 5,          // Number of automatic reconnection attempts
+  maxErrorNotifications: 3,   // Maximum number of error notifications to show
+  errorNotificationCooldown: 300000, // 5 minutes between error notifications
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWhatsAppConnectionStatus } from './whatsapp/useWhatsAppConnectionStatus';
 import { useWhatsAppQRHandler } from './whatsapp/useWhatsAppQRHandler';
