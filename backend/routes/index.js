@@ -5,8 +5,9 @@ const router = express.Router();
 // Import all route modules
 const whatsappRoutes = require('./whatsapp');
 const shopeeRoutes = require('./shopee');
-const activityRoutes = require('./activity');
-const { addActivity } = require('./activity'); // Import the addActivity function separately
+const activityModule = require('./activity');
+const activityRoutes = activityModule.router; // Get router from activity module
+const { addActivity } = activityModule; // Import the addActivity function from the module
 const templatesRoutes = require('./templates');
 const promozapRoutes = require('./promozap');
 

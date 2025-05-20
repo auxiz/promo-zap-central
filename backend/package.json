@@ -13,6 +13,7 @@
     "@wppconnect-team/wppconnect": "^1.28.3",
     "qrcode": "^1.5.3",
     "axios": "^1.9.0",
-    "crypto": "^1.0.1"
+    "crypto": "^1.0.1",
+    "winston": "^3.17.0"
   }
 }

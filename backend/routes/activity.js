@@ -30,7 +30,8 @@ router.get('/recent', (req, res) => {
   res.json({ events: recentActivity });
 });
 
-// Export the router directly (not as an object with router property)
-module.exports = router;
-// Export addActivity separately using exports
-exports.addActivity = addActivity;
+// Export both router and addActivity as a single object
+module.exports = {
+  router,
+  addActivity
+};
