@@ -14,6 +14,10 @@ const {
   verifyAlternativeApiCredentials 
 } = require('./auth/verifyCredentials');
 const { convertUsingAlternativeApi } = require('./auth/alternativeApi');
+const { 
+  makeDirectGraphQLRequest,
+  generateDirectSignature 
+} = require('./auth/shopeeDirectUtils');
 
 // Re-export all modules
 module.exports = {
@@ -22,5 +26,7 @@ module.exports = {
   verifyApiCredentialsGraphQL,
   makeGraphQLRequestWithCredentials,
   convertUsingAlternativeApi,
-  verifyAlternativeApiCredentials
+  verifyAlternativeApiCredentials,
+  makeDirectGraphQLRequest,
+  generateDirectSignature
 };
