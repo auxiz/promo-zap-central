@@ -18,6 +18,11 @@ const {
   makeDirectGraphQLRequest,
   generateDirectSignature 
 } = require('./auth/shopeeDirectUtils');
+const {
+  generateGraphQLSignature,
+  formatGraphQLQuery,
+  makeShopeeGraphQLRequest
+} = require('./auth/shopeeGraphQLClient');
 
 // Re-export all modules
 module.exports = {
@@ -28,5 +33,9 @@ module.exports = {
   convertUsingAlternativeApi,
   verifyAlternativeApiCredentials,
   makeDirectGraphQLRequest,
-  generateDirectSignature
+  generateDirectSignature,
+  // New improved modules
+  generateGraphQLSignature,
+  formatGraphQLQuery,
+  makeShopeeGraphQLRequest
 };
