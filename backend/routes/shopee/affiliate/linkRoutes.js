@@ -4,9 +4,10 @@
  */
 const express = require('express');
 const router = express.Router();
-const shopeeUtils = require('../../../utils/shopee');
+const { convertToAffiliateLink } = require('../../../utils/shopee/affiliate/linkConverter');
+const { getShopeeCredentials } = require('../../../utils/shopee/credentials');
 const { trackShopeeError } = require('../../../whatsapp/services/errorTracker');
-const { convertUsingAlternativeApi } = require('../../../utils/shopee/directAuth');
+const logger = require('../../../utils/logger');
 
 // Convert a URL to Shopee affiliate link
 router.post('/', async (req, res) => {
@@ -28,7 +29,7 @@ router.post('/', async (req, res) => {
       });
     }
     
-    const credentials = shopeeUtils.getShopeeCredentials();
+    const credentials = getShopeeCredentials();
     if (!credentials.appId) {
       return res.status(400).json({ 
         success: false,
@@ -36,99 +37,72 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Get the full credentials for secure conversion
-    const fullCredentials = shopeeUtils.getFullCredentials();
-    if (!fullCredentials.secretKey) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Shopee Secret Key not configured' 
-      });
-    }
+    logger.info('[Shopee Route] Converting link:', originalUrl);
     
-    // First try the alternative API 
-    const alternativeResult = await convertUsingAlternativeApi(originalUrl);
+    // Convert the URL using the improved conversion function
+    const result = await convertToAffiliateLink(originalUrl);
     
-    if (alternativeResult && alternativeResult.affiliateUrl) {
-      return res.json({ 
-        success: true,
-        affiliate_url: alternativeResult.affiliateUrl,
-        original_url: originalUrl,
-        source: 'alternative'
-      });
-    }
-    
-    console.log('Alternative API failed, falling back to original implementation');
-    
-    // Fall back to the original GraphQL API if the alternative API fails
-    // Check connection status before proceeding
-    if (credentials.status !== 'online') {
-      // Try to verify credentials first
-      const isConnected = await shopeeUtils.verifyApiCredentialsGraphQL(
-        fullCredentials.appId, 
-        fullCredentials.secretKey
-      );
+    if (result.error) {
+      logger.warn('[Shopee Route] Conversion failed:', result.error);
       
-      if (!isConnected) {
-        return res.status(401).json({
-          success: false,
-          error: 'Shopee API connection failed. Please verify your credentials.'
-        });
+      // Determine appropriate status code based on error type
+      let statusCode = 500;
+      if (result.error.includes('credentials') || result.error.includes('Authentication')) {
+        statusCode = 401;
+      } else if (result.error.includes('Rate limit')) {
+        statusCode = 429;
+      } else if (result.error.includes('Invalid URL')) {
+        statusCode = 400;
       }
+      
+      return res.status(statusCode).json({ 
+        success: false,
+        error: result.error,
+        message: result.message
+      });
     }
     
-    // Try to convert the URL using GraphQL
-    const result = await shopeeUtils.convertToAffiliateLink(originalUrl);
-    
-    if (!result || !result.affiliateUrl) {
+    if (!result.affiliateUrl) {
       return res.status(500).json({ 
         success: false,
-        error: result?.error || 'Failed to convert URL. The API might be experiencing issues.' 
+        error: 'No affiliate URL returned',
+        message: 'The conversion process completed but no affiliate URL was generated'
       });
     }
+    
+    logger.info('[Shopee Route] Conversion successful via:', result.source);
     
     res.json({ 
       success: true,
       affiliate_url: result.affiliateUrl,
       original_url: originalUrl,
-      source: 'graphql'
+      source: result.source
     });
   } catch (error) {
-    console.error('Error converting URL:', error);
+    logger.error('[Shopee Route] Error converting URL:', error.message);
     trackShopeeError('CONVERSION', 'Failed to convert URL', error);
     
-    // Check for rate limiting errors
-    if (error.response && error.response.status === 429) {
-      return res.status(429).json({
+    // Handle specific error types
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return res.status(408).json({
         success: false,
-        error: 'Rate limit exceeded. Please try again later.',
-        message: 'The Shopee API rate limit has been reached. Please wait before making more requests.'
+        error: 'Request timeout',
+        message: 'The request to Shopee API timed out. Please try again.'
       });
     }
     
-    // Handle authentication errors
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      return res.status(401).json({
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
         success: false,
-        error: 'Authentication failed',
-        message: 'Invalid credentials or expired authentication. Please update your Shopee API credentials.'
-      });
-    }
-    
-    // Handle HTML responses (non-JSON)
-    if (error.response && error.response.headers && 
-        error.response.headers['content-type'] && 
-        error.response.headers['content-type'].includes('text/html')) {
-      return res.status(502).json({
-        success: false,
-        error: 'Received HTML response instead of JSON',
-        message: 'The Shopee API returned an HTML page instead of JSON. This might indicate a network issue or API endpoint problem.'
+        error: 'Service unavailable',
+        message: 'Unable to connect to Shopee API. Please try again later.'
       });
     }
     
     res.status(500).json({ 
       success: false,
-      error: 'Failed to convert URL',
-      message: error.message 
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while converting the URL'
     });
   }
 });

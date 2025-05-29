@@ -1,168 +1,252 @@
 
+const { makeShopeeGraphQLRequest } = require('../auth/shopeeGraphQLClient');
 const { getFullCredentials } = require('../credentials');
-const { trackShopeeError } = require('../../../whatsapp/services/errorTracker');
-const { convertUsingAlternativeApi } = require('../directAuth');
+const logger = require('../../../utils/logger');
+const axios = require('axios');
+
+// Alternative API for fallback
+const ALTERNATIVE_API_URL = 'https://api-hook.diade.shop/webhook/amazonadmin';
 
 /**
- * Convert a Shopee URL to an affiliate link using GraphQL
+ * Convert a Shopee URL to affiliate link using GraphQL API
  * 
- * @param {string} originalUrl - The original Shopee product URL to convert
- * @returns {Promise<Object>} - Object containing the affiliate URL or error details
+ * @param {string} originalUrl - The original Shopee URL
+ * @returns {Object} Conversion result
  */
-const convertToAffiliateLink = async (originalUrl) => {
+const convertToAffiliateLinkGraphQL = async (originalUrl) => {
   try {
     const credentials = getFullCredentials();
     if (!credentials.appId || !credentials.secretKey) {
-      console.error('[Shopee Affiliate] Missing credentials');
-      return { error: 'Missing Shopee API credentials' };
-    }
-    
-    console.log(`[Shopee Affiliate] Converting URL: ${originalUrl}`);
-    
-    // First try the alternative API 
-    const alternativeResult = await convertUsingAlternativeApi(originalUrl);
-    
-    if (alternativeResult && alternativeResult.affiliateUrl) {
-      return {
-        affiliateUrl: alternativeResult.affiliateUrl,
-        originalUrl: originalUrl,
-        source: 'alternative',
-        success: true
+      return { 
+        error: 'Missing Shopee API credentials',
+        message: 'Please configure your Shopee API credentials'
       };
     }
     
-    console.log('[Shopee Affiliate] Alternative API failed, falling back to GraphQL API');
+    logger.info('[Shopee Convert] Converting URL using GraphQL API:', originalUrl);
     
-    // GraphQL query for link conversion
-    const query = `
-      mutation GenerateShortLink($shortLinkRequest: ShortLinkRequest!) {
+    // GraphQL mutation for converting links
+    const convertMutation = `
+      mutation ConvertLink($url: String!) {
         affiliate {
-          generateShortLink(shortLinkRequest: $shortLinkRequest) {
-            shortLink
-            originalLink
-            offerLink
+          convertLink(originalUrl: $url) {
+            affiliateUrl
+            originalUrl
+            success
+            error
           }
         }
       }
     `;
     
-    // Query variables
-    const variables = {
-      shortLinkRequest: {
-        originalLink: originalUrl
-      }
-    };
-    
     // Make the GraphQL request
-    const { makeGraphQLRequest } = require('./graphqlClient');
-    const response = await makeGraphQLRequest(query, variables);
+    const response = await makeShopeeGraphQLRequest(
+      convertMutation,
+      { url: originalUrl },
+      credentials.appId,
+      credentials.secretKey,
+      { timeout: 20000, maxRetries: 2 }
+    );
     
-    return processGraphQLResponse(response, originalUrl);
-  } catch (error) {
-    return handleConversionError(error);
-  }
-};
-
-/**
- * Process the GraphQL API response
- * 
- * @param {Object} response - Response from the GraphQL API
- * @param {string} originalUrl - The original Shopee product URL
- * @returns {Object} - Processed response object
- */
-const processGraphQLResponse = (response, originalUrl) => {
-  // Check if the response is valid
-  if (!response || response.error) {
-    console.error('[Shopee Affiliate] API Error:', response?.error || 'Unknown error');
-    return { 
-      error: response?.error || 'API returned an error',
-      message: response?.message || 'Failed to convert link'
-    };
-  }
-  
-  // Check for GraphQL errors
-  if (response.errors && response.errors.length > 0) {
-    const errorMessage = response.errors[0].message || 'GraphQL error';
-    console.error('[Shopee Affiliate] GraphQL Error:', errorMessage);
+    logger.debug('[Shopee Convert] GraphQL response:', response);
     
-    return {
-      error: 'GraphQL error',
-      message: errorMessage
-    };
-  }
-  
-  // Extract the affiliate link from the response
-  if (response.data &&
-      response.data.affiliate &&
-      response.data.affiliate.generateShortLink) {
-    
-    const linkData = response.data.affiliate.generateShortLink;
-    
-    // Prefer offerLink if available, otherwise use shortLink
-    const affiliateUrl = linkData.offerLink || linkData.shortLink;
-    
-    if (!affiliateUrl) {
+    // Check for errors in the response
+    if (response.error) {
+      logger.error('[Shopee Convert] GraphQL API error:', response.error);
       return {
-        error: 'No affiliate link in response',
-        message: 'The API did not return an affiliate link'
+        error: response.error,
+        message: response.message || 'Failed to convert link using GraphQL API'
       };
     }
     
+    // Check for GraphQL errors
+    if (response.errors && response.errors.length > 0) {
+      const errorMessage = response.errors[0].message || 'GraphQL error';
+      logger.error('[Shopee Convert] GraphQL errors:', response.errors);
+      
+      return {
+        error: 'GraphQL error',
+        message: errorMessage
+      };
+    }
+    
+    // Extract the converted link from response
+    if (response.data && 
+        response.data.affiliate && 
+        response.data.affiliate.convertLink) {
+      const result = response.data.affiliate.convertLink;
+      
+      if (result.success && result.affiliateUrl) {
+        logger.info('[Shopee Convert] Link converted successfully via GraphQL');
+        return {
+          affiliateUrl: result.affiliateUrl,
+          originalUrl: result.originalUrl || originalUrl,
+          source: 'graphql'
+        };
+      } else {
+        logger.warn('[Shopee Convert] GraphQL conversion failed:', result.error);
+        return {
+          error: result.error || 'Conversion failed',
+          message: 'The GraphQL API could not convert this link'
+        };
+      }
+    }
+    
+    // If we reach here, the response format was unexpected
+    logger.warn('[Shopee Convert] Unexpected GraphQL response format:', response);
     return {
-      affiliateUrl: affiliateUrl,
-      originalUrl: originalUrl,
-      source: 'graphql',
-      success: true
+      error: 'Invalid response format',
+      message: 'The GraphQL API returned an unexpected response format'
+    };
+  } catch (error) {
+    logger.error('[Shopee Convert] Error in GraphQL conversion:', error.message);
+    return {
+      error: 'GraphQL conversion error',
+      message: error.message || 'An error occurred during GraphQL link conversion'
     };
   }
-  
-  console.log('Unexpected response format:', JSON.stringify(response));
-  
-  return { 
-    error: 'Invalid response format from API',
-    message: 'The API returned data in an unexpected format'
-  };
 };
 
 /**
- * Handle errors that occur during link conversion
+ * Convert a Shopee URL to affiliate link using alternative API
  * 
- * @param {Error} error - The error object
- * @returns {Object} - Error details object
+ * @param {string} originalUrl - The original Shopee URL
+ * @returns {Object} Conversion result
  */
-const handleConversionError = (error) => {
-  console.error('Error converting to affiliate link:', error.message);
-  
-  // Check for specific types of errors
-  if (error.response) {
-    console.error('Error response status:', error.response.status);
-    
-    // Check if the response is HTML instead of JSON
-    const contentType = error.response.headers['content-type'];
-    if (contentType && contentType.includes('text/html')) {
-      console.error('Received HTML response instead of JSON');
-      trackShopeeError('CONVERSION', 'Received HTML instead of JSON', error);
+const convertUsingAlternativeApi = async (originalUrl) => {
+  try {
+    const credentials = getFullCredentials();
+    if (!credentials.appId || !credentials.secretKey) {
       return { 
-        error: 'Received HTML response instead of JSON',
-        message: 'The API returned an HTML page instead of the expected JSON response'
+        error: 'Missing Shopee API credentials',
+        message: 'Please configure your Shopee API credentials'
       };
     }
     
-    // Log detailed error data for debugging
-    if (error.response.data) {
-      console.error('Error response data:', error.response.data);
+    logger.info('[Shopee Convert] Converting URL using alternative API:', originalUrl);
+    
+    // Make the API request
+    const response = await axios({
+      url: ALTERNATIVE_API_URL,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: {
+        app_id: credentials.appId,
+        secret_key: credentials.secretKey,
+        product_url: originalUrl
+      },
+      timeout: 15000, // 15 second timeout
+      validateStatus: function (status) {
+        return status < 500; // Accept anything less than 500
+      }
+    });
+    
+    logger.debug('[Shopee Convert] Alternative API response status:', response.status);
+    logger.debug('[Shopee Convert] Alternative API response data:', response.data);
+    
+    // Check if we got a successful response
+    if (response.status === 200 && response.data) {
+      // Try to extract affiliate URL from different possible response formats
+      let affiliateUrl = null;
+      
+      if (typeof response.data === 'string') {
+        // Sometimes the API returns just the URL as a string
+        if (response.data.includes('shopee.com.br') && response.data.includes('affiliate')) {
+          affiliateUrl = response.data.trim();
+        }
+      } else if (typeof response.data === 'object') {
+        // Object response - check common field names
+        affiliateUrl = response.data.affiliate_url || 
+                      response.data.affiliateUrl || 
+                      response.data.converted_url || 
+                      response.data.url ||
+                      response.data.link;
+      }
+      
+      if (affiliateUrl && affiliateUrl !== originalUrl) {
+        logger.info('[Shopee Convert] Link converted successfully via alternative API');
+        return {
+          affiliateUrl: affiliateUrl,
+          originalUrl: originalUrl,
+          source: 'alternative'
+        };
+      }
     }
+    
+    // If conversion failed or returned same URL
+    logger.warn('[Shopee Convert] Alternative API conversion failed or returned same URL');
+    return {
+      error: 'Alternative API conversion failed',
+      message: 'The alternative API could not convert this link'
+    };
+  } catch (error) {
+    logger.error('[Shopee Convert] Error in alternative API conversion:', error.message);
+    return {
+      error: 'Alternative API error',
+      message: error.message || 'An error occurred during alternative API link conversion'
+    };
   }
-  
-  // Track the error for monitoring
-  trackShopeeError('CONVERSION', error.message, error);
-  
-  return { 
-    error: error.message,
-    message: 'Failed to convert link'
-  };
+};
+
+/**
+ * Main function to convert Shopee URL to affiliate link with fallback
+ * 
+ * @param {string} originalUrl - The original Shopee URL
+ * @returns {Object} Conversion result
+ */
+const convertToAffiliateLink = async (originalUrl) => {
+  try {
+    logger.info('[Shopee Convert] Starting link conversion:', originalUrl);
+    
+    // Validate URL
+    if (!originalUrl || !originalUrl.includes('shopee.com')) {
+      return {
+        error: 'Invalid URL',
+        message: 'The provided URL is not a valid Shopee URL'
+      };
+    }
+    
+    // First try the alternative API (usually more reliable)
+    const alternativeResult = await convertUsingAlternativeApi(originalUrl);
+    
+    if (alternativeResult && alternativeResult.affiliateUrl && !alternativeResult.error) {
+      logger.info('[Shopee Convert] Conversion successful via alternative API');
+      return alternativeResult;
+    }
+    
+    logger.info('[Shopee Convert] Alternative API failed, trying GraphQL API');
+    
+    // Fallback to GraphQL API
+    const graphqlResult = await convertToAffiliateLinkGraphQL(originalUrl);
+    
+    if (graphqlResult && graphqlResult.affiliateUrl && !graphqlResult.error) {
+      logger.info('[Shopee Convert] Conversion successful via GraphQL API');
+      return graphqlResult;
+    }
+    
+    // If both methods failed, return the most informative error
+    const error = graphqlResult.error || alternativeResult.error || 'Both conversion methods failed';
+    const message = graphqlResult.message || alternativeResult.message || 'Unable to convert link using any available method';
+    
+    logger.error('[Shopee Convert] All conversion methods failed:', { error, message });
+    
+    return {
+      error: error,
+      message: message
+    };
+  } catch (error) {
+    logger.error('[Shopee Convert] Unexpected error in conversion:', error.message);
+    return {
+      error: 'Conversion error',
+      message: error.message || 'An unexpected error occurred during link conversion'
+    };
+  }
 };
 
 module.exports = {
-  convertToAffiliateLink
+  convertToAffiliateLink,
+  convertToAffiliateLinkGraphQL,
+  convertUsingAlternativeApi
 };

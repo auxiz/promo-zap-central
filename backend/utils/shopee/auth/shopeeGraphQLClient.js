@@ -16,8 +16,22 @@ const SHOPEE_GRAPHQL_API = 'https://open-api.affiliate.shopee.com.br/graphql';
  * @returns {string} HMAC-SHA256 signature
  */
 const generateGraphQLSignature = (appId, timestamp, payload, secretKey) => {
+  // The string to sign format: appId + timestamp + payload + secretKey
   const stringToSign = `${appId}${timestamp}${payload}${secretKey}`;
-  return crypto.createHmac('sha256', secretKey).update(stringToSign).digest('hex');
+  
+  logger.debug('[Shopee GraphQL] Signature generation:', {
+    appId: appId,
+    timestamp: timestamp,
+    payloadLength: payload.length,
+    stringToSignLength: stringToSign.length,
+    stringToSign: stringToSign.substring(0, 200) + '...' // Log first 200 chars for security
+  });
+  
+  const signature = crypto.createHmac('sha256', secretKey).update(stringToSign).digest('hex');
+  
+  logger.debug('[Shopee GraphQL] Generated signature:', signature);
+  
+  return signature;
 };
 
 /**
@@ -57,7 +71,7 @@ const makeShopeeGraphQLRequest = async (query, variables = {}, appId, secretKey,
     // Format the query to minimize payload size
     const formattedQuery = formatGraphQLQuery(query);
     
-    // Create request body
+    // Create request body - ensure consistent JSON formatting
     const requestBody = JSON.stringify({
       query: formattedQuery,
       variables
@@ -74,84 +88,128 @@ const makeShopeeGraphQLRequest = async (query, variables = {}, appId, secretKey,
       secretKey
     );
     
-    // Create authorization header
+    // Create authorization header - exact format as per Shopee documentation
     const authHeader = `SHA256 Credential=${appId}, Timestamp=${timestamp}, Signature=${signature}`;
     
-    logger.debug(`[Shopee GraphQL] Making request to: ${SHOPEE_GRAPHQL_API}`);
+    logger.info(`[Shopee GraphQL] Making request to: ${SHOPEE_GRAPHQL_API}`);
+    logger.debug('[Shopee GraphQL] Request details:', {
+      timestamp: timestamp,
+      authHeader: authHeader,
+      bodyLength: requestBody.length
+    });
     
-    // Apply default retry options
-    const retryOptions = {
-      maxRetries: options.maxRetries || 3,
-      retryDelay: options.retryDelay || 1000,
-      currentRetry: 0
+    // Apply default options with timeout
+    const requestOptions = {
+      url: SHOPEE_GRAPHQL_API,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'User-Agent': 'Promozap-Backend/1.0',
+        'Accept': 'application/json'
+      },
+      data: requestBody,
+      timeout: options.timeout || 15000, // 15 second timeout
+      validateStatus: function (status) {
+        return true; // Handle all statuses manually
+      },
+      ...options
     };
     
-    // Make the API request with retry support
-    const makeRequest = async (retryCount) => {
+    // Apply retry logic
+    const maxRetries = options.maxRetries || 3;
+    let lastError = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const response = await axios({
-          url: SHOPEE_GRAPHQL_API,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader
-          },
-          data: requestBody,
-          validateStatus: function (status) {
-            return true; // Handle all statuses manually
-          },
-          ...options
-        });
+        logger.debug(`[Shopee GraphQL] Attempt ${attempt + 1}/${maxRetries + 1}`);
+        
+        const response = await axios(requestOptions);
+        
+        logger.debug('[Shopee GraphQL] Response status:', response.status);
+        logger.debug('[Shopee GraphQL] Response headers:', response.headers);
         
         // Check if the response is HTML (error page) instead of JSON
         const contentType = response.headers['content-type'];
         if (contentType && contentType.includes('text/html')) {
-          throw {
+          const error = {
             error: 'Received HTML response',
             message: 'The API returned an HTML page instead of JSON. This might indicate an issue with the API endpoint.',
             status: response.status,
             isHtml: true
           };
+          
+          if (attempt < maxRetries) {
+            logger.warn('[Shopee GraphQL] HTML response, retrying...');
+            lastError = error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
+            continue;
+          }
+          
+          return error;
         }
         
         // Handle error status codes
         if (response.status >= 400) {
-          throw {
+          const error = {
             error: `API Error: ${response.status}`,
-            message: response.data?.message || 'An error occurred with the API request',
+            message: response.data?.message || response.data?.error || 'An error occurred with the API request',
             status: response.status,
             data: response.data
           };
+          
+          logger.error('[Shopee GraphQL] API Error:', error);
+          
+          // Don't retry 4xx errors (client errors)
+          if (response.status >= 400 && response.status < 500) {
+            return error;
+          }
+          
+          // Retry 5xx errors (server errors)
+          if (attempt < maxRetries) {
+            logger.warn('[Shopee GraphQL] Server error, retrying...');
+            lastError = error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+            continue;
+          }
+          
+          return error;
         }
+        
+        // Log successful response
+        logger.info('[Shopee GraphQL] Request successful');
+        logger.debug('[Shopee GraphQL] Response data:', JSON.stringify(response.data).substring(0, 500) + '...');
         
         // Return the successful response data
         return response.data;
-      } catch (error) {
-        // Check if we should retry
-        if (retryCount < retryOptions.maxRetries) {
-          logger.debug(`[Shopee GraphQL] Retry ${retryCount + 1}/${retryOptions.maxRetries}`);
-          
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, retryOptions.retryDelay));
-          
-          // Exponential backoff
-          retryOptions.retryDelay *= 2;
-          
-          // Retry the request
-          return makeRequest(retryCount + 1);
-        }
+      } catch (requestError) {
+        logger.error(`[Shopee GraphQL] Request error (attempt ${attempt + 1}):`, requestError.message);
         
-        // Max retries reached, return error
-        throw error;
+        lastError = {
+          error: 'Request Error',
+          message: requestError.message || 'Network error occurred',
+          status: requestError.code || 500,
+          code: requestError.code
+        };
+        
+        // Don't retry network errors on last attempt
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        }
       }
-    };
+    }
     
-    return await makeRequest(0);
+    // If we get here, all retries failed
+    return lastError || {
+      error: 'Max retries exceeded',
+      message: 'Failed to connect to Shopee API after multiple attempts'
+    };
   } catch (error) {
-    logger.error('[Shopee GraphQL] Request error:', error.message);
+    logger.error('[Shopee GraphQL] Unexpected error:', error.message);
     return {
-      error: error.error || 'Request Error',
-      message: error.message || 'An error occurred while making the GraphQL request',
+      error: error.error || 'Unexpected Error',
+      message: error.message || 'An unexpected error occurred while making the GraphQL request',
       status: error.status || 500,
       data: error.data
     };
