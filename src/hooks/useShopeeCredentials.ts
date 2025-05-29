@@ -25,7 +25,13 @@ export function useShopeeCredentials(
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/shopee/credentials`);
+        const response = await fetch(`${API_BASE}/api/shopee/credentials`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
         if (response.ok) {
           const data = await response.json();
           
@@ -34,9 +40,12 @@ export function useShopeeCredentials(
             appId: data.appId || prev.appId,
             status: data.status || 'offline'
           }));
+        } else {
+          console.warn('Failed to fetch Shopee credentials, backend may be offline');
         }
       } catch (error) {
         console.error("Error fetching Shopee status:", error);
+        // Don't show error toast on every failed fetch, just log it
       }
     };
     
@@ -58,7 +67,10 @@ export function useShopeeCredentials(
   }, [initialAppId, initialStatus]);
 
   const saveShopeeCredentials = async () => {
-    if (!shopeeSettings.appId || !shopeeSettings.secretKey) return;
+    if (!shopeeSettings.appId || !shopeeSettings.secretKey) {
+      toast.error('Por favor, preencha App ID e Secret Key');
+      return;
+    }
     
     setShopeeSettings({ ...shopeeSettings, isLoading: true });
     
@@ -73,7 +85,8 @@ export function useShopeeCredentials(
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save credentials');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       
       const result = await response.json();
@@ -90,7 +103,13 @@ export function useShopeeCredentials(
       setTimeout(refreshShopeeStatus, 1000);
     } catch (error) {
       console.error("Error saving Shopee credentials:", error);
-      toast.error('Erro ao salvar credenciais da Shopee');
+      
+      if (error.message.includes('Failed to fetch')) {
+        toast.error('Erro de conexão: Verifique se o backend está rodando');
+      } else {
+        toast.error(`Erro ao salvar credenciais: ${error.message}`);
+      }
+      
       setShopeeSettings({
         ...shopeeSettings,
         isLoading: false,
@@ -99,7 +118,10 @@ export function useShopeeCredentials(
   };
 
   const testShopeeConnection = async () => {
-    if (!shopeeSettings.appId || !shopeeSettings.secretKey) return;
+    if (!shopeeSettings.appId || !shopeeSettings.secretKey) {
+      toast.error('Por favor, preencha App ID e Secret Key');
+      return;
+    }
     
     setShopeeSettings({ ...shopeeSettings, isLoading: true });
     
@@ -117,7 +139,7 @@ export function useShopeeCredentials(
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || 'Credenciais inválidas');
+        throw new Error(result.error || `HTTP ${response.status}`);
       }
       
       setShopeeSettings({
@@ -129,7 +151,14 @@ export function useShopeeCredentials(
       toast.success('Conexão com a API da Shopee estabelecida com sucesso');
     } catch (error) {
       console.error("Error testing Shopee connection:", error);
-      toast.error(`Erro na conexão com a API da Shopee: ${error.message || 'Verifique as credenciais'}`);
+      
+      if (error.message.includes('Failed to fetch')) {
+        toast.error('Erro de conexão: Verifique se o backend está rodando');
+      } else if (error.message.includes('Invalid credentials')) {
+        toast.error('Credenciais inválidas: Verifique App ID e Secret Key');
+      } else {
+        toast.error(`Erro na conexão: ${error.message}`);
+      }
       
       setShopeeSettings({
         ...shopeeSettings,

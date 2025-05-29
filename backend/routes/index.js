@@ -2,23 +2,31 @@
 const express = require('express');
 const router = express.Router();
 
-// Import all route modules
+// Import route modules
 const whatsappRoutes = require('./whatsapp');
 const shopeeRoutes = require('./shopee');
-const activityModule = require('./activity');
-const activityRoutes = activityModule.router; // Get router from activity module
-const { addActivity } = activityModule; // Import the addActivity function from the module
-const templatesRoutes = require('./templates');
 const promozapRoutes = require('./promozap');
+const healthRoutes = require('./health');
 
-// Register all route modules
+// Register routes
 router.use('/whatsapp', whatsappRoutes);
 router.use('/shopee', shopeeRoutes);
-router.use('/activity', activityRoutes);
-router.use('/templates', templatesRoutes);
-router.use('/v1', promozapRoutes);
+router.use('/promozap', promozapRoutes);
+router.use('/health', healthRoutes);
 
-// Expose addActivity for other modules to use
-router.addActivity = addActivity;
+// Root endpoint
+router.get('/', (req, res) => {
+  res.json({
+    message: 'Promozap Central API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      whatsapp: '/api/whatsapp',
+      shopee: '/api/shopee',
+      promozap: '/api/promozap'
+    }
+  });
+});
 
 module.exports = router;

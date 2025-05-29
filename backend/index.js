@@ -11,7 +11,14 @@ const logger = require('./utils/logger');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://84c94cc0-176b-4da2-bd4c-8ad76c953c8d.lovableproject.com'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -46,9 +53,19 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server - bind to all network interfaces (0.0.0.0)
-const PORT = process.env.PORT || 3000; // Changed default from 4000 to 3000
+const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
+
 app.listen(PORT, HOST, () => {
-  console.log(`Server is running on ${HOST}:${PORT}`);
-  console.log(`Server accessible at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+  console.log(`🚀 Server is running on ${HOST}:${PORT}`);
+  console.log(`📡 Server accessible at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+  console.log(`🔗 API endpoints available at http://localhost:${PORT}/api`);
+  console.log(`❤️  Health check at http://localhost:${PORT}/api/health`);
+  
+  // Log environment info
+  logger.info('Server started successfully', {
+    port: PORT,
+    host: HOST,
+    environment: process.env.NODE_ENV || 'development'
+  });
 });

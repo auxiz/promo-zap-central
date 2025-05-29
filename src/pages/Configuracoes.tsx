@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { ShopeeConversionForm } from '@/components/shopee/ShopeeConversionForm';
 import { Card } from '@/components/ui/card';
+import { BackendStatusIndicator } from '@/components/ui/BackendStatusIndicator';
 
 export default function Configuracoes() {
   const [shopeeAppId, setShopeeAppId] = useState('');
@@ -45,11 +46,14 @@ export default function Configuracoes() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Configurações de Integrações</h1>
-        <p className="text-muted-foreground mt-2">
-          Configure suas integrações com plataformas externas
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Configurações de Integrações</h1>
+          <p className="text-muted-foreground mt-2">
+            Configure suas integrações com plataformas externas
+          </p>
+        </div>
+        <BackendStatusIndicator />
       </div>
       
       <div className="space-y-6">
