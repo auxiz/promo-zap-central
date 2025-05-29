@@ -2,10 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import useWhatsAppConnection from './useWhatsAppConnection';
-
-// API endpoint base URL
-const API_BASE = 'http://168.231.98.177:4000';
-const API_BASE_URL = `${API_BASE}/api/whatsapp`;
+import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
 
 export interface Group {
   id: string;
@@ -36,14 +33,14 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
       setIsLoading(true);
       try {
         // Fetch all groups
-        const groupsResponse = await fetch(`${API_BASE_URL}/groups`);
+        const groupsResponse = await fetch(`${WHATSAPP_API_BASE_URL}/groups`);
         if (!groupsResponse.ok) {
           throw new Error(`Falha ao carregar grupos`);
         }
         const groupsData = await groupsResponse.json();
 
         // Fetch selected groups (monitored or send)
-        const selectedResponse = await fetch(`${API_BASE_URL}/${endpoint}`);
+        const selectedResponse = await fetch(`${WHATSAPP_API_BASE_URL}/${endpoint}`);
         if (!selectedResponse.ok) {
           throw new Error(`Falha ao carregar grupos ${endpointLabel.toLowerCase()}`);
         }
@@ -69,7 +66,7 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
   const handleAddGroup = async (groupId: string) => {
     setIsProcessing(prev => ({ ...prev, [groupId]: true }));
     try {
-      const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      const response = await fetch(`${WHATSAPP_API_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ groupId })
@@ -93,7 +90,7 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
   const handleRemoveGroup = async (groupId: string) => {
     setIsProcessing(prev => ({ ...prev, [groupId]: true }));
     try {
-      const response = await fetch(`${API_BASE_URL}/${endpoint}/${groupId}`, {
+      const response = await fetch(`${WHATSAPP_API_BASE_URL}/${endpoint}/${groupId}`, {
         method: 'DELETE'
       });
 

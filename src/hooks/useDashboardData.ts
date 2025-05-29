@@ -1,8 +1,6 @@
 
 import { useState, useEffect } from 'react';
-
-// Replace with your actual VPS IPv4 address and port
-const API_BASE = 'http://168.231.98.177:4000';
+import { WHATSAPP_API_BASE_URL, API_BASE } from '@/utils/api-constants';
 
 interface GroupCount {
   total: number;
@@ -40,7 +38,7 @@ export function useDashboardData() {
 
   const fetchMonitoredGroups = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/whatsapp/monitored/count`);
+      const response = await fetch(`${WHATSAPP_API_BASE_URL}/monitored/count`);
       if (response.ok) {
         const data = await response.json();
         setMonitoredGroups(data);
@@ -52,7 +50,7 @@ export function useDashboardData() {
 
   const fetchSendGroups = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/whatsapp/send/count`);
+      const response = await fetch(`${WHATSAPP_API_BASE_URL}/send/count`);
       if (response.ok) {
         const data = await response.json();
         setSendGroups(data);
