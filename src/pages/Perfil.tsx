@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { User, Mail, Save, Loader2, Bell, Sun, Shield } from 'lucide-react';
+import { User, Mail, Save, Loader2, Bell, Sun, Shield, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Perfil() {
   const { user } = useAuth();
   const { profile, loading, updateProfile } = useUserProfile();
+  const { role, isAdmin, loading: roleLoading } = useUserRole();
   const [isUpdating, setIsUpdating] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
 
@@ -76,7 +78,10 @@ export default function Perfil() {
     return 'AA';
   };
 
-  if (loading) {
+  // Default avatar SVG
+  const defaultAvatar = "data:image/svg+xml,%3csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='50' cy='50' r='50' fill='%23e5e7eb'/%3e%3ccircle cx='50' cy='35' r='12' fill='%239ca3af'/%3e%3cpath d='M50 55c-8 0-15 4-19 10v10c0 8 6 15 14 15h10c8 0 14-7 14-15v-10c-4-6-11-10-19-10z' fill='%239ca3af'/%3e%3c/svg%3e";
+
+  if (loading || roleLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -106,13 +111,31 @@ export default function Perfil() {
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile?.avatar_url || ''} alt="Avatar" />
-                  <AvatarFallback className="text-lg">
+                  <AvatarImage 
+                    src={profile?.avatar_url || defaultAvatar} 
+                    alt="Avatar"
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-lg bg-primary/10 text-primary">
                     {getInitials(profile?.full_name, user?.email)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-medium">Foto do Perfil</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg font-medium">Foto do Perfil</h3>
+                    {isAdmin && (
+                      <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                    {role === 'user' && (
+                      <Badge variant="secondary">
+                        <User className="w-3 h-3 mr-1" />
+                        Usuário
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Upload de avatar será implementado em breve
                   </p>
@@ -145,6 +168,36 @@ export default function Perfil() {
                     O email não pode ser alterado
                   </p>
                 </div>
+
+                {role && (
+                  <div className="space-y-2">
+                    <Label>Tipo de Conta</Label>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={isAdmin ? "default" : "secondary"}
+                        className={isAdmin ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" : ""}
+                      >
+                        {isAdmin ? (
+                          <>
+                            <Crown className="w-3 h-3 mr-1" />
+                            Administrador
+                          </>
+                        ) : (
+                          <>
+                            <User className="w-3 h-3 mr-1" />
+                            Usuário
+                          </>
+                        )}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {isAdmin 
+                        ? "Você tem acesso completo a todas as funcionalidades do sistema."
+                        : "Você tem acesso às funcionalidades básicas do sistema."
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">
@@ -161,6 +214,7 @@ export default function Perfil() {
           </Card>
         </TabsContent>
 
+        
         <TabsContent value="aparencia" className="space-y-6">
           <Card className="p-6">
             <div className="space-y-4">

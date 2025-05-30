@@ -1,74 +1,120 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+type AuthMode = 'signin' | 'signup' | 'reset';
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-  });
-
+  const [mode, setMode] = useState<AuthMode>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
 
     try {
-      if (isLogin) {
-        await signIn(formData.email, formData.password);
-      } else {
-        await signUp(formData.email, formData.password, formData.fullName);
+      if (mode === 'signin') {
+        await signIn(email, password);
+      } else if (mode === 'signup') {
+        await signUp(email, password, fullName);
+      } else if (mode === 'reset') {
+        await handlePasswordReset();
       }
     } catch (error) {
-      // Error is handled in the auth context
+      // Error handling is done in the auth context
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast.error('Por favor, insira seu email');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
+      setMode('signin');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao enviar email de recuperação');
+    }
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'signin':
+        return 'Entrar';
+      case 'signup':
+        return 'Criar Conta';
+      case 'reset':
+        return 'Recuperar Senha';
+      default:
+        return 'Entrar';
+    }
+  };
+
+  const getDescription = () => {
+    switch (mode) {
+      case 'signin':
+        return 'Faça login em sua conta';
+      case 'signup':
+        return 'Crie uma nova conta para começar';
+      case 'reset':
+        return 'Insira seu email para receber instruções de recuperação';
+      default:
+        return 'Faça login em sua conta';
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">
-            {isLogin ? 'Fazer Login' : 'Criar Conta'}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {isLogin 
-              ? 'Entre com suas credenciais para acessar o painel' 
-              : 'Crie uma nova conta para começar'
-            }
-          </CardDescription>
+          <div className="flex items-center gap-2">
+            {mode === 'reset' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMode('signin')}
+                className="p-1 h-auto"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <CardTitle className="text-2xl font-bold">{getTitle()}</CardTitle>
+          </div>
+          <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {mode === 'signup' && (
               <div className="space-y-2">
                 <Label htmlFor="fullName">Nome Completo</Label>
                 <Input
                   id="fullName"
-                  name="fullName"
                   type="text"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required={!isLogin}
-                  disabled={isLoading}
+                  placeholder="Digite seu nome completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
                 />
               </div>
             )}
@@ -77,51 +123,73 @@ export default function AuthPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
-                value={formData.email}
-                onChange={handleInputChange}
+                placeholder="Digite seu email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                disabled={isLoading}
-                minLength={6}
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLogin ? 'Entrar' : 'Criar Conta'}
+
+            {mode !== 'reset' && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Digite sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {mode === 'signin' && 'Entrar'}
+              {mode === 'signup' && 'Criar Conta'}
+              {mode === 'reset' && 'Enviar Email'}
             </Button>
           </form>
-          
-          <div className="mt-4 text-center">
-            <Button
-              variant="link"
-              onClick={() => setIsLogin(!isLogin)}
-              disabled={isLoading}
-              className="text-sm"
-            >
-              {isLogin 
-                ? 'Não tem uma conta? Cadastre-se' 
-                : 'Já tem uma conta? Faça login'
-              }
-            </Button>
+
+          <div className="mt-6 space-y-2">
+            {mode === 'signin' && (
+              <>
+                <div className="text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => setMode('reset')}
+                    className="text-sm text-muted-foreground hover:text-primary"
+                  >
+                    Esqueceu sua senha?
+                  </Button>
+                </div>
+                <div className="text-center text-sm text-muted-foreground">
+                  Não tem uma conta?{' '}
+                  <Button
+                    variant="link"
+                    onClick={() => setMode('signup')}
+                    className="text-primary hover:underline p-0 h-auto"
+                  >
+                    Criar conta
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {mode === 'signup' && (
+              <div className="text-center text-sm text-muted-foreground">
+                Já tem uma conta?{' '}
+                <Button
+                  variant="link"
+                  onClick={() => setMode('signin')}
+                  className="text-primary hover:underline p-0 h-auto"
+                >
+                  Fazer login
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
