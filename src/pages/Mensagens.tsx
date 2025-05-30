@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateHeader } from '@/components/mensagens/TemplateHeader';
@@ -53,9 +52,11 @@ export default function Mensagens() {
       
       <TemplateHeader 
         selectedTemplateId={selectedTemplateId}
+        templates={templates}
         handleNewTemplate={handleNewTemplate}
         handleDeleteTemplate={handleDeleteTemplate}
         handleSaveTemplate={handleSaveTemplate}
+        templateName={templateName}
       />
       
       <Card className="dashboard-card">
