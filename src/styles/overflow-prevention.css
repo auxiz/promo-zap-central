@@ -1,0 +1,43 @@
+
+@layer components {
+  /* === PREVENÇÃO TOTAL DE OVERFLOW HORIZONTAL === */
+  .no-overflow {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .no-overflow * {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* === GARANTIAS MÁXIMAS ANTI-OVERFLOW === */
+  html, body, #root, main, div {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  img, video, iframe, svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  pre, code {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    word-wrap: break-word !important;
+  }
+
+  table {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    display: block !important;
+    white-space: nowrap;
+  }
+}

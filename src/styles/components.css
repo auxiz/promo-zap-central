@@ -1,0 +1,108 @@
+
+@layer components {
+  /* === CONTAINERS SEGUROS === */
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    overflow-x: hidden !important;
+  }
+
+  /* === CARDS E CONTAINERS SEGUROS === */
+  .responsive-card {
+    @apply bg-card border rounded-lg shadow-sm;
+    overflow: hidden;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .responsive-content {
+    @apply p-3;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  @media (min-width: 640px) {
+    .responsive-content {
+      @apply p-4;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .responsive-content {
+      @apply p-6;
+    }
+  }
+
+  /* === INPUTS E FORMS SEGUROS === */
+  .responsive-input {
+    @apply w-full min-w-0;
+    max-width: 100% !important;
+  }
+
+  .responsive-textarea {
+    @apply w-full min-w-0 resize-y;
+    max-width: 100% !important;
+  }
+
+  /* === TEXTO TOTALMENTE RESPONSIVO === */
+  .responsive-text {
+    @apply text-sm;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  @media (min-width: 768px) {
+    .responsive-text {
+      @apply text-base;
+    }
+  }
+
+  /* === ESPAÇAMENTOS ADAPTATIVOS === */
+  .responsive-spacing {
+    @apply space-y-3;
+  }
+
+  @media (min-width: 640px) {
+    .responsive-spacing {
+      @apply space-y-4;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .responsive-spacing {
+      @apply space-y-6;
+    }
+  }
+
+  /* === TABS RESPONSIVAS === */
+  .responsive-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+
+  .responsive-tabs [role="tablist"] {
+    display: flex !important;
+    min-width: max-content !important;
+    padding: 0.25rem !important;
+  }
+
+  .responsive-tabs [role="tab"] {
+    white-space: nowrap !important;
+    padding: 0.5rem 0.75rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  @media (max-width: 640px) {
+    .responsive-tabs [role="tab"] {
+      padding: 0.5rem !important;
+      font-size: 0.875rem !important;
+    }
+  }
+}
