@@ -35,11 +35,11 @@ export function TemplateHeader({
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-      <div className="flex-1 max-w-md">
+    <div className="space-y-4">
+      <div className="w-full">
         <label className="block text-sm font-medium mb-2">Template Selecionado</label>
         <Select value={selectedTemplateId || ''} onValueChange={() => {}}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione um template ou crie um novo" />
           </SelectTrigger>
           <SelectContent>
@@ -52,23 +52,51 @@ export function TemplateHeader({
         </Select>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-3 overflow-x-auto pb-2">
         <Button
           onClick={handleNewTemplate}
           variant="outline"
-          className="flex items-center gap-2"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
+            minWidth: '120px',
+            flexShrink: 0,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+            borderRadius: '0.375rem'
+          }}
         >
-          <Plus className="h-4 w-4" />
-          Novo Template
+          <Plus className="h-4 w-4" style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            Novo Template
+          </span>
         </Button>
         
         <Button
           onClick={handleSaveTemplate}
-          className="flex items-center gap-2"
           disabled={!templateName.trim()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
+            minWidth: '120px',
+            flexShrink: 0,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+            borderRadius: '0.375rem'
+          }}
         >
-          <Save className="h-4 w-4" />
-          Salvar Template
+          <Save className="h-4 w-4" style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            Salvar Template
+          </span>
         </Button>
         
         {selectedTemplateId && (
@@ -76,10 +104,24 @@ export function TemplateHeader({
             <AlertDialogTrigger asChild>
               <Button
                 variant="destructive"
-                className="flex items-center gap-2"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  minWidth: '120px',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  borderRadius: '0.375rem'
+                }}
               >
-                <Trash2 className="h-4 w-4" />
-                Excluir
+                <Trash2 className="h-4 w-4" style={{ flexShrink: 0 }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Excluir
+                </span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

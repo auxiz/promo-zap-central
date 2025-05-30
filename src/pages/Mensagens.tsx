@@ -1,3 +1,4 @@
+
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateHeader } from '@/components/mensagens/TemplateHeader';
@@ -31,18 +32,18 @@ export default function Mensagens() {
   const previewText = getAutomationPreviewText();
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Bot className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold">Templates de Mensagens Automáticas</h1>
-            <Badge variant="outline" className="flex items-center gap-1">
+    <div className="space-y-6 overflow-x-hidden min-h-full">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+            <Bot className="h-8 w-8 text-blue-600 flex-shrink-0" />
+            <h1 className="text-2xl lg:text-3xl font-bold min-w-0">Templates de Mensagens Automáticas</h1>
+            <Badge variant="outline" className="flex items-center gap-1 flex-shrink-0">
               <MessageSquare className="h-3 w-3" />
               Bot Ativo
             </Badge>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm lg:text-base">
             Configure os templates que serão usados pelo bot quando detectar links nos grupos monitorados
           </p>
         </div>
@@ -59,22 +60,30 @@ export default function Mensagens() {
         templateName={templateName}
       />
       
-      <Card className="dashboard-card">
+      <Card className="dashboard-card overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="border-b px-6">
-            <TabsList className="bg-transparent border-b-0">
-              <TabsTrigger value="editor" className="flex items-center gap-2">
-                <Bot className="h-4 w-4" />
-                Editor de Templates
+          <div className="border-b px-4 lg:px-6 overflow-x-auto">
+            <TabsList className="bg-transparent border-b-0 w-full sm:w-auto">
+              <TabsTrigger 
+                value="editor" 
+                className="flex items-center gap-2 text-sm lg:text-base whitespace-nowrap"
+              >
+                <Bot className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Editor de Templates</span>
+                <span className="sm:hidden">Editor</span>
               </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Pré-visualização
+              <TabsTrigger 
+                value="preview" 
+                className="flex items-center gap-2 text-sm lg:text-base whitespace-nowrap"
+              >
+                <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Pré-visualização</span>
+                <span className="sm:hidden">Preview</span>
               </TabsTrigger>
             </TabsList>
           </div>
           
-          <TabsContent value="editor" className="p-6 space-y-6 text-foreground">
+          <TabsContent value="editor" className="p-4 lg:p-6 space-y-6 text-foreground">
             <AutomationTemplateForm
               templateName={templateName}
               setTemplateName={setTemplateName}
@@ -90,7 +99,7 @@ export default function Mensagens() {
             />
           </TabsContent>
           
-          <TabsContent value="preview" className="p-6 text-foreground">
+          <TabsContent value="preview" className="p-4 lg:p-6 text-foreground">
             <AutomationPreview previewText={previewText} />
           </TabsContent>
         </Tabs>

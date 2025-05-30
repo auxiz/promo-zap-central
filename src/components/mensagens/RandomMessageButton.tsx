@@ -176,11 +176,25 @@ export function RandomMessageButton({ setTemplateContent }: RandomMessageButtonP
     <Button 
       onClick={handleGenerateRandom} 
       variant="outline"
-      className="w-full flex items-center justify-center mt-4 bg-accent/30 hover:bg-accent/50"
+      className="w-full bg-accent/30 hover:bg-accent/50"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        padding: '0.75rem 1rem',
+        borderRadius: '0.375rem',
+        flexShrink: 0,
+        minWidth: '120px'
+      }}
     >
-      <Zap className="mr-2 h-4 w-4" />
-      Gerar Mensagem Aleatória
+      <Zap className="h-4 w-4" style={{ flexShrink: 0 }} />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        Gerar Mensagem Aleatória
+      </span>
     </Button>
   );
 }
-

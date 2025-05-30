@@ -36,8 +36,8 @@ export function AutomationTemplateForm({
   activeStyleId,
 }: AutomationTemplateFormProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 overflow-x-hidden">
+      <div className="xl:col-span-2 space-y-6 min-w-0">
         <TemplateNameSelect
           templateName={templateName}
           setTemplateName={setTemplateName}
@@ -59,22 +59,20 @@ export function AutomationTemplateForm({
         />
       </div>
       
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <AutomationPlaceholdersList 
-            templateContent={templateContent}
-            setTemplateContent={setTemplateContent}
-          />
-          
-          <AutomationRandomMessageButton 
-            setTemplateContent={setTemplateContent}
-          />
-          
-          <EmojiSelector 
-            templateContent={templateContent}
-            setTemplateContent={setTemplateContent}
-          />
-        </div>
+      <div className="space-y-6 min-w-0">
+        <AutomationPlaceholdersList 
+          templateContent={templateContent}
+          setTemplateContent={setTemplateContent}
+        />
+        
+        <AutomationRandomMessageButton 
+          setTemplateContent={setTemplateContent}
+        />
+        
+        <EmojiSelector 
+          templateContent={templateContent}
+          setTemplateContent={setTemplateContent}
+        />
       </div>
     </div>
   );
