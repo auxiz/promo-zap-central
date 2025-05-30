@@ -59,6 +59,13 @@ export default function Router() {
           </Layout>
         </ProtectedRoute>
       } />
+      <Route path="/whatsapp-conexao" element={
+        <ProtectedRoute>
+          <Layout>
+            <WhatsAppConexao />
+          </Layout>
+        </ProtectedRoute>
+      } />
       <Route path="/grupos-monitorados" element={
         <ProtectedRoute>
           <Layout>
