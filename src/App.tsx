@@ -1,34 +1,28 @@
 
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/sonner";
-import { NotificationProvider } from "@/contexts/NotificationContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-function App({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function App({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <QueryClientProvider client={queryClient}>
-        <NotificationProvider>
-          {children}
-          <Toaster />
-        </NotificationProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  )
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <BrowserRouter>
+          <AuthProvider>
+            <NotificationProvider>
+              {children}
+              <Toaster />
+            </NotificationProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;
