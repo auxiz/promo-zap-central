@@ -1,9 +1,11 @@
-import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, HelpCircle } from 'lucide-react';
+
+import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const sidebarItems = [
   { href: '/', label: 'Dashboard', icon: Home },
@@ -25,6 +27,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
+  const { isAdmin } = useUserRole();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -72,6 +75,11 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   // For mobile, use the isOpen prop; for desktop, use local isCollapsed state
   const shouldCollapse = isMobile ? !isOpen : isCollapsed;
+
+  // Combine regular items with admin items if user is admin
+  const allSidebarItems = isAdmin 
+    ? [...sidebarItems, { href: '/admin', label: 'Administração', icon: Shield }]
+    : sidebarItems;
 
   return (
     <>
@@ -128,7 +136,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           shouldCollapse && !isMobile ? "p-2 overflow-hidden" : "p-4 overflow-y-auto"
         )}>
           <ul className="space-y-1">
-            {sidebarItems.map((item) => {
+            {allSidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
               

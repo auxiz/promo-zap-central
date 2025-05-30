@@ -11,6 +11,7 @@ import GruposEnvio from "@/pages/GruposEnvio";
 import Mensagens from "@/pages/Mensagens";
 import Configuracoes from "@/pages/Configuracoes";
 import Perfil from "@/pages/Perfil";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -88,6 +89,13 @@ export default function Router() {
         <ProtectedRoute>
           <Layout>
             <Perfil />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <Layout>
+            <Admin />
           </Layout>
         </ProtectedRoute>
       } />
