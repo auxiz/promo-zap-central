@@ -1,3 +1,4 @@
+
 import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, HelpCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -103,7 +104,8 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           "border-b flex items-center transition-all duration-300",
           shouldCollapse && !isMobile ? "p-2 justify-center" : "p-4 justify-between"
         )}>
-          {(!shouldCollapse || !isMobile) && (
+          {/* Only show logo when not collapsed on desktop OR on mobile */}
+          {(!shouldCollapse || isMobile) && (
             <h1 className="text-lg sm:text-xl font-bold text-sidebar-foreground truncate">PromoZap</h1>
           )}
           <Button
@@ -124,8 +126,8 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
         {/* Navigation */}
         <nav className={cn(
-          "flex-1 transition-all duration-300 overflow-y-auto",
-          shouldCollapse && !isMobile ? "p-2" : "p-4"
+          "flex-1 transition-all duration-300",
+          shouldCollapse && !isMobile ? "p-2 overflow-hidden" : "p-4 overflow-y-auto"
         )}>
           <ul className="space-y-1">
             {sidebarItems.map((item) => {

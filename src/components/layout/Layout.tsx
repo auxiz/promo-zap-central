@@ -38,13 +38,13 @@ export default function Layout({ children }: LayoutProps) {
       <div className="flex flex-col flex-1 overflow-hidden min-w-0 main-content">
         <Header onMenuToggle={toggleSidebar} />
         <main className="flex-1 overflow-auto w-full max-w-full">
-          <div className="p-4 sm:p-6 w-full max-w-full overflow-x-hidden">
+          <div className="p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
             {user && (
-              <div className="mb-6 w-full max-w-full">
-                <h1 className="text-xl sm:text-2xl font-bold truncate">
+              <div className="mb-4 sm:mb-6 w-full max-w-full">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold break-words overflow-wrap-anywhere">
                   Bem-vindo, {user.user_metadata?.full_name || user.email}!
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base mt-1">
+                <p className="text-muted-foreground text-xs sm:text-sm lg:text-base mt-1 break-words">
                   Gerencie suas conexões WhatsApp e credenciais Shopee no seu painel pessoal.
                 </p>
               </div>

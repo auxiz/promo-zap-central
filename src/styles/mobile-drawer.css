@@ -86,4 +86,43 @@
       pointer-events: none;
     }
   }
+
+  /* === RESPONSIVE TEXT TREATMENT === */
+  
+  /* Break long words and emails responsively */
+  .break-words {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
+  
+  /* Ensure text never causes horizontal overflow */
+  @media (max-width: 640px) {
+    h1, h2, h3, p {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      max-width: 100%;
+    }
+    
+    /* Special handling for very long emails */
+    h1 {
+      font-size: 1rem !important;
+      line-height: 1.3;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 0.9rem !important;
+      line-height: 1.2;
+    }
+    
+    p {
+      font-size: 0.75rem !important;
+    }
+  }
 }
