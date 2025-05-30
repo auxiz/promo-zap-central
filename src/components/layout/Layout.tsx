@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,12 +10,33 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarOpen(false); // Close sidebar on mobile by default
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <div className="flex h-screen bg-background w-full max-w-full overflow-x-hidden">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0 main-content">
-        <Header />
+        <Header onMenuToggle={toggleSidebar} />
         <main className="flex-1 overflow-auto w-full max-w-full">
           <div className="p-4 sm:p-6 w-full max-w-full overflow-x-hidden">
             {user && (

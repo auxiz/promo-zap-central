@@ -7,13 +7,22 @@ import { NotificationCenter } from "./NotificationCenter";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useNotifications } from "@/hooks/useNotifications";
 
-export default function Header() {
+interface HeaderProps {
+  onMenuToggle: () => void;
+}
+
+export default function Header({ onMenuToggle }: HeaderProps) {
   const { unreadCount } = useNotifications();
 
   return (
     <header className="border-b bg-background w-full max-w-full overflow-x-hidden flex-shrink-0">
       <div className="flex h-16 items-center px-4 sm:px-6 w-full max-w-full">
-        <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden flex-shrink-0"
+          onClick={onMenuToggle}
+        >
           <Menu className="h-5 w-5" />
         </Button>
         

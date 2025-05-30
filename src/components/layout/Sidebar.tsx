@@ -1,4 +1,3 @@
-
 import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, HelpCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -20,7 +19,12 @@ const bottomItems = [
   { href: '/configuracoes-usuario', label: 'Preferências', icon: Settings },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -31,18 +35,18 @@ export default function Sidebar() {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (mobile) {
-        setIsCollapsed(true);
+        setIsCollapsed(!isOpen); // Use the prop from parent
       }
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isOpen]);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (isMobile && !isCollapsed) {
+    if (isMobile && isOpen) {
       document.body.classList.add('menu-open');
     } else {
       document.body.classList.remove('menu-open');
@@ -51,22 +55,29 @@ export default function Sidebar() {
     return () => {
       document.body.classList.remove('menu-open');
     };
-  }, [isMobile, isCollapsed]);
+  }, [isMobile, isOpen]);
 
   const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+    if (isMobile) {
+      onToggle(); // Use parent toggle for mobile
+    } else {
+      setIsCollapsed(!isCollapsed); // Keep local state for desktop
+    }
   };
 
   const closeSidebar = () => {
     if (isMobile) {
-      setIsCollapsed(true);
+      onToggle(); // Close using parent function
     }
   };
+
+  // For mobile, use the isOpen prop; for desktop, use local isCollapsed state
+  const shouldCollapse = isMobile ? !isOpen : isCollapsed;
 
   return (
     <>
       {/* Overlay for mobile */}
-      {isMobile && !isCollapsed && (
+      {isMobile && isOpen && (
         <div 
           className="sidebar-overlay fixed inset-0 bg-black/50 z-[900]"
           onClick={closeSidebar}
@@ -78,21 +89,21 @@ export default function Sidebar() {
         "flex flex-col bg-sidebar border-r transition-all duration-300 flex-shrink-0",
         // Desktop styles
         "md:relative md:h-screen",
-        isCollapsed ? "md:w-16" : "md:w-64",
+        shouldCollapse ? "md:w-16" : "md:w-64",
         // Mobile styles
         isMobile ? [
           "sidebar-mobile fixed top-0 left-0 h-screen z-[1000]",
           "overflow-y-auto overscroll-contain",
           "scrollbar-width-none -ms-overflow-style-none",
-          isCollapsed ? "w-0 opacity-0" : "w-64 opacity-100"
+          shouldCollapse ? "w-0 opacity-0" : "w-64 opacity-100"
         ] : ""
       )}>
         {/* Header */}
         <div className={cn(
           "border-b flex items-center transition-all duration-300",
-          isCollapsed && !isMobile ? "p-2 justify-center" : "p-4 justify-between"
+          shouldCollapse && !isMobile ? "p-2 justify-center" : "p-4 justify-between"
         )}>
-          {(!isCollapsed || !isMobile) && (
+          {(!shouldCollapse || !isMobile) && (
             <h1 className="text-lg sm:text-xl font-bold text-sidebar-foreground truncate">PromoZap</h1>
           )}
           <Button
@@ -101,12 +112,12 @@ export default function Sidebar() {
             onClick={toggleSidebar}
             className={cn(
               "transition-all duration-200 flex-shrink-0",
-              isCollapsed && !isMobile ? "p-1 h-8 w-8" : "p-2"
+              shouldCollapse && !isMobile ? "p-1 h-8 w-8" : "p-2"
             )}
           >
             <ChevronLeft className={cn(
               "h-4 w-4 transition-transform duration-300",
-              isCollapsed && !isMobile && "rotate-180"
+              shouldCollapse && !isMobile && "rotate-180"
             )} />
           </Button>
         </div>
@@ -114,7 +125,7 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className={cn(
           "flex-1 transition-all duration-300 overflow-y-auto",
-          isCollapsed && !isMobile ? "p-2" : "p-4"
+          shouldCollapse && !isMobile ? "p-2" : "p-4"
         )}>
           <ul className="space-y-1">
             {sidebarItems.map((item) => {
@@ -128,26 +139,26 @@ export default function Sidebar() {
                     onClick={closeSidebar}
                     className={cn(
                       "flex items-center rounded-lg text-sm transition-all duration-200 relative group",
-                      isCollapsed && !isMobile
+                      shouldCollapse && !isMobile
                         ? "w-12 h-12 justify-center p-0 mx-auto" 
                         : "gap-3 px-3 py-3",
                       isActive
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
-                    title={isCollapsed && !isMobile ? item.label : undefined}
+                    title={shouldCollapse && !isMobile ? item.label : undefined}
                   >
                     <Icon 
                       size={20} 
                       className={cn(
                         "shrink-0 transition-all duration-200",
-                        isCollapsed && !isMobile ? "w-5 h-5" : ""
+                        shouldCollapse && !isMobile ? "w-5 h-5" : ""
                       )} 
                     />
-                    {(!isCollapsed || isMobile) && <span className="font-medium truncate">{item.label}</span>}
+                    {(!shouldCollapse || isMobile) && <span className="font-medium truncate">{item.label}</span>}
                     
                     {/* Tooltip for collapsed state on desktop */}
-                    {isCollapsed && !isMobile && (
+                    {shouldCollapse && !isMobile && (
                       <div className="absolute left-full ml-2 px-2 py-1 bg-sidebar-accent text-sidebar-accent-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                         {item.label}
                       </div>
@@ -162,7 +173,7 @@ export default function Sidebar() {
         {/* Bottom section */}
         <div className={cn(
           "border-t transition-all duration-300",
-          isCollapsed && !isMobile ? "p-2" : "p-4"
+          shouldCollapse && !isMobile ? "p-2" : "p-4"
         )}>
           <ul className="space-y-1">
             {bottomItems.map((item) => {
@@ -176,26 +187,26 @@ export default function Sidebar() {
                     onClick={closeSidebar}
                     className={cn(
                       "flex items-center rounded-lg text-sm transition-all duration-200 relative group",
-                      isCollapsed && !isMobile
+                      shouldCollapse && !isMobile
                         ? "w-12 h-12 justify-center p-0 mx-auto" 
                         : "gap-3 px-3 py-3",
                       isActive
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
-                    title={isCollapsed && !isMobile ? item.label : undefined}
+                    title={shouldCollapse && !isMobile ? item.label : undefined}
                   >
                     <Icon 
                       size={20} 
                       className={cn(
                         "shrink-0 transition-all duration-200",
-                        isCollapsed && !isMobile ? "w-5 h-5" : ""
+                        shouldCollapse && !isMobile ? "w-5 h-5" : ""
                       )} 
                     />
-                    {(!isCollapsed || isMobile) && <span className="font-medium truncate">{item.label}</span>}
+                    {(!shouldCollapse || isMobile) && <span className="font-medium truncate">{item.label}</span>}
                     
                     {/* Tooltip for collapsed state on desktop */}
-                    {isCollapsed && !isMobile && (
+                    {shouldCollapse && !isMobile && (
                       <div className="absolute left-full ml-2 px-2 py-1 bg-sidebar-accent text-sidebar-accent-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                         {item.label}
                       </div>
