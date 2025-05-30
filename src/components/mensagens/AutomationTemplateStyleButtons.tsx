@@ -43,7 +43,7 @@ export function AutomationTemplateStyleButtons({
                 </ResponsiveButton>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{style.description}</p>
+                <p>{style.name}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
