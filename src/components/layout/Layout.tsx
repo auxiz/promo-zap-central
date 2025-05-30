@@ -14,7 +14,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex h-screen bg-background w-full max-w-full overflow-x-hidden">
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0 main-content">
         <Header />
         <main className="flex-1 overflow-auto w-full max-w-full">
           <div className="p-4 sm:p-6 w-full max-w-full overflow-x-hidden">

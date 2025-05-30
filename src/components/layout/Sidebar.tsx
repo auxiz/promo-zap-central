@@ -23,11 +23,14 @@ const bottomItems = [
 export default function Sidebar() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Auto-collapse on very small screens
+  // Auto-collapse on very small screens and set mobile state
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
         setIsCollapsed(true);
       }
     };
@@ -37,129 +40,173 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobile && !isCollapsed) {
+      document.body.classList.add('menu-open');
+    } else {
+      document.body.classList.remove('menu-open');
+    }
+
+    return () => {
+      document.body.classList.remove('menu-open');
+    };
+  }, [isMobile, isCollapsed]);
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const closeSidebar = () => {
+    if (isMobile) {
+      setIsCollapsed(true);
+    }
+  };
+
   return (
-    <div className={cn(
-      "flex flex-col h-screen bg-sidebar border-r transition-all duration-300 flex-shrink-0",
-      isCollapsed ? "w-16" : "w-64",
-      "md:relative absolute z-50 md:z-auto"
-    )}>
-      {/* Header */}
+    <>
+      {/* Overlay for mobile */}
+      {isMobile && !isCollapsed && (
+        <div 
+          className="sidebar-overlay fixed inset-0 bg-black/50 z-[900]"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+      )}
+
       <div className={cn(
-        "border-b flex items-center transition-all duration-300",
-        isCollapsed ? "p-2 justify-center" : "p-4 justify-between"
+        "flex flex-col bg-sidebar border-r transition-all duration-300 flex-shrink-0",
+        // Desktop styles
+        "md:relative md:h-screen",
+        isCollapsed ? "md:w-16" : "md:w-64",
+        // Mobile styles
+        isMobile ? [
+          "sidebar-mobile fixed top-0 left-0 h-screen z-[1000]",
+          "overflow-y-auto overscroll-contain",
+          "scrollbar-width-none -ms-overflow-style-none",
+          isCollapsed ? "w-0 opacity-0" : "w-64 opacity-100"
+        ] : ""
       )}>
-        {!isCollapsed && (
-          <h1 className="text-lg sm:text-xl font-bold text-sidebar-foreground truncate">PromoZap</h1>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn(
-            "transition-all duration-200 flex-shrink-0",
-            isCollapsed ? "p-1 h-8 w-8" : "p-2"
+        {/* Header */}
+        <div className={cn(
+          "border-b flex items-center transition-all duration-300",
+          isCollapsed && !isMobile ? "p-2 justify-center" : "p-4 justify-between"
+        )}>
+          {(!isCollapsed || !isMobile) && (
+            <h1 className="text-lg sm:text-xl font-bold text-sidebar-foreground truncate">PromoZap</h1>
           )}
-        >
-          <ChevronLeft className={cn(
-            "h-4 w-4 transition-transform duration-300",
-            isCollapsed && "rotate-180"
-          )} />
-        </Button>
-      </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className={cn(
+              "transition-all duration-200 flex-shrink-0",
+              isCollapsed && !isMobile ? "p-1 h-8 w-8" : "p-2"
+            )}
+          >
+            <ChevronLeft className={cn(
+              "h-4 w-4 transition-transform duration-300",
+              isCollapsed && !isMobile && "rotate-180"
+            )} />
+          </Button>
+        </div>
 
-      {/* Navigation */}
-      <nav className={cn(
-        "flex-1 transition-all duration-300 overflow-y-auto",
-        isCollapsed ? "p-2" : "p-4"
-      )}>
-        <ul className="space-y-1">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <li key={item.href}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "flex items-center rounded-lg text-sm transition-all duration-200 relative group",
-                    isCollapsed 
-                      ? "w-12 h-12 justify-center p-0 mx-auto" 
-                      : "gap-3 px-3 py-3",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Icon 
-                    size={20} 
+        {/* Navigation */}
+        <nav className={cn(
+          "flex-1 transition-all duration-300 overflow-y-auto",
+          isCollapsed && !isMobile ? "p-2" : "p-4"
+        )}>
+          <ul className="space-y-1">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+              
+              return (
+                <li key={item.href}>
+                  <Link
+                    to={item.href}
+                    onClick={closeSidebar}
                     className={cn(
-                      "shrink-0 transition-all duration-200",
-                      isCollapsed ? "w-5 h-5" : ""
-                    )} 
-                  />
-                  {!isCollapsed && <span className="font-medium truncate">{item.label}</span>}
-                  
-                  {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-sidebar-accent text-sidebar-accent-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                      {item.label}
-                    </div>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+                      "flex items-center rounded-lg text-sm transition-all duration-200 relative group",
+                      isCollapsed && !isMobile
+                        ? "w-12 h-12 justify-center p-0 mx-auto" 
+                        : "gap-3 px-3 py-3",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                    title={isCollapsed && !isMobile ? item.label : undefined}
+                  >
+                    <Icon 
+                      size={20} 
+                      className={cn(
+                        "shrink-0 transition-all duration-200",
+                        isCollapsed && !isMobile ? "w-5 h-5" : ""
+                      )} 
+                    />
+                    {(!isCollapsed || isMobile) && <span className="font-medium truncate">{item.label}</span>}
+                    
+                    {/* Tooltip for collapsed state on desktop */}
+                    {isCollapsed && !isMobile && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-sidebar-accent text-sidebar-accent-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        {item.label}
+                      </div>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
-      {/* Bottom section */}
-      <div className={cn(
-        "border-t transition-all duration-300",
-        isCollapsed ? "p-2" : "p-4"
-      )}>
-        <ul className="space-y-1">
-          {bottomItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <li key={item.href}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "flex items-center rounded-lg text-sm transition-all duration-200 relative group",
-                    isCollapsed 
-                      ? "w-12 h-12 justify-center p-0 mx-auto" 
-                      : "gap-3 px-3 py-3",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Icon 
-                    size={20} 
+        {/* Bottom section */}
+        <div className={cn(
+          "border-t transition-all duration-300",
+          isCollapsed && !isMobile ? "p-2" : "p-4"
+        )}>
+          <ul className="space-y-1">
+            {bottomItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+              
+              return (
+                <li key={item.href}>
+                  <Link
+                    to={item.href}
+                    onClick={closeSidebar}
                     className={cn(
-                      "shrink-0 transition-all duration-200",
-                      isCollapsed ? "w-5 h-5" : ""
-                    )} 
-                  />
-                  {!isCollapsed && <span className="font-medium truncate">{item.label}</span>}
-                  
-                  {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-sidebar-accent text-sidebar-accent-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                      {item.label}
-                    </div>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                      "flex items-center rounded-lg text-sm transition-all duration-200 relative group",
+                      isCollapsed && !isMobile
+                        ? "w-12 h-12 justify-center p-0 mx-auto" 
+                        : "gap-3 px-3 py-3",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                    title={isCollapsed && !isMobile ? item.label : undefined}
+                  >
+                    <Icon 
+                      size={20} 
+                      className={cn(
+                        "shrink-0 transition-all duration-200",
+                        isCollapsed && !isMobile ? "w-5 h-5" : ""
+                      )} 
+                    />
+                    {(!isCollapsed || isMobile) && <span className="font-medium truncate">{item.label}</span>}
+                    
+                    {/* Tooltip for collapsed state on desktop */}
+                    {isCollapsed && !isMobile && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-sidebar-accent text-sidebar-accent-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        {item.label}
+                      </div>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
