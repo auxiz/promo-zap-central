@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -148,9 +147,14 @@ export function NewMensagensEditor({
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-4">
             <div className="space-y-4">
-              <label className="block text-sm font-medium">
-                Conteúdo do Template
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium">
+                  Conteúdo do Template
+                </label>
+                <NewRandomMessageButton 
+                  setTemplateContent={setTemplateContent}
+                />
+              </div>
               <Textarea
                 value={templateContent}
                 onChange={(e) => setTemplateContent(e.target.value)}
@@ -166,26 +170,12 @@ export function NewMensagensEditor({
           />
         </div>
 
-        {/* Sidebar Tools - Reorganized for mobile */}
+        {/* Sidebar Tools */}
         <div className="space-y-6">
-          {/* Mobile: Template Aleatório first, Desktop: maintains order */}
-          <div className="block lg:hidden">
-            <NewRandomMessageButton 
-              setTemplateContent={setTemplateContent}
-            />
-          </div>
-          
           <NewPlaceholdersList 
             templateContent={templateContent}
             setTemplateContent={setTemplateContent}
           />
-          
-          {/* Desktop: Template Aleatório in original position */}
-          <div className="hidden lg:block">
-            <NewRandomMessageButton 
-              setTemplateContent={setTemplateContent}
-            />
-          </div>
           
           <NewEmojiSelector 
             templateContent={templateContent}
