@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -120,7 +121,14 @@ serve(async (req) => {
 
     // Handle POST request - update user role
     if (req.method === 'POST') {
-      const { action, userId, newRole } = await req.json()
+      let requestBody
+      try {
+        requestBody = await req.json()
+      } catch (error) {
+        throw new Error('Invalid JSON in request body')
+      }
+
+      const { action, userId, newRole } = requestBody
 
       if (action === 'updateRole') {
         // Verificar se não é o próprio usuário tentando alterar seu próprio role
@@ -177,7 +185,14 @@ serve(async (req) => {
 
     // Handle DELETE request - delete user
     if (req.method === 'DELETE') {
-      const { userId } = await req.json()
+      let requestBody
+      try {
+        requestBody = await req.json()
+      } catch (error) {
+        throw new Error('Invalid JSON in request body')
+      }
+
+      const { userId } = requestBody
 
       // Verificar se não é o próprio usuário tentando se deletar
       if (userId === user.id) {

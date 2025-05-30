@@ -36,7 +36,9 @@ export function useAdminUsers() {
     setError(null);
     
     try {
-      const { data: result, error } = await supabase.functions.invoke('admin-users');
+      const { data: result, error } = await supabase.functions.invoke('admin-users', {
+        method: 'GET'
+      });
       
       if (error) throw error;
 
@@ -56,6 +58,7 @@ export function useAdminUsers() {
     
     try {
       const { data: result, error } = await supabase.functions.invoke('admin-users', {
+        method: 'POST',
         body: {
           action: 'updateRole',
           userId,
