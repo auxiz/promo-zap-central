@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import ConnectionStatus from '@/components/whatsapp/ConnectionStatus';
 import ConnectionMetrics from '@/components/whatsapp/ConnectionMetrics';
@@ -11,11 +11,12 @@ import InstancesList from '@/components/whatsapp/InstancesList';
 import NewInstanceDialog from '@/components/whatsapp/NewInstanceDialog';
 import DeleteInstanceDialog from '@/components/whatsapp/DeleteInstanceDialog';
 import ErrorMonitor from '@/components/whatsapp/ErrorMonitor';
-import { useState } from 'react';
+import ErrorFallback from '@/components/whatsapp/ErrorFallback';
 
 export default function WhatsAppConexao() {
   const [showErrorMonitor, setShowErrorMonitor] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
+  const [hasError, setHasError] = useState(false);
   
   const {
     instances,
@@ -42,8 +43,35 @@ export default function WhatsAppConexao() {
     backendError,
     handleConnect,
     handleQrCodeScanned,
-    handleDisconnect
+    handleDisconnect,
+    refreshStatus
   } = useWhatsAppConnection(currentInstance);
+
+  const handleRetry = async () => {
+    setHasError(false);
+    try {
+      await refreshStatus();
+    } catch (error) {
+      console.error('Retry failed:', error);
+      setHasError(true);
+    }
+  };
+
+  // Show error fallback if there are persistent errors
+  if (hasError || (backendError && !connectionStatus)) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">WhatsApp Conexão</h1>
+        </div>
+        <ErrorFallback 
+          error="Erro ao conectar com o servidor WhatsApp" 
+          onRetry={handleRetry}
+          isRetrying={isLoading}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

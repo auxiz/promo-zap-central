@@ -12,29 +12,25 @@ export function useWhatsAppErrorHandler({ addNotification }: UseWhatsAppErrorHan
   const lastErrorNotificationRef = useRef<number>(0);
   const consecutiveErrorsRef = useRef<number>(0);
   const lastNotificationTypeRef = useRef<string>('');
-  const maxApiErrorsRef = useRef<number>(CONNECTION_CONFIG.maxErrorNotifications || 3); // Maximum API error notifications to show per session
-  const apiErrorCountRef = useRef<number>(0); // Count of API error notifications shown
+  const maxApiErrorsRef = useRef<number>(CONNECTION_CONFIG.maxErrorNotifications || 3);
+  const apiErrorCountRef = useRef<number>(0);
   
   const handleBackendError = (wasConnected: boolean = false) => {
-    // Increment consecutive errors counter
     consecutiveErrorsRef.current += 1;
     
     const now = Date.now();
     const timeSinceLastNotification = now - lastErrorNotificationRef.current;
     
-    // Only show notification if:
-    // 1. It's been more than 5 minutes since the last one OR
-    // 2. This is the first error after successful connection
-    // 3. We haven't shown too many API error notifications
+    // Only show notification if we haven't shown too many and enough time has passed
     if (
       apiErrorCountRef.current < maxApiErrorsRef.current &&
-      ((timeSinceLastNotification > CONNECTION_CONFIG.maxPollingInterval) || // 5 minutes
+      ((timeSinceLastNotification > CONNECTION_CONFIG.maxPollingInterval) ||
        (consecutiveErrorsRef.current === 1 && lastNotificationTypeRef.current !== 'backend-error'))
     ) {
       addNotification(
-        'Erro de API',
-        'Não foi possível conectar ao servidor WhatsApp',
-        'error',
+        'Conectando ao servidor',
+        'Configurando conexão com WhatsApp via Supabase...',
+        'info',
         'silent'
       );
       lastNotificationTypeRef.current = 'backend-error';
@@ -44,7 +40,6 @@ export function useWhatsAppErrorHandler({ addNotification }: UseWhatsAppErrorHan
   };
   
   const handleConnectionChanged = (newStatus: string, deviceName?: string) => {
-    // Reset consecutive errors counter when connection is successful
     if (newStatus === 'connected') {
       consecutiveErrorsRef.current = 0;
       
