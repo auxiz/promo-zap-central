@@ -58,9 +58,23 @@ export function AutomationRandomMessageButton({ setTemplateContent }: Automation
       onClick={handleGenerateRandom} 
       variant="outline"
       className="w-full"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        padding: '0.75rem 1rem',
+        borderRadius: '0.375rem',
+        flexShrink: 0,
+        minWidth: 'fit-content'
+      }}
     >
-      <Bot className="h-4 w-4 mr-2" />
-      Gerar Template de Automação
+      <Bot className="h-4 w-4" style={{ flexShrink: 0 }} />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        Gerar Template de Automação
+      </span>
     </Button>
   );
 }
