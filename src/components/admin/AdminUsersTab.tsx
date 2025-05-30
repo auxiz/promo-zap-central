@@ -57,25 +57,32 @@ export function AdminUsersTab() {
 
       if (rolesError) throw rolesError;
 
-      // Get auth users (admin only can access this)
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
+      // Get auth users (we'll use profiles as the base since admin access might be limited)
+      const usersWithRoles: UserWithRole[] = [];
 
-      // Combine data
-      const usersWithRoles = profiles?.map(profile => {
-        const authUser = authUsers.users.find(u => u.id === profile.id);
-        const userRole = roles?.find(r => r.user_id === profile.id);
-        
-        return {
-          id: profile.id,
-          email: authUser?.email || 'N/A',
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-          created_at: profile.created_at,
-          role: userRole?.role || 'user'
-        };
-      }) || [];
+      if (profiles) {
+        for (const profile of profiles) {
+          // Try to get email from auth, but handle gracefully if not available
+          let email = 'N/A';
+          try {
+            const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+            email = authUser.user?.email || 'N/A';
+          } catch (error) {
+            console.warn('Could not fetch email for user:', profile.id);
+          }
+
+          const userRole = roles?.find(r => r.user_id === profile.id);
+          
+          usersWithRoles.push({
+            id: profile.id,
+            email,
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url,
+            created_at: profile.created_at,
+            role: (userRole?.role as 'admin' | 'user') || 'user'
+          });
+        }
+      }
 
       setUsers(usersWithRoles);
     } catch (error: any) {
