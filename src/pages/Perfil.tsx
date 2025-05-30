@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { User, Mail, Save, Loader2, Bell, Sun, Shield, Crown } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateRandomAvatar, generateInitialsAvatar } from '@/utils/avatarGenerator';
 
 export default function Perfil() {
   const { user } = useAuth();
@@ -63,24 +65,6 @@ export default function Perfil() {
     toast.success('Configuração de privacidade atualizada');
   };
 
-  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
-    if (name) {
-      return name
-        .split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    if (email) {
-      return email.slice(0, 2).toUpperCase();
-    }
-    return 'AA';
-  };
-
-  // Default avatar SVG
-  const defaultAvatar = "data:image/svg+xml,%3csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='50' cy='50' r='50' fill='%23e5e7eb'/%3e%3ccircle cx='50' cy='35' r='12' fill='%239ca3af'/%3e%3cpath d='M50 55c-8 0-15 4-19 10v10c0 8 6 15 14 15h10c8 0 14-7 14-15v-10c-4-6-11-10-19-10z' fill='%239ca3af'/%3e%3c/svg%3e";
-
   if (loading || roleLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -88,6 +72,22 @@ export default function Perfil() {
       </div>
     );
   }
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || 'Usuário';
+
+  // Avatar logic: use profile avatar, then random avatar, then initials
+  const getAvatarUrl = () => {
+    if (profile?.avatar_url) {
+      return profile.avatar_url;
+    }
+    if (user?.id) {
+      return generateRandomAvatar(user.id, 80);
+    }
+    return null;
+  };
+
+  const avatarUrl = getAvatarUrl();
+  const initialsData = generateInitialsAvatar(displayName, user?.email);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -112,12 +112,18 @@ export default function Perfil() {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
                   <AvatarImage 
-                    src={profile?.avatar_url || defaultAvatar} 
+                    src={avatarUrl || undefined} 
                     alt="Avatar"
                     className="object-cover"
                   />
-                  <AvatarFallback className="text-lg bg-primary/10 text-primary">
-                    {getInitials(profile?.full_name, user?.email)}
+                  <AvatarFallback 
+                    className="text-lg font-medium"
+                    style={{
+                      backgroundColor: initialsData.backgroundColor,
+                      color: initialsData.textColor,
+                    }}
+                  >
+                    {initialsData.initials}
                   </AvatarFallback>
                 </Avatar>
                 <div>

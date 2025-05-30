@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserRole } from '@/hooks/useUserRole';
+import { generateRandomAvatar, generateInitialsAvatar } from '@/utils/avatarGenerator';
 
 export default function UserDropdown() {
   const { user, signOut } = useAuth();
@@ -23,29 +24,23 @@ export default function UserDropdown() {
 
   if (!user) return null;
 
-  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
-    if (name) {
-      return name
-        .split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    if (email) {
-      return email.slice(0, 2).toUpperCase();
-    }
-    return 'AA';
-  };
-
   const handleNavigateToProfile = () => {
     navigate('/perfil');
   };
 
   const displayName = profile?.full_name || user.user_metadata?.full_name || 'Usuário';
 
-  // Default avatar SVG as data URL
-  const defaultAvatar = "data:image/svg+xml,%3csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='50' cy='50' r='50' fill='%23e5e7eb'/%3e%3ccircle cx='50' cy='35' r='12' fill='%239ca3af'/%3e%3cpath d='M50 55c-8 0-15 4-19 10v10c0 8 6 15 14 15h10c8 0 14-7 14-15v-10c-4-6-11-10-19-10z' fill='%239ca3af'/%3e%3c/svg%3e";
+  // Avatar logic: use profile avatar, then random avatar, then initials
+  const getAvatarUrl = () => {
+    if (profile?.avatar_url) {
+      return profile.avatar_url;
+    }
+    // Generate consistent random avatar based on user ID
+    return generateRandomAvatar(user.id, 32);
+  };
+
+  const avatarUrl = getAvatarUrl();
+  const initialsData = generateInitialsAvatar(displayName, user.email);
 
   return (
     <DropdownMenu>
@@ -56,12 +51,18 @@ export default function UserDropdown() {
         >
           <Avatar className="h-8 w-8">
             <AvatarImage 
-              src={profile?.avatar_url || defaultAvatar} 
+              src={avatarUrl} 
               alt={displayName}
               className="object-cover"
             />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {getInitials(displayName, user.email)}
+            <AvatarFallback 
+              className="text-sm font-medium"
+              style={{
+                backgroundColor: initialsData.backgroundColor,
+                color: initialsData.textColor,
+              }}
+            >
+              {initialsData.initials}
             </AvatarFallback>
           </Avatar>
         </Button>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { generateRandomAvatar } from '@/utils/avatarGenerator';
 
 type Profile = Tables<'profiles'>;
 
@@ -29,14 +30,17 @@ export const useUserProfile = () => {
           .single();
 
         if (error) {
-          // If profile doesn't exist, create it
+          // If profile doesn't exist, create it with a random avatar
           if (error.code === 'PGRST116') {
+            const randomAvatarUrl = generateRandomAvatar(user.id, 150);
+            
             const { data: newProfile, error: insertError } = await supabase
               .from('profiles')
               .insert([
                 {
                   id: user.id,
                   full_name: user.user_metadata?.full_name || null,
+                  avatar_url: randomAvatarUrl,
                 }
               ])
               .select()
@@ -48,7 +52,22 @@ export const useUserProfile = () => {
             throw error;
           }
         } else {
-          setProfile(data);
+          // If profile exists but has no avatar, update it with a random one
+          if (!data.avatar_url) {
+            const randomAvatarUrl = generateRandomAvatar(user.id, 150);
+            
+            const { data: updatedProfile, error: updateError } = await supabase
+              .from('profiles')
+              .update({ avatar_url: randomAvatarUrl })
+              .eq('id', user.id)
+              .select()
+              .single();
+
+            if (updateError) throw updateError;
+            setProfile(updatedProfile);
+          } else {
+            setProfile(data);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching profile:', err);
