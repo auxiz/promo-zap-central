@@ -59,20 +59,24 @@ export function AutomationTemplateForm({
         />
       </div>
       
-      <div className="space-y-4">
-        <AutomationPlaceholdersList 
-          templateContent={templateContent}
-          setTemplateContent={setTemplateContent}
-        />
-        
-        <AutomationRandomMessageButton 
-          setTemplateContent={setTemplateContent}
-        />
-        
-        <EmojiSelector 
-          templateContent={templateContent}
-          setTemplateContent={setTemplateContent}
-        />
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <AutomationPlaceholdersList 
+            templateContent={templateContent}
+            setTemplateContent={setTemplateContent}
+          />
+          
+          <div className="p-4 border rounded-lg bg-card">
+            <AutomationRandomMessageButton 
+              setTemplateContent={setTemplateContent}
+            />
+          </div>
+          
+          <EmojiSelector 
+            templateContent={templateContent}
+            setTemplateContent={setTemplateContent}
+          />
+        </div>
       </div>
     </div>
   );
