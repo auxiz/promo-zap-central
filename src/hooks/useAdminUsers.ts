@@ -83,8 +83,9 @@ export function useAdminUsers() {
     
     try {
       const { data: result, error } = await supabase.functions.invoke('admin-users', {
-        method: 'DELETE',
+        method: 'POST',
         body: {
+          action: 'deleteUser',
           userId
         }
       });

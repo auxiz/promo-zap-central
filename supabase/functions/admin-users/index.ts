@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -119,7 +118,7 @@ serve(async (req) => {
       })
     }
 
-    // Handle POST request - update user role
+    // Handle POST request - update user role or delete user
     if (req.method === 'POST') {
       let requestBody
       try {
@@ -180,10 +179,90 @@ serve(async (req) => {
         })
       }
 
+      if (action === 'deleteUser') {
+        // Verificar se não é o próprio usuário tentando se deletar
+        if (userId === user.id) {
+          throw new Error('Cannot delete your own account')
+        }
+
+        // Verificar se não está tentando deletar o último admin
+        const { data: targetUserRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single()
+
+        if (targetUserRole?.role === 'admin') {
+          const { count: adminCount } = await supabase
+            .from('user_roles')
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'admin')
+
+          if (adminCount && adminCount <= 1) {
+            throw new Error('Cannot delete the last administrator')
+          }
+        }
+
+        // Buscar dados do usuário antes de deletar para log
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .single()
+
+        // Deletar dados relacionados nas tabelas do projeto
+        const deleteOperations = [
+          supabase.from('user_roles').delete().eq('user_id', userId),
+          supabase.from('user_whatsapp_instances').delete().eq('user_id', userId),
+          supabase.from('user_shopee_credentials').delete().eq('user_id', userId),
+          supabase.from('user_templates').delete().eq('user_id', userId),
+          supabase.from('user_groups').delete().eq('user_id', userId),
+          supabase.from('user_activity').delete().eq('user_id', userId),
+          supabase.from('profiles').delete().eq('id', userId)
+        ]
+
+        // Executar todas as operações de delete
+        for (const operation of deleteOperations) {
+          const { error } = await operation
+          if (error) {
+            console.error('Error deleting user data:', error)
+            // Continue mesmo com erros para tentar deletar o máximo possível
+          }
+        }
+
+        // Deletar usuário do auth (isso também remove referências devido ao CASCADE)
+        const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId)
+        
+        if (authDeleteError) {
+          console.error('Error deleting auth user:', authDeleteError)
+          throw new Error('Failed to delete user from authentication system')
+        }
+
+        // Log da operação
+        await supabase.from('system_logs').insert({
+          level: 'warning',
+          message: `User deleted by admin`,
+          source: 'admin-users',
+          user_id: user.id,
+          context: {
+            deletedUserId: userId,
+            deletedUserName: userProfile?.full_name || 'Unknown',
+            action: 'deleteUser'
+          }
+        })
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'User deleted successfully'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       throw new Error('Invalid action')
     }
 
-    // Handle DELETE request - delete user
+    // Handle DELETE request - delete user (mantido para compatibilidade)
     if (req.method === 'DELETE') {
       let requestBody
       try {
