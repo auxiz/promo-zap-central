@@ -77,7 +77,7 @@ export default function UserDropdown() {
             <p className="text-sm font-medium leading-none flex items-center gap-2">
               {displayName}
               {isAdmin && (
-                <Crown className="h-3 w-3 text-yellow-500" title="Administrador" />
+                <Crown className="h-3 w-3 text-yellow-500" aria-label="Administrador" />
               )}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
