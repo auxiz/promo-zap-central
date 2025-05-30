@@ -11,7 +11,6 @@ import GruposEnvio from "@/pages/GruposEnvio";
 import Mensagens from "@/pages/Mensagens";
 import Configuracoes from "@/pages/Configuracoes";
 import Perfil from "@/pages/Perfil";
-import ConfiguracoesUsuario from "@/pages/ConfiguracoesUsuario";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -92,13 +91,8 @@ export default function Router() {
           </Layout>
         </ProtectedRoute>
       } />
-      <Route path="/configuracoes-usuario" element={
-        <ProtectedRoute>
-          <Layout>
-            <ConfiguracoesUsuario />
-          </Layout>
-        </ProtectedRoute>
-      } />
+      {/* Redirect old configuracoes-usuario route to perfil */}
+      <Route path="/configuracoes-usuario" element={<Navigate to="/perfil" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

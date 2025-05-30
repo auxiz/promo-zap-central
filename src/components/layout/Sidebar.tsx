@@ -1,4 +1,3 @@
-
 import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, HelpCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -16,8 +15,7 @@ const sidebarItems = [
 ];
 
 const bottomItems = [
-  { href: '/perfil', label: 'Perfil', icon: User },
-  { href: '/configuracoes-usuario', label: 'Preferências', icon: Settings },
+  { href: '/perfil', label: 'Minha Conta', icon: User },
 ];
 
 interface SidebarProps {
