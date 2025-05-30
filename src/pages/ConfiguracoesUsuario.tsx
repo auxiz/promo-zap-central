@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { Bell, Moon, Sun, Shield, Database } from 'lucide-react';
+import { Bell, Sun, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ConfiguracoesUsuario() {
@@ -18,7 +18,6 @@ export default function ConfiguracoesUsuario() {
   });
 
   const [privacySettings, setPrivacySettings] = useState({
-    shareAnalytics: false,
     allowCookies: true,
   });
 
@@ -151,25 +150,9 @@ export default function ConfiguracoesUsuario() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="share-analytics">Compartilhar Dados de Análise</Label>
-                <p className="text-sm text-muted-foreground">
-                  Ajude-nos a melhorar o produto compartilhando dados anônimos
-                </p>
-              </div>
-              <Switch
-                id="share-analytics"
-                checked={privacySettings.shareAnalytics}
-                onCheckedChange={(value) => handlePrivacyChange('shareAnalytics', value)}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
                 <Label htmlFor="allow-cookies">Permitir Cookies</Label>
                 <p className="text-sm text-muted-foreground">
-                  Necessário para funcionalidades básicas
+                  Cookies são usados para salvar suas preferências de tema, estado da sidebar e autenticação
                 </p>
               </div>
               <Switch
