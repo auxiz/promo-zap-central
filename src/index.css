@@ -90,6 +90,7 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   
   html, body {
@@ -103,17 +104,6 @@
     @apply bg-background text-foreground;
   }
 
-  /* Prevent horizontal overflow on all elements */
-  * {
-    box-sizing: border-box;
-  }
-
-  /* Ensure containers don't overflow */
-  .container {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
   .glass-card {
     @apply dark:bg-slate-800/50 dark:backdrop-blur-sm dark:border dark:border-slate-700/50 dark:shadow-md;
   }
@@ -121,45 +111,188 @@
   .dashboard-card {
     @apply bg-card shadow-sm border rounded-lg overflow-hidden hover:shadow-md transition-shadow;
   }
+}
 
-  /* Mobile responsive button styles */
-  @media (max-width: 768px) {
-    .responsive-button-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      width: 100%;
+@layer components {
+  /* === PÁGINA MENSAGENS === */
+  .mensagens-page {
+    @apply w-full overflow-x-hidden;
+    max-width: 100vw;
+  }
+
+  .mensagens-container {
+    @apply max-w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-6;
+    overflow-x: hidden;
+  }
+
+  .mensagens-header {
+    @apply w-full;
+  }
+
+  .mensagens-card {
+    @apply dashboard-card w-full;
+    overflow-x: hidden;
+  }
+
+  /* === AÇÕES === */
+  .mensagens-actions {
+    @apply w-full;
+  }
+
+  .action-buttons-container {
+    @apply flex flex-col sm:flex-row gap-3 w-full;
+  }
+
+  .action-button {
+    @apply flex-1 sm:flex-none sm:min-w-[140px];
+  }
+
+  /* === NAVEGAÇÃO TABS === */
+  .mensagens-tab-navigation {
+    @apply w-full;
+  }
+
+  .tab-navigation-container {
+    @apply border-b px-4 lg:px-6 w-full overflow-x-hidden;
+  }
+
+  .tab-list {
+    @apply bg-transparent border-b-0 w-full;
+  }
+
+  .tab-trigger {
+    @apply flex items-center gap-2 text-sm lg:text-base px-3 py-2 min-w-[100px];
+  }
+
+  .tab-text {
+    @apply truncate;
+  }
+
+  /* === CONTEÚDO PRINCIPAL === */
+  .mensagens-main-content {
+    @apply w-full;
+  }
+
+  .tab-content {
+    @apply p-4 lg:p-6 text-foreground w-full;
+  }
+
+  /* === FORMULÁRIO AUTOMAÇÃO === */
+  .automation-template-form {
+    @apply w-full;
+  }
+
+  .form-layout {
+    @apply flex flex-col lg:flex-row gap-6 w-full;
+  }
+
+  .form-main-section {
+    @apply flex-1 space-y-6 min-w-0;
+  }
+
+  .form-sidebar {
+    @apply w-full lg:w-80 lg:flex-shrink-0 space-y-6;
+  }
+
+  /* === BOTÕES DE ESTILO === */
+  .automation-template-style-buttons {
+    @apply w-full;
+  }
+
+  .style-buttons-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-2 w-full;
+  }
+
+  .style-button {
+    @apply w-full text-left h-auto p-3;
+  }
+
+  .style-button-content {
+    @apply w-full text-left;
+  }
+
+  .style-badge {
+    @apply mt-1 text-xs py-0;
+  }
+
+  /* === BOTÃO RESPONSIVO === */
+  .responsive-button {
+    @apply flex-shrink-0 overflow-hidden text-ellipsis whitespace-nowrap;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .automation-random-button {
+    @apply bg-accent/30 hover:bg-accent/50;
+  }
+
+  /* === BREAKPOINTS RESPONSIVOS === */
+  @media (max-width: 640px) {
+    .mensagens-container {
+      @apply px-3 space-y-4;
     }
-    
-    .responsive-button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: stretch;
+
+    .tab-content {
+      @apply p-3;
     }
-    
-    .responsive-button {
-      flex: 1;
-      min-width: 120px;
-      max-width: 100%;
+
+    .form-layout {
+      @apply gap-4;
+    }
+
+    .form-sidebar {
+      @apply space-y-4;
+    }
+
+    .action-buttons-container {
+      @apply gap-2;
+    }
+
+    .style-buttons-grid {
+      @apply grid-cols-1 gap-1.5;
     }
   }
 
-  /* Ensure proper text wrapping */
   @media (max-width: 480px) {
-    h1 {
-      font-size: 1.5rem;
-      line-height: 2rem;
+    .mensagens-container {
+      @apply px-2 space-y-3;
     }
-    
-    .text-3xl {
-      font-size: 1.5rem !important;
-      line-height: 2rem !important;
+
+    .tab-content {
+      @apply p-2;
     }
-    
-    .text-2xl {
-      font-size: 1.25rem !important;
-      line-height: 1.75rem !important;
+
+    .responsive-button {
+      @apply text-xs px-3 py-2.5 min-w-[100px];
+    }
+  }
+
+  /* === PREVENÇÃO DE OVERFLOW === */
+  .mensagens-page *,
+  .mensagens-container *,
+  .form-layout *,
+  .tab-content * {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Garantir que inputs e selects não quebrem o layout */
+  .mensagens-page input,
+  .mensagens-page select,
+  .mensagens-page textarea {
+    @apply w-full min-w-0;
+  }
+
+  /* === MOBILE TOUCH TARGETS === */
+  @media (max-width: 768px) {
+    .responsive-button {
+      min-height: 48px;
+      min-width: 120px;
+    }
+
+    .tab-trigger {
+      min-height: 48px;
+      @apply px-4 py-3;
     }
   }
 }

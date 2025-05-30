@@ -1,5 +1,5 @@
 
-import { Button } from '@/components/ui/button';
+import { ResponsiveButton } from '@/components/ui/responsive-button';
 import { Bot } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
@@ -54,27 +54,13 @@ export function AutomationRandomMessageButton({ setTemplateContent }: Automation
   };
 
   return (
-    <Button 
+    <ResponsiveButton 
       onClick={handleGenerateRandom} 
       variant="outline"
-      className="w-full"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        padding: '0.75rem 1rem',
-        borderRadius: '0.375rem',
-        flexShrink: 0,
-        minWidth: 'fit-content'
-      }}
+      className="w-full automation-random-button"
     >
-      <Bot className="h-4 w-4" style={{ flexShrink: 0 }} />
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        Gerar Template de Automação
-      </span>
-    </Button>
+      <Bot className="h-4 w-4 flex-shrink-0" />
+      <span>Gerar Template de Automação</span>
+    </ResponsiveButton>
   );
 }

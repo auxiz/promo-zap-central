@@ -1,5 +1,5 @@
 
-import { Button } from '@/components/ui/button';
+import { ResponsiveButton } from '@/components/ui/responsive-button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Tooltip, 
@@ -21,25 +21,26 @@ export function AutomationTemplateStyleButtons({
   activeStyleId
 }: AutomationTemplateStyleButtonsProps) {
   return (
-    <div className="mt-4">
+    <div className="automation-template-style-buttons">
       <h3 className="text-sm font-medium mb-2">Templates de Automação Pré-definidos</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="style-buttons-grid">
         {templateStyles.map((style) => (
           <TooltipProvider key={style.id}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
+                <ResponsiveButton
                   onClick={() => loadAutomationTemplate(style.id)}
-                  className="p-3 h-auto text-sm justify-start transition-colors"
+                  className="style-button"
                   variant={style.id === activeStyleId ? "default" : "outline"}
+                  size="sm"
                 >
-                  <div className="text-left">
+                  <div className="style-button-content">
                     <div className="font-medium">{style.name}</div>
                     {style.id === 'ofertaDetectada' && activeStyleId !== style.id && (
-                      <Badge variant="secondary" className="mt-1 text-xs py-0">Recomendado</Badge>
+                      <Badge variant="secondary" className="style-badge">Recomendado</Badge>
                     )}
                   </div>
-                </Button>
+                </ResponsiveButton>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{style.description}</p>

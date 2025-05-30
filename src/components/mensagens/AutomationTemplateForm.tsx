@@ -36,43 +36,45 @@ export function AutomationTemplateForm({
   activeStyleId,
 }: AutomationTemplateFormProps) {
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 overflow-x-hidden">
-      <div className="xl:col-span-2 space-y-6 min-w-0">
-        <TemplateNameSelect
-          templateName={templateName}
-          setTemplateName={setTemplateName}
-          selectedTemplateId={selectedTemplateId}
-          templates={templates}
-          isLoading={isLoading}
-          handleTemplateSelect={handleTemplateSelect}
-        />
+    <div className="automation-template-form">
+      <div className="form-layout">
+        <div className="form-main-section">
+          <TemplateNameSelect
+            templateName={templateName}
+            setTemplateName={setTemplateName}
+            selectedTemplateId={selectedTemplateId}
+            templates={templates}
+            isLoading={isLoading}
+            handleTemplateSelect={handleTemplateSelect}
+          />
+          
+          <TemplateContent
+            templateContent={templateContent}
+            setTemplateContent={setTemplateContent}
+          />
+          
+          <AutomationTemplateStyleButtons
+            templateStyles={templateStyles}
+            loadAutomationTemplate={loadAutomationTemplate}
+            activeStyleId={activeStyleId}
+          />
+        </div>
         
-        <TemplateContent
-          templateContent={templateContent}
-          setTemplateContent={setTemplateContent}
-        />
-        
-        <AutomationTemplateStyleButtons
-          templateStyles={templateStyles}
-          loadAutomationTemplate={loadAutomationTemplate}
-          activeStyleId={activeStyleId}
-        />
-      </div>
-      
-      <div className="space-y-6 min-w-0">
-        <AutomationPlaceholdersList 
-          templateContent={templateContent}
-          setTemplateContent={setTemplateContent}
-        />
-        
-        <AutomationRandomMessageButton 
-          setTemplateContent={setTemplateContent}
-        />
-        
-        <EmojiSelector 
-          templateContent={templateContent}
-          setTemplateContent={setTemplateContent}
-        />
+        <div className="form-sidebar">
+          <AutomationPlaceholdersList 
+            templateContent={templateContent}
+            setTemplateContent={setTemplateContent}
+          />
+          
+          <AutomationRandomMessageButton 
+            setTemplateContent={setTemplateContent}
+          />
+          
+          <EmojiSelector 
+            templateContent={templateContent}
+            setTemplateContent={setTemplateContent}
+          />
+        </div>
       </div>
     </div>
   );
