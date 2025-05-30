@@ -166,16 +166,26 @@ export function NewMensagensEditor({
           />
         </div>
 
-        {/* Sidebar Tools */}
+        {/* Sidebar Tools - Reorganized for mobile */}
         <div className="space-y-6">
+          {/* Mobile: Template Aleatório first, Desktop: maintains order */}
+          <div className="block lg:hidden">
+            <NewRandomMessageButton 
+              setTemplateContent={setTemplateContent}
+            />
+          </div>
+          
           <NewPlaceholdersList 
             templateContent={templateContent}
             setTemplateContent={setTemplateContent}
           />
           
-          <NewRandomMessageButton 
-            setTemplateContent={setTemplateContent}
-          />
+          {/* Desktop: Template Aleatório in original position */}
+          <div className="hidden lg:block">
+            <NewRandomMessageButton 
+              setTemplateContent={setTemplateContent}
+            />
+          </div>
           
           <NewEmojiSelector 
             templateContent={templateContent}
