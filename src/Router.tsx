@@ -14,6 +14,8 @@ import ConfigShopee from "@/pages/ConfigShopee";
 import ConversionTool from "@/pages/ConversionTool";
 import ShopeeAffiliate from "@/pages/ShopeeAffiliate";
 import ShopeeOAuthCallback from "@/pages/ShopeeOAuthCallback";
+import Perfil from "@/pages/Perfil";
+import ConfiguracoesUsuario from "@/pages/ConfiguracoesUsuario";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -112,6 +114,20 @@ export default function Router() {
         <ProtectedRoute>
           <Layout>
             <ShopeeAffiliate />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/perfil" element={
+        <ProtectedRoute>
+          <Layout>
+            <Perfil />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/configuracoes-usuario" element={
+        <ProtectedRoute>
+          <Layout>
+            <ConfiguracoesUsuario />
           </Layout>
         </ProtectedRoute>
       } />
