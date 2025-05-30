@@ -41,66 +41,80 @@ const Index = () => {
   }, [whatsappStatus.connected, fetchMetrics]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button 
-          variant="outline"
-          size="sm"
-          disabled={isLoading}
-          onClick={fetchData}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatusCard 
-          title="Grupos Monitorados" 
-          value={monitoredGroups.total} 
-          subtitle="Total de grupos"
-          badge={{ text: `${monitoredGroups.active} Ativos` }}
-        />
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+          <Button 
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            onClick={fetchData}
+            className="flex items-center gap-2 w-full sm:w-auto"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+        </div>
         
-        <StatusCard 
-          title="Grupos de Envio" 
-          value={sendGroups.total} 
-          subtitle="Total de grupos"
-          badge={{ text: `${sendGroups.active} Ativos` }}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+          <div className="w-full max-w-full">
+            <StatusCard 
+              title="Grupos Monitorados" 
+              value={monitoredGroups.total} 
+              subtitle="Total de grupos"
+              badge={{ text: `${monitoredGroups.active} Ativos` }}
+            />
+          </div>
+          
+          <div className="w-full max-w-full">
+            <StatusCard 
+              title="Grupos de Envio" 
+              value={sendGroups.total} 
+              subtitle="Total de grupos"
+              badge={{ text: `${sendGroups.active} Ativos` }}
+            />
+          </div>
+          
+          <div className="w-full max-w-full">
+            <StatusCard 
+              title="Links Gerados" 
+              value={todayConversions} 
+              subtitle={todayConversions > 0 && totalConversions > 0
+                ? `${Math.round(todayConversions / totalConversions * 100)}% do total` 
+                : 'Nenhuma conversão hoje'}
+              badge={{ text: 'Hoje' }}
+            />
+          </div>
+          
+          <div className="w-full max-w-full">
+            {metricsData ? (
+              <ConnectionStatsCard
+                metrics={metricsData}
+                connected={whatsappStatus.connected}
+                since={whatsappStatus.since}
+                isLoading={isStatusLoading}
+              />
+            ) : (
+              <ConnectionStatusCard 
+                connected={whatsappStatus.connected}
+                device={whatsappStatus.device}
+                since={whatsappStatus.since}
+                isStatusLoading={isStatusLoading}
+                onCheckStatus={handleCheckStatus}
+              />
+            )}
+          </div>
+        </div>
         
-        <StatusCard 
-          title="Links Gerados" 
-          value={todayConversions} 
-          subtitle={todayConversions > 0 && totalConversions > 0
-            ? `${Math.round(todayConversions / totalConversions * 100)}% do total` 
-            : 'Nenhuma conversão hoje'}
-          badge={{ text: 'Hoje' }}
-        />
-        
-        {metricsData ? (
-          <ConnectionStatsCard
-            metrics={metricsData}
-            connected={whatsappStatus.connected}
-            since={whatsappStatus.since}
-            isLoading={isStatusLoading}
-          />
-        ) : (
-          <ConnectionStatusCard 
-            connected={whatsappStatus.connected}
-            device={whatsappStatus.device}
-            since={whatsappStatus.since}
-            isStatusLoading={isStatusLoading}
-            onCheckStatus={handleCheckStatus}
-          />
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <RecentActivity events={recentActivity} />
-        <InfoCard totalLinks={totalConversions} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+          <div className="lg:col-span-2 w-full max-w-full">
+            <RecentActivity events={recentActivity} />
+          </div>
+          <div className="w-full max-w-full">
+            <InfoCard totalLinks={totalConversions} />
+          </div>
+        </div>
       </div>
     </div>
   );

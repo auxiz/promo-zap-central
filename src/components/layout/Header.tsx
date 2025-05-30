@@ -11,15 +11,15 @@ export default function Header() {
   const { unreadCount } = useNotifications();
 
   return (
-    <header className="border-b bg-background">
-      <div className="flex h-16 items-center px-6">
-        <Button variant="ghost" size="icon" className="md:hidden">
+    <header className="border-b bg-background w-full max-w-full overflow-x-hidden flex-shrink-0">
+      <div className="flex h-16 items-center px-4 sm:px-6 w-full max-w-full">
+        <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0">
           <Menu className="h-5 w-5" />
         </Button>
         
-        <div className="flex-1" />
+        <div className="flex-1 min-w-0" />
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
           <ThemeToggle />
           
           <div className="relative">

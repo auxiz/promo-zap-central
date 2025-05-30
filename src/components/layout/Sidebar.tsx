@@ -2,7 +2,7 @@
 import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, HelpCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 
@@ -24,10 +24,24 @@ export default function Sidebar() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Auto-collapse on very small screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsCollapsed(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className={cn(
-      "flex flex-col h-screen bg-sidebar border-r transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
+      "flex flex-col h-screen bg-sidebar border-r transition-all duration-300 flex-shrink-0",
+      isCollapsed ? "w-16" : "w-64",
+      "md:relative absolute z-50 md:z-auto"
     )}>
       {/* Header */}
       <div className={cn(
@@ -35,14 +49,14 @@ export default function Sidebar() {
         isCollapsed ? "p-2 justify-center" : "p-4 justify-between"
       )}>
         {!isCollapsed && (
-          <h1 className="text-xl font-bold text-sidebar-foreground">PromoZap</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-sidebar-foreground truncate">PromoZap</h1>
         )}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(
-            "transition-all duration-200",
+            "transition-all duration-200 flex-shrink-0",
             isCollapsed ? "p-1 h-8 w-8" : "p-2"
           )}
         >
@@ -55,7 +69,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className={cn(
-        "flex-1 transition-all duration-300",
+        "flex-1 transition-all duration-300 overflow-y-auto",
         isCollapsed ? "p-2" : "p-4"
       )}>
         <ul className="space-y-1">
@@ -85,7 +99,7 @@ export default function Sidebar() {
                       isCollapsed ? "w-5 h-5" : ""
                     )} 
                   />
-                  {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                  {!isCollapsed && <span className="font-medium truncate">{item.label}</span>}
                   
                   {/* Tooltip for collapsed state */}
                   {isCollapsed && (
@@ -132,7 +146,7 @@ export default function Sidebar() {
                       isCollapsed ? "w-5 h-5" : ""
                     )} 
                   />
-                  {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                  {!isCollapsed && <span className="font-medium truncate">{item.label}</span>}
                   
                   {/* Tooltip for collapsed state */}
                   {isCollapsed && (
