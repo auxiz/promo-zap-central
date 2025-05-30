@@ -2,9 +2,12 @@
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateHeader } from '@/components/mensagens/TemplateHeader';
-import { TemplateForm } from '@/components/mensagens/TemplateForm';
-import { TemplatePreview } from '@/components/mensagens/TemplatePreview';
-import { useTemplateUtils, messagePlaceholders, messageTemplateStyles, defaultTemplateStyles } from '@/hooks/useTemplateUtils';
+import { AutomationTemplateForm } from '@/components/mensagens/AutomationTemplateForm';
+import { AutomationPreview } from '@/components/mensagens/AutomationPreview';
+import { AutomationFlowExplanation } from '@/components/mensagens/AutomationFlowExplanation';
+import { useAutomationTemplateUtils, automationPlaceholders, automationTemplateOptions } from '@/hooks/useAutomationTemplateUtils';
+import { Badge } from '@/components/ui/badge';
+import { Bot, MessageSquare } from 'lucide-react';
 
 export default function Mensagens() {
   const {
@@ -21,15 +24,33 @@ export default function Mensagens() {
     handleTemplateSelect,
     handleSaveTemplate,
     handleDeleteTemplate,
-    loadDefaultTemplate,
-    getPreviewText,
+    loadAutomationTemplate,
+    getAutomationPreviewText,
     activeStyleId,
-  } = useTemplateUtils();
+  } = useAutomationTemplateUtils();
 
-  const previewText = getPreviewText();
+  const previewText = getAutomationPreviewText();
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Bot className="h-8 w-8 text-blue-600" />
+            <h1 className="text-3xl font-bold">Templates de Mensagens Automáticas</h1>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <MessageSquare className="h-3 w-3" />
+              Bot Ativo
+            </Badge>
+          </div>
+          <p className="text-muted-foreground">
+            Configure os templates que serão usados pelo bot quando detectar links nos grupos monitorados
+          </p>
+        </div>
+      </div>
+
+      <AutomationFlowExplanation />
+      
       <TemplateHeader 
         selectedTemplateId={selectedTemplateId}
         handleNewTemplate={handleNewTemplate}
@@ -41,13 +62,19 @@ export default function Mensagens() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="border-b px-6">
             <TabsList className="bg-transparent border-b-0">
-              <TabsTrigger value="editor">Editor</TabsTrigger>
-              <TabsTrigger value="preview">Pré-visualização</TabsTrigger>
+              <TabsTrigger value="editor" className="flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                Editor de Templates
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Pré-visualização
+              </TabsTrigger>
             </TabsList>
           </div>
           
           <TabsContent value="editor" className="p-6 space-y-6 text-foreground">
-            <TemplateForm
+            <AutomationTemplateForm
               templateName={templateName}
               setTemplateName={setTemplateName}
               templateContent={templateContent}
@@ -56,16 +83,14 @@ export default function Mensagens() {
               templates={templates}
               isLoading={isLoading}
               handleTemplateSelect={handleTemplateSelect}
-              placeholders={messagePlaceholders}
-              templateStyles={messageTemplateStyles}
-              defaultTemplates={defaultTemplateStyles}
-              loadDefaultTemplate={loadDefaultTemplate}
+              templateStyles={automationTemplateOptions}
+              loadAutomationTemplate={loadAutomationTemplate}
               activeStyleId={activeStyleId}
             />
           </TabsContent>
           
           <TabsContent value="preview" className="p-6 text-foreground">
-            <TemplatePreview previewText={previewText} />
+            <AutomationPreview previewText={previewText} />
           </TabsContent>
         </Tabs>
       </Card>
