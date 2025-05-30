@@ -1,138 +1,107 @@
 
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, MessageSquare, Users, Send, Phone, Settings } from 'lucide-react';
+import { Home, MessageSquare, Users, Send, Settings, User, Smartphone, HelpCircle } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft } from 'lucide-react';
 
-const navigationItems = [
-  {
-    name: 'Home',
-    href: '/',
-    icon: Home,
-  },
-  {
-    name: 'Mensagens',
-    href: '/mensagens',
-    icon: MessageSquare,
-  },
-  {
-    name: 'Grupos Monitorados',
-    href: '/grupos-monitorados',
-    icon: Users,
-  },
-  {
-    name: 'Grupos de Envio',
-    href: '/grupos-envio',
-    icon: Send,
-  },
-  {
-    name: 'WhatsApp Conexão',
-    href: '/whatsapp-conexao',
-    icon: Phone,
-  },
-  {
-    name: 'Configurações',
-    href: '/configuracoes',
-    icon: Settings,
-  },
+const sidebarItems = [
+  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/whatsapp-conexao', label: 'WhatsApp Conexão', icon: Smartphone },
+  { href: '/grupos-monitorados', label: 'Grupos Monitorados', icon: Users },
+  { href: '/grupos-envio', label: 'Grupos de Envio', icon: Send },
+  { href: '/mensagens', label: 'Mensagens', icon: MessageSquare },
+  { href: '/configuracoes', label: 'Configurações', icon: Settings },
+];
+
+const bottomItems = [
+  { href: '/perfil', label: 'Perfil', icon: User },
+  { href: '/configuracoes-usuario', label: 'Preferências', icon: Settings },
 ];
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
-  const { user } = useAuth();
-
-  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
-    if (name) {
-      return name
-        .split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    if (email) {
-      return email.slice(0, 2).toUpperCase();
-    }
-    return 'AA';
-  };
-
-  const getDisplayName = () => {
-    return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário';
-  };
-
-  const getUserRole = () => {
-    return user?.user_metadata?.role || 'Usuário';
-  };
+  const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <aside
-      className={cn(
-        "h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
-        {!collapsed && (
-          <h1 className="font-bold text-lg">
-            <span className="text-primary-600">Promo</span>
-            <span>Zap</span>
-          </h1>
+    <div className={cn(
+      "flex flex-col h-screen bg-sidebar border-r transition-all duration-300",
+      isCollapsed ? "w-16" : "w-64"
+    )}>
+      {/* Header */}
+      <div className="p-4 border-b flex items-center justify-between">
+        {!isCollapsed && (
+          <h1 className="text-xl font-bold text-sidebar-foreground">PromoZap</h1>
         )}
-        <button 
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="p-2"
         >
-          {collapsed ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m9 18 6-6-6-6"/>
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6"/>
-            </svg>
-          )}
-        </button>
+          <ChevronLeft className={cn(
+            "h-4 w-4 transition-transform",
+            isCollapsed && "rotate-180"
+          )} />
+        </Button>
       </div>
 
-      <nav className="flex-1 py-4 overflow-y-auto">
-        <ul className="space-y-1 px-2">
-          {navigationItems.map((item) => (
-            <li key={item.name}>
-              <NavLink
-                to={item.href}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
+      {/* Navigation */}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.href;
+            
+            return (
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )
-                }
-              >
-                <item.icon size={20} />
-                {!collapsed && <span>{item.name}</span>}
-              </NavLink>
-            </li>
-          ))}
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
-      
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            <span className="font-medium text-sm">
-              {getInitials(user?.user_metadata?.full_name, user?.email)}
-            </span>
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">{getDisplayName()}</span>
-              <span className="text-xs text-sidebar-foreground/70">{getUserRole()}</span>
-            </div>
-          )}
-        </div>
+
+      {/* Bottom section */}
+      <div className="p-4 border-t">
+        <ul className="space-y-2">
+          {bottomItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.href;
+            
+            return (
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </div>
-    </aside>
+    </div>
   );
 }

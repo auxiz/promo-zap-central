@@ -48,6 +48,11 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
 
         setGroups(groupsData.groups || []);
         setSelectedGroupIds(selectedData[endpoint] || []);
+        
+        // Show success notification when groups load after connection
+        if (connectionStatus === 'connected' && groupsData.groups?.length > 0) {
+          toast.success(`${groupsData.groups.length} grupos carregados com sucesso!`);
+        }
       } catch (error) {
         console.error(`Error fetching groups:`, error);
         toast.error('Erro ao carregar dados dos grupos');
@@ -58,6 +63,17 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
 
     fetchData();
   }, [connectionStatus, endpoint, endpointLabel]);
+
+  // Auto-refresh when connection status changes to connected
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      // Small delay to ensure backend is ready
+      const timer = setTimeout(() => {
+        setIsLoading(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [connectionStatus]);
 
   const filteredGroups = groups.filter(group => 
     group.name.toLowerCase().includes(searchTerm.toLowerCase())

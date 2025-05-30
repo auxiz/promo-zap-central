@@ -10,7 +10,6 @@ import GruposMonitorados from "@/pages/GruposMonitorados";
 import GruposEnvio from "@/pages/GruposEnvio";
 import Mensagens from "@/pages/Mensagens";
 import Configuracoes from "@/pages/Configuracoes";
-import ConfigShopee from "@/pages/ConfigShopee";
 import Perfil from "@/pages/Perfil";
 import ConfiguracoesUsuario from "@/pages/ConfiguracoesUsuario";
 import NotFound from "@/pages/NotFound";
@@ -83,13 +82,6 @@ export default function Router() {
         <ProtectedRoute>
           <Layout>
             <Configuracoes />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      <Route path="/config-shopee" element={
-        <ProtectedRoute>
-          <Layout>
-            <ConfigShopee />
           </Layout>
         </ProtectedRoute>
       } />
