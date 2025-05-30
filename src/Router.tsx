@@ -11,9 +11,6 @@ import GruposEnvio from "@/pages/GruposEnvio";
 import Mensagens from "@/pages/Mensagens";
 import Configuracoes from "@/pages/Configuracoes";
 import ConfigShopee from "@/pages/ConfigShopee";
-import ConversionTool from "@/pages/ConversionTool";
-import ShopeeAffiliate from "@/pages/ShopeeAffiliate";
-import ShopeeOAuthCallback from "@/pages/ShopeeOAuthCallback";
 import Perfil from "@/pages/Perfil";
 import ConfiguracoesUsuario from "@/pages/ConfiguracoesUsuario";
 import NotFound from "@/pages/NotFound";
@@ -51,13 +48,6 @@ export default function Router() {
         <ProtectedRoute>
           <Layout>
             <Index />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      <Route path="/whatsapp" element={
-        <ProtectedRoute>
-          <Layout>
-            <WhatsAppConexao />
           </Layout>
         </ProtectedRoute>
       } />
@@ -103,20 +93,6 @@ export default function Router() {
           </Layout>
         </ProtectedRoute>
       } />
-      <Route path="/conversion-tool" element={
-        <ProtectedRoute>
-          <Layout>
-            <ConversionTool />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      <Route path="/shopee-affiliate" element={
-        <ProtectedRoute>
-          <Layout>
-            <ShopeeAffiliate />
-          </Layout>
-        </ProtectedRoute>
-      } />
       <Route path="/perfil" element={
         <ProtectedRoute>
           <Layout>
@@ -131,7 +107,6 @@ export default function Router() {
           </Layout>
         </ProtectedRoute>
       } />
-      <Route path="/shopee/oauth/callback" element={<ShopeeOAuthCallback />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

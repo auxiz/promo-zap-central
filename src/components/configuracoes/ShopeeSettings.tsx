@@ -52,8 +52,8 @@ export function ShopeeSettings({
           <p className="font-medium mb-2">Sobre a Autenticação Direta:</p>
           <p>
             Este método de autenticação utiliza suas credenciais da API da Shopee (APP ID e Secret Key)
-            para se conectar diretamente à API de Afiliados da Shopee sem necessidade de autenticação 
-            OAuth ou login manual.
+            para se conectar diretamente à API GraphQL de Afiliados da Shopee sem necessidade de 
+            autenticação OAuth ou login manual.
           </p>
           <p>
             A autenticação direta utiliza assinaturas HMAC-SHA256 para cada requisição, garantindo

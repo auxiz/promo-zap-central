@@ -5,10 +5,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import Router from "@/Router";
 
 const queryClient = new QueryClient();
 
-function App({ children }: { children: React.ReactNode }) {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider 
@@ -20,7 +21,7 @@ function App({ children }: { children: React.ReactNode }) {
         <BrowserRouter>
           <AuthProvider>
             <NotificationProvider>
-              {children}
+              <Router />
               <Toaster />
             </NotificationProvider>
           </AuthProvider>
