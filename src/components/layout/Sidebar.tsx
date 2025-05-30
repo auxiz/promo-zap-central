@@ -66,7 +66,7 @@ export default function Sidebar() {
                   )}
                   title={isCollapsed ? item.label : undefined}
                 >
-                  <Icon size={18} className="shrink-0" />
+                  <Icon size={24} className="shrink-0" />
                   {!isCollapsed && <span>{item.label}</span>}
                 </Link>
               </li>
@@ -94,7 +94,7 @@ export default function Sidebar() {
                   )}
                   title={isCollapsed ? item.label : undefined}
                 >
-                  <Icon size={18} className="shrink-0" />
+                  <Icon size={24} className="shrink-0" />
                   {!isCollapsed && <span>{item.label}</span>}
                 </Link>
               </li>

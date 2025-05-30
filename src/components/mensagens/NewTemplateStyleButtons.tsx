@@ -15,7 +15,7 @@ const templateStyles = [
     id: 'ofertaDetectada',
     name: 'Oferta Detectada',
     icon: Bot,
-    recommended: true
+    recommended: false
   },
   {
     id: 'linkConvertido',
@@ -72,11 +72,6 @@ export function NewTemplateStyleButtons({
               >
                 <Icon className="h-4 w-4" />
                 <span className="font-medium text-sm">{style.name}</span>
-                {style.recommended && !isActive && (
-                  <Badge variant="secondary" className="text-xs ml-2">
-                    Recomendado
-                  </Badge>
-                )}
               </ResponsiveButton>
             );
           })}

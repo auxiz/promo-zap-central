@@ -1,7 +1,6 @@
 
 import { Card } from '@/components/ui/card';
 import { ResponsiveButton } from '@/components/ui/responsive-button';
-import { Shuffle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
 const randomMessages = [
@@ -61,8 +60,7 @@ export function NewRandomMessageButton({ setTemplateContent }: NewRandomMessageB
           variant="outline"
           className="w-full"
         >
-          <Shuffle className="h-4 w-4" />
-          Gerar Template Aleatório
+          Template Aleatório
         </ResponsiveButton>
       </div>
     </Card>
