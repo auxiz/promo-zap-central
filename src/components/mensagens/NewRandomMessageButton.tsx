@@ -10,7 +10,7 @@ const randomMessages = [
 💰 Preço especial: --precopromocional--
 🔗 LINK AFILIADO: --linkafiliado--
 📊 Economia de --desconto--%
-🕒 Detectado agora em --grupoorigem--`,
+🕒 Detectado agora`,
 
   `⚡ BOT ENCONTROU OFERTA ⚡
 🏷️ --produtodescricao--
@@ -30,8 +30,7 @@ const randomMessages = [
 --produtodescricao--
 🏪 --nomeloja--
 💵 De --precooriginal-- para --precopromocional--
-🚀 GARANTIR: --linkafiliado--
-📍 Fonte: --grupoorigem--`,
+🚀 GARANTIR: --linkafiliado--`,
 ];
 
 interface NewRandomMessageButtonProps {

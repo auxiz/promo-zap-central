@@ -14,28 +14,24 @@ const templateStyles = [
   {
     id: 'ofertaDetectada',
     name: 'Oferta Detectada',
-    description: 'Template para ofertas detectadas automaticamente',
     icon: Bot,
     recommended: true
   },
   {
     id: 'linkConvertido',
     name: 'Link Convertido',
-    description: 'Template destacando conversão de link',
     icon: Zap,
     recommended: false
   },
   {
     id: 'botOportunidade',
     name: 'Nova Oportunidade',
-    description: 'Template para oportunidades encontradas pelo bot',
     icon: Target,
     recommended: false
   },
   {
     id: 'monitoramentoDesconto',
     name: 'Desconto Encontrado',
-    description: 'Template para descontos detectados',
     icon: TrendingDown,
     recommended: false
   },
@@ -72,20 +68,15 @@ export function NewTemplateStyleButtons({
                 key={style.id}
                 onClick={() => handleLoadTemplate(style.id)}
                 variant={isActive ? "default" : "outline"}
-                className="h-auto p-3 flex-col items-start gap-2"
+                className="h-auto p-3 flex items-center justify-center gap-2"
               >
-                <div className="flex items-center gap-2 w-full">
-                  <Icon className="h-4 w-4" />
-                  <span className="font-medium text-sm">{style.name}</span>
-                  {style.recommended && !isActive && (
-                    <Badge variant="secondary" className="text-xs ml-auto">
-                      Recomendado
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs opacity-80 text-left">
-                  {style.description}
-                </p>
+                <Icon className="h-4 w-4" />
+                <span className="font-medium text-sm">{style.name}</span>
+                {style.recommended && !isActive && (
+                  <Badge variant="secondary" className="text-xs ml-2">
+                    Recomendado
+                  </Badge>
+                )}
               </ResponsiveButton>
             );
           })}

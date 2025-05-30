@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Template, useTemplates } from '@/hooks/useTemplates';
 import { toast } from '@/components/ui/sonner';
@@ -9,8 +8,7 @@ export const automationTemplateStyles = {
 📦 --produtodescricao--
 💰 Preço: --precopromocional--
 🛒 LINK CONVERTIDO: --linkafiliado--
-⏰ Detectado em: --datahorario--
-📍 Origem: --grupoorigem--`,
+⏰ Detectado em: --datahorario--`,
   
   linkConvertido: `🔗 LINK CONVERTIDO - PROMOÇÃO 🔗
 --produtodescricao--
@@ -23,8 +21,7 @@ export const automationTemplateStyles = {
   botOportunidade: `🎯 BOT: NOVA OPORTUNIDADE 🎯
 --produtodescricao--
 💵 Apenas: --precopromocional--
-🔥 APROVEITE: --linkafiliado--
-📊 Detectado automaticamente em --grupoorigem--`,
+🔥 APROVEITE: --linkafiliado--`,
   
   monitoramentoDesconto: `📢 MONITORAMENTO: DESCONTO ENCONTRADO 📢
 🏷️ --produtodescricao--
@@ -37,14 +34,13 @@ export const automationTemplateStyles = {
 export type AutomationTemplateStyle = {
   id: string;
   name: string;
-  description: string;
 };
 
 export const automationTemplateOptions: AutomationTemplateStyle[] = [
-  { id: 'ofertaDetectada', name: 'Oferta Detectada', description: 'Template para ofertas detectadas automaticamente' },
-  { id: 'linkConvertido', name: 'Link Convertido', description: 'Template destacando conversão de link' },
-  { id: 'botOportunidade', name: 'Nova Oportunidade', description: 'Template para oportunidades encontradas pelo bot' },
-  { id: 'monitoramentoDesconto', name: 'Desconto Encontrado', description: 'Template para descontos detectados' },
+  { id: 'ofertaDetectada', name: 'Oferta Detectada' },
+  { id: 'linkConvertido', name: 'Link Convertido' },
+  { id: 'botOportunidade', name: 'Nova Oportunidade' },
+  { id: 'monitoramentoDesconto', name: 'Desconto Encontrado' },
 ];
 
 export const automationPlaceholders = [
@@ -55,7 +51,6 @@ export const automationPlaceholders = [
   { id: 'nomeloja', label: '--nomeloja--', description: 'Nome da loja/plataforma (Shopee, Amazon, etc.)' },
   { id: 'desconto', label: '--desconto--', description: 'Percentual de desconto calculado automaticamente' },
   { id: 'datahorario', label: '--datahorario--', description: 'Data/hora da detecção pelo bot' },
-  { id: 'grupoorigem', label: '--grupoorigem--', description: 'Nome do grupo onde foi detectado o link' },
 ];
 
 export function useAutomationTemplateUtils() {
@@ -161,8 +156,7 @@ export function useAutomationTemplateUtils() {
       .replace(/--precopromocional--/g, 'R$ 399,00')
       .replace(/--nomeloja--/g, 'Shopee')
       .replace(/--desconto--/g, '33')
-      .replace(/--datahorario--/g, new Date().toLocaleString('pt-BR'))
-      .replace(/--grupoorigem--/g, 'Ofertas Tech Brasil');
+      .replace(/--datahorario--/g, new Date().toLocaleString('pt-BR'));
   };
 
   return {

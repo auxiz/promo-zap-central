@@ -17,7 +17,6 @@ const placeholders = [
   { id: 'nomeloja', label: '--nomeloja--', description: 'Nome da loja (Shopee, Amazon, etc.)' },
   { id: 'desconto', label: '--desconto--', description: 'Percentual de desconto calculado' },
   { id: 'datahorario', label: '--datahorario--', description: 'Data/hora da detecção' },
-  { id: 'grupoorigem', label: '--grupoorigem--', description: 'Nome do grupo onde foi detectado' },
 ];
 
 export function NewPlaceholdersList({ templateContent, setTemplateContent }: NewPlaceholdersListProps) {
