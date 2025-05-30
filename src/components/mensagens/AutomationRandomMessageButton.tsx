@@ -57,11 +57,10 @@ export function AutomationRandomMessageButton({ setTemplateContent }: Automation
     <Button 
       onClick={handleGenerateRandom} 
       variant="outline"
-      size="lg"
-      className="w-full bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:border-blue-800 dark:text-blue-300"
+      className="w-full"
     >
-      <Bot className="w-4 h-4 mr-2" />
-      <span>Gerar Template de Automação</span>
+      <Bot className="h-4 w-4 mr-2" />
+      Gerar Template de Automação
     </Button>
   );
 }

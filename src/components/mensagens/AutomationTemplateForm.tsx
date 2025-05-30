@@ -66,11 +66,9 @@ export function AutomationTemplateForm({
             setTemplateContent={setTemplateContent}
           />
           
-          <div className="p-4 border rounded-lg bg-card">
-            <AutomationRandomMessageButton 
-              setTemplateContent={setTemplateContent}
-            />
-          </div>
+          <AutomationRandomMessageButton 
+            setTemplateContent={setTemplateContent}
+          />
           
           <EmojiSelector 
             templateContent={templateContent}
