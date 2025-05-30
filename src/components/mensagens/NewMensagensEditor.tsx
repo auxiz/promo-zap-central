@@ -3,12 +3,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ResponsiveButton } from '@/components/ui/responsive-button';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2, Zap } from 'lucide-react';
 import { Template } from '@/hooks/useTemplates';
 import { NewTemplateStyleButtons } from './NewTemplateStyleButtons';
 import { NewPlaceholdersList } from './NewPlaceholdersList';
 import { NewEmojiSelector } from './NewEmojiSelector';
-import { NewRandomMessageButton } from './NewRandomMessageButton';
+import { toast } from '@/components/ui/sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,35 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+
+const randomMessages = [
+  `🤖 DETECÇÃO AUTOMÁTICA 🤖
+--produtodescricao--
+💰 Preço especial: --precopromocional--
+🔗 LINK AFILIADO: --linkafiliado--
+📊 Economia de --desconto--%
+🕒 Detectado agora`,
+
+  `⚡ BOT ENCONTROU OFERTA ⚡
+🏷️ --produtodescricao--
+❌ Era: --precooriginal--
+✅ Agora: --precopromocional--
+🛒 APROVEITAR: --linkafiliado--
+🏪 Loja: --nomeloja--`,
+
+  `🔍 MONITORAMENTO ATIVO 🔍
+--produtodescricao--
+💸 --desconto--% de desconto!
+💰 Por apenas: --precopromocional--
+🔗 Link convertido: --linkafiliado--
+⏰ --datahorario--`,
+
+  `🎯 OPORTUNIDADE DETECTADA 🎯
+--produtodescricao--
+🏪 --nomeloja--
+💵 De --precooriginal-- para --precopromocional--
+🚀 GARANTIR: --linkafiliado--`,
+];
 
 interface NewMensagensEditorProps {
   templateName: string;
@@ -53,6 +82,14 @@ export function NewMensagensEditor({
   activeStyleId,
 }: NewMensagensEditorProps) {
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+
+  const handleGenerateRandom = () => {
+    const randomIndex = Math.floor(Math.random() * randomMessages.length);
+    setTemplateContent(randomMessages[randomIndex]);
+    toast.success('Template gerado!', {
+      description: 'Template aleatório foi aplicado com sucesso'
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -147,13 +184,19 @@ export function NewMensagensEditor({
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-4">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <label className="block text-sm font-medium">
                   Conteúdo do Template
                 </label>
-                <NewRandomMessageButton 
-                  setTemplateContent={setTemplateContent}
-                />
+                <ResponsiveButton 
+                  onClick={handleGenerateRandom} 
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  <Zap className="h-4 w-4" />
+                  Template Aleatório
+                </ResponsiveButton>
               </div>
               <Textarea
                 value={templateContent}
