@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 function App({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <BrowserRouter>
           <AuthProvider>
             <NotificationProvider>

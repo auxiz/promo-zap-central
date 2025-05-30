@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import UserDropdown from "@/components/auth/UserDropdown";
 import { NotificationCenter } from "./NotificationCenter";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export default function Header() {
@@ -19,6 +20,8 @@ export default function Header() {
         <div className="flex-1" />
         
         <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          
           <div className="relative">
             <NotificationCenter />
             {unreadCount > 0 && (

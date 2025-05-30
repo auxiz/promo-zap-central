@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, MessageSquare, Users, Send, Phone, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigationItems = [
   {
@@ -39,6 +40,30 @@ const navigationItems = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useAuth();
+
+  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name) {
+      return name
+        .split(' ')
+        .map(word => word.charAt(0))
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (email) {
+      return email.slice(0, 2).toUpperCase();
+    }
+    return 'AA';
+  };
+
+  const getDisplayName = () => {
+    return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário';
+  };
+
+  const getUserRole = () => {
+    return user?.user_metadata?.role || 'Usuário';
+  };
 
   return (
     <aside
@@ -96,12 +121,14 @@ export default function Sidebar() {
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            <span className="font-medium text-sm">AA</span>
+            <span className="font-medium text-sm">
+              {getInitials(user?.user_metadata?.full_name, user?.email)}
+            </span>
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-medium">Admin</span>
-              <span className="text-xs text-sidebar-foreground/70">Administrador</span>
+              <span className="text-sm font-medium">{getDisplayName()}</span>
+              <span className="text-xs text-sidebar-foreground/70">{getUserRole()}</span>
             </div>
           )}
         </div>
