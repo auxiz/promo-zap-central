@@ -1,7 +1,7 @@
 
-import { Menu } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import UserDropdown from '@/components/auth/UserDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 import { NotificationCenter } from './NotificationCenter';
 
 interface HeaderProps {
@@ -9,6 +9,8 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuToggle }: HeaderProps) {
+  const { signOut } = useAuth();
+
   return (
     <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
       <div className="flex h-14 items-center justify-between px-4">
@@ -25,9 +27,15 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         
         <div className="flex items-center gap-2">
           <NotificationCenter />
-          <div className="relative z-50">
-            <UserDropdown />
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => signOut()}
+            className="text-muted-foreground hover:text-foreground"
+            title="Sair"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </div>
     </header>
