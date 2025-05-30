@@ -11,7 +11,18 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Crown, User, MoreHorizontal, UserCheck, UserX, RefreshCw } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Crown, User, MoreHorizontal, UserCheck, UserX, RefreshCw, Trash2, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,9 +31,27 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { generateRandomAvatar, generateInitialsAvatar } from '@/utils/avatarGenerator';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 export function AdminUsersTab() {
-  const { data, loading, error, refetch, toggleUserRole } = useAdminUsers();
+  const { data, loading, error, operationLoading, refetch, toggleUserRole, deleteUser } = useAdminUsers();
+  const { user: currentUser } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    setUserToDelete({ id: userId, name: userName });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      deleteUser(userToDelete.id, userToDelete.name);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -84,8 +113,8 @@ export function AdminUsersTab() {
               <Badge variant="secondary">
                 {users.length} usuários
               </Badge>
-              <Button onClick={refetch} variant="outline" size="sm">
-                <RefreshCw className="w-4 h-4 mr-2" />
+              <Button onClick={refetch} variant="outline" size="sm" disabled={loading}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
             </div>
@@ -106,6 +135,8 @@ export function AdminUsersTab() {
               {users.map((user) => {
                 const avatarUrl = user.avatar_url || generateRandomAvatar(user.id, 32);
                 const initialsData = generateInitialsAvatar(user.full_name || 'User', user.email);
+                const isCurrentUser = user.id === currentUser?.id;
+                const isOperationLoading = operationLoading === user.id;
                 
                 return (
                   <TableRow key={user.id}>
@@ -124,6 +155,7 @@ export function AdminUsersTab() {
                         </Avatar>
                         <span className="font-medium">
                           {user.full_name || 'Sem nome'}
+                          {isCurrentUser && <span className="text-xs text-muted-foreground ml-2">(Você)</span>}
                         </span>
                       </div>
                     </TableCell>
@@ -168,26 +200,48 @@ export function AdminUsersTab() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" disabled={isOperationLoading}>
+                            {isOperationLoading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => toggleUserRole(user.id, user.role)}
-                          >
-                            {user.role === 'admin' ? (
-                              <>
-                                <UserX className="mr-2 h-4 w-4" />
-                                Remover Admin
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Tornar Admin
-                              </>
-                            )}
-                          </DropdownMenuItem>
+                          {!isCurrentUser && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => toggleUserRole(user.id, user.role)}
+                                disabled={isOperationLoading}
+                              >
+                                {user.role === 'admin' ? (
+                                  <>
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    Remover Admin
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Tornar Admin
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteUser(user.id, user.full_name || user.email)}
+                                disabled={isOperationLoading}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir Usuário
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {isCurrentUser && (
+                            <DropdownMenuItem disabled>
+                              <span className="text-muted-foreground">Não é possível modificar sua própria conta</span>
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -205,6 +259,35 @@ export function AdminUsersTab() {
           </Table>
         </div>
       </Card>
+
+      {/* Dialog de confirmação para exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o usuário <strong>{userToDelete?.name}</strong>?
+              <br />
+              <br />
+              Esta ação é <strong>irreversível</strong> e irá:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Remover permanentemente a conta do usuário</li>
+                <li>Excluir todos os dados associados (instâncias, templates, etc.)</li>
+                <li>Desconectar todas as integrações ativas</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteUser}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir Usuário
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

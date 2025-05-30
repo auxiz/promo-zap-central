@@ -29,6 +29,7 @@ export function useAdminUsers() {
   const [data, setData] = useState<AdminUsersData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [operationLoading, setOperationLoading] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -51,16 +52,16 @@ export function useAdminUsers() {
 
   const toggleUserRole = async (userId: string, currentRole: string) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    setOperationLoading(userId);
     
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .upsert({ 
-          user_id: userId, 
-          role: newRole 
-        }, { 
-          onConflict: 'user_id' 
-        });
+      const { data: result, error } = await supabase.functions.invoke('admin-users', {
+        body: {
+          action: 'updateRole',
+          userId,
+          newRole
+        }
+      });
 
       if (error) throw error;
 
@@ -68,7 +69,32 @@ export function useAdminUsers() {
       fetchUsers(); // Recarregar dados
     } catch (error: any) {
       console.error('Erro ao alterar role:', error);
-      toast.error('Erro ao alterar permissões do usuário');
+      toast.error(error.message || 'Erro ao alterar permissões do usuário');
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
+  const deleteUser = async (userId: string, userName?: string) => {
+    setOperationLoading(userId);
+    
+    try {
+      const { data: result, error } = await supabase.functions.invoke('admin-users', {
+        method: 'DELETE',
+        body: {
+          userId
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Usuário ${userName || 'usuário'} excluído com sucesso`);
+      fetchUsers(); // Recarregar dados
+    } catch (error: any) {
+      console.error('Erro ao excluir usuário:', error);
+      toast.error(error.message || 'Erro ao excluir usuário');
+    } finally {
+      setOperationLoading(null);
     }
   };
 
@@ -80,7 +106,9 @@ export function useAdminUsers() {
     data,
     loading,
     error,
+    operationLoading,
     refetch: fetchUsers,
-    toggleUserRole
+    toggleUserRole,
+    deleteUser
   };
 }
