@@ -33,6 +33,132 @@ export type Database = {
         }
         Relationships: []
       }
+      system_backups: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_by: string | null
+          error_message: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          started_at: string | null
+          status: string
+          tables_included: string[] | null
+        }
+        Insert: {
+          backup_type: string
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          tables_included?: string[] | null
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          tables_included?: string[] | null
+        }
+        Relationships: []
+      }
+      system_config: {
+        Row: {
+          config_key: string
+          config_value: Json
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config_key: string
+          config_value: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config_key?: string
+          config_value?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          tags: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_name: string
+          metric_type?: string
+          metric_value: number
+          tags?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          tags?: Json | null
+        }
+        Relationships: []
+      }
       user_activity: {
         Row: {
           created_at: string

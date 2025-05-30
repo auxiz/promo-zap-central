@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "@/components/auth/AuthPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AdminRoute from "@/components/admin/AdminRoute";
 import Layout from "@/components/layout/Layout";
 import Index from "@/pages/Index";
 import WhatsAppConexao from "@/pages/WhatsAppConexao";
@@ -94,9 +95,11 @@ export default function Router() {
       } />
       <Route path="/admin" element={
         <ProtectedRoute>
-          <Layout>
-            <Admin />
-          </Layout>
+          <AdminRoute>
+            <Layout>
+              <Admin />
+            </Layout>
+          </AdminRoute>
         </ProtectedRoute>
       } />
       {/* Redirect old configuracoes-usuario route to perfil */}
