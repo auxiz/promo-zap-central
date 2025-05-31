@@ -4,8 +4,8 @@
 const getApiBase = () => {
   // Check if we're in development or production
   if (import.meta.env.DEV) {
-    // In development, use Supabase Edge Functions
-    return 'https://iltppjgwfmftbpdpfypx.supabase.co/functions/v1';
+    // In development, use local Node.js backend
+    return 'http://localhost:3000';
   }
   
   // In production, use the same origin
@@ -13,7 +13,7 @@ const getApiBase = () => {
 };
 
 export const API_BASE = getApiBase();
-export const WHATSAPP_API_BASE_URL = `${API_BASE}/whatsapp-status`;
+export const WHATSAPP_API_BASE_URL = `${API_BASE}/api/whatsapp`;
 export const SHOPEE_API_BASE_URL = `${API_BASE}/api/shopee`;
 
 // Health check endpoint
