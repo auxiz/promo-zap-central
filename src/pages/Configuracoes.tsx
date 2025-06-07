@@ -1,18 +1,17 @@
 
-import { useState, useEffect } from 'react';
 import { ShopeeSettings } from '@/components/configuracoes/ShopeeSettings';
 import { InstagramSettings } from '@/components/configuracoes/InstagramSettings';
 import { AmazonSettings } from '@/components/configuracoes/AmazonSettings';
 import { MagaluSettings } from '@/components/configuracoes/MagaluSettings';
 import { NaturaSettings } from '@/components/configuracoes/NaturaSettings';
-import { API_BASE } from '@/utils/api-constants';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, ShoppingBag, Package, Settings as SettingsIcon, Instagram, Leaf } from 'lucide-react';
-import { ShopeeConversionForm } from '@/components/shopee/ShopeeConversionForm';
+import { ShopeeLocalConversionForm } from '@/components/shopee/ShopeeLocalConversionForm';
 import { Card } from '@/components/ui/card';
 import { BackendStatusIndicator } from '@/components/ui/BackendStatusIndicator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
 
 // Configuration for each integration
 const integrations = [
@@ -59,38 +58,7 @@ const integrations = [
 ];
 
 export default function Configuracoes() {
-  const [shopeeAppId, setShopeeAppId] = useState('');
-  const [shopeeStatus, setShopeeStatus] = useState<'online' | 'offline'>('offline');
-  const [hasToken, setHasToken] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState('shopee');
-
-  // Fetch current Shopee credentials on mount
-  useEffect(() => {
-    const fetchShopeeCredentials = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/shopee/credentials`);
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.appId) {
-            setShopeeAppId(data.appId);
-          }
-          
-          if (data.status) {
-            setShopeeStatus(data.status);
-          }
-          
-          if (data.hasToken) {
-            setHasToken(data.hasToken);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching Shopee credentials:", error);
-      }
-    };
-
-    fetchShopeeCredentials();
-  }, []);
 
   const renderIntegrationContent = () => {
     switch (selectedIntegration) {
@@ -112,17 +80,13 @@ export default function Configuracoes() {
             </Alert>
             
             <div className="w-full max-w-full overflow-x-hidden">
-              <ShopeeSettings 
-                initialAppId={shopeeAppId} 
-                initialStatus={shopeeStatus}
-                initialHasToken={hasToken}
-              />
+              <ShopeeSettings />
             </div>
             
             <div className="space-y-4 w-full max-w-full">
               <h2 className="text-xl font-semibold">Conversão de Links</h2>
               <Card className="p-4 sm:p-6 w-full max-w-full overflow-x-hidden">
-                <ShopeeConversionForm />
+                <ShopeeLocalConversionForm />
               </Card>
             </div>
             
@@ -131,29 +95,28 @@ export default function Configuracoes() {
               
               <div className="space-y-4 text-muted-foreground text-sm sm:text-base">
                 <p>
-                  O sistema automaticamente monitora mensagens de grupos selecionados (Grupos Monitorados)
-                  e converte links da Shopee para links de afiliado.
+                  O sistema permite que você converta links da Shopee para links de afiliado usando suas 
+                  próprias credenciais, que ficam armazenadas apenas no seu navegador.
                 </p>
                 
                 <p>
-                  Para gerar links de afiliado, o sistema utiliza suas credenciais da API da Shopee
-                  (APP ID e Secret Key) para autenticar diretamente com a API de afiliados.
+                  Para gerar links de afiliado, você precisa configurar suas credenciais da API da Shopee
+                  (APP ID e Secret Key) que são utilizadas para autenticar diretamente com a API de afiliados.
                 </p>
                 
                 <p>
-                  Quando uma mensagem contendo um link da Shopee é detectada, o sistema:
+                  Quando você converte um link da Shopee, o sistema:
                 </p>
                 
                 <ol className="list-decimal ml-5 space-y-2">
-                  <li>Extrai todos os links da Shopee na mensagem</li>
-                  <li>Converte cada link para o formato de afiliado usando suas credenciais</li>
-                  <li>Encaminha a mensagem com os links convertidos para os Grupos de Envio</li>
+                  <li>Utiliza suas credenciais armazenadas localmente</li>
+                  <li>Envia o link original junto com suas credenciais para conversão</li>
+                  <li>Retorna o link de afiliado convertido</li>
                 </ol>
                 
                 <p className="mt-4">
-                  Para começar, configure suas credenciais da Shopee acima e depois defina os 
-                  grupos que deseja monitorar e os grupos para onde deseja encaminhar as mensagens
-                  convertidas nas páginas de Grupos Monitorados e Grupos de Envio.
+                  Para começar, configure suas credenciais da Shopee acima e teste a conversão 
+                  com um link de exemplo. Suas credenciais ficam seguras no seu navegador.
                 </p>
               </div>
             </div>
@@ -168,7 +131,7 @@ export default function Configuracoes() {
       case 'instagram':
         return <InstagramSettings />;
       default:
-        return <ShopeeSettings initialAppId={shopeeAppId} initialStatus={shopeeStatus} initialHasToken={hasToken} />;
+        return <ShopeeSettings />;
     }
   };
 
