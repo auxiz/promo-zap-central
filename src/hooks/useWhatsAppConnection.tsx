@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWhatsAppConnectionStatus } from './whatsapp/useWhatsAppConnectionStatus';
 import { useWhatsAppQRHandler } from './whatsapp/useWhatsAppQRHandler';
@@ -10,9 +11,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
   const [isLoading, setIsLoading] = useState(false);
   const [statusAttempts, setStatusAttempts] = useState(0);
   
-  // Track reconnection attempts
   const reconnectAttemptsRef = useRef<number>(0);
-  
   const { addNotification } = useNotificationContext();
   
   const { 
@@ -43,39 +42,36 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     consecutiveErrors 
   });
 
-  // Initial fetch of status on component mount - only once
+  // Initial fetch only on mount
   useEffect(() => {
     fetchStatus();
-    // We're intentionally only running this on mount and instanceId changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
-  // Adaptive polling based on backend status and connection state
+  // Much more conservative polling to reduce server load
   useEffect(() => {
-    // Clear any existing intervals when state changes
     clearPollingIntervals();
     
-    // Check if we should stop polling due to too many failed attempts
+    // Stop polling after too many failed attempts to prevent server overload
     if (statusAttempts >= CONNECTION_CONFIG.maxStatusAttempts && backendError) {
-      console.log(`Reached maximum status check attempts (${CONNECTION_CONFIG.maxStatusAttempts}). Pausing automatic checks.`);
+      console.log(`Reached maximum status check attempts (${CONNECTION_CONFIG.maxStatusAttempts}). Stopping polling to reduce server load.`);
       addNotification(
-        'API Indisponível',
-        'As verificações automáticas foram pausadas devido a falhas consecutivas. Tente novamente mais tarde.',
+        'Sistema em Modo Conservação',
+        'Polling pausado para reduzir carga no servidor. Use "Atualizar" manualmente.',
         'warning',
-        'low'
+        'high'
       );
-      return; // Don't set up new intervals
+      return;
     }
     
     const { statusInterval, qrInterval } = getPollingIntervals();
-    console.log(`Setting polling intervals: status=${statusInterval}ms, qr=${qrInterval}ms`);
+    console.log(`Conservative polling: status=${statusInterval}ms, qr=${qrInterval}ms`);
     
-    // Set up new intervals based on connection status and backend health
+    // Only poll when absolutely necessary
     if (connectionStatus === 'connecting') {
       // Initial QR code fetch
       fetchQrCodeWithRateLimit();
       
-      // Set new polling intervals
+      // Much less frequent polling when connecting
       setStatusPollingInterval(() => {
         setStatusAttempts(prev => prev + 1);
         fetchStatus();
@@ -83,14 +79,15 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       
       setQrCodePollingInterval(fetchQrCodeWithRateLimit, qrInterval);
     } else if (connectionStatus === 'connected') {
-      // When connected, only poll status occasionally to verify connection
-      setStatusAttempts(0); // Reset attempts counter when successfully connected
+      // Reset attempts counter when successfully connected
+      setStatusAttempts(0);
       
+      // Very infrequent polling when connected (every 2 minutes)
       setStatusPollingInterval(() => {
         fetchStatus();
-      }, 60000); // Check once per minute when connected
+      }, 120000);
     } else {
-      // When disconnected, check status occasionally in case backend comes back
+      // Minimal polling when disconnected to check if server comes back
       setStatusPollingInterval(() => {
         setStatusAttempts(prev => prev + 1);
         fetchStatus();
@@ -105,12 +102,11 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
   const handleConnect = async () => {
     setIsLoading(true);
     setConnectionStatus('connecting');
-    setStatusAttempts(0); // Reset attempts counter when manually connecting
-    reconnectAttemptsRef.current = 0; // Reset reconnection attempts
+    setStatusAttempts(0);
+    reconnectAttemptsRef.current = 0;
     
     try {
       await initiateConnection();
-      // WPPConnect may restore session without needing QR code
       await fetchStatus();
       await fetchQrCodeWithRateLimit();
     } catch (error) {
@@ -118,7 +114,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       setConnectionStatus('disconnected');
       addNotification(
         'Erro de Conexão',
-        'Não foi possível iniciar a conexão com WhatsApp. Tente novamente mais tarde.',
+        'Não foi possível iniciar a conexão com WhatsApp. O servidor pode estar sobrecarregado.',
         'error',
         'high'
       );
@@ -128,7 +124,6 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
   };
   
   const handleQrCodeScanned = async () => {
-    // With WPPConnect this is handled automatically on the backend
     await fetchStatus();
   };
   
@@ -139,8 +134,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       const success = await disconnectWhatsApp();
       if (success) {
         setConnectionStatus('disconnected');
-        resetQrState(); // Clear QR code after disconnection
-        setStatusAttempts(0); // Reset attempts counter when manually disconnecting
+        resetQrState();
+        setStatusAttempts(0);
         addNotification(
           'WhatsApp Desconectado',
           'WhatsApp foi desconectado com sucesso',
@@ -163,9 +158,9 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     }
   };
   
-  // Function to manually trigger a status check (for UI refresh button)
+  // Manual refresh with rate limiting
   const refreshStatus = useCallback(async () => {
-    setStatusAttempts(0); // Reset attempts counter on manual refresh
+    setStatusAttempts(0);
     await fetchStatus();
   }, [fetchStatus]);
 

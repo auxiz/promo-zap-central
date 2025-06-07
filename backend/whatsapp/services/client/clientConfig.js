@@ -1,25 +1,23 @@
 
 /**
  * Client configuration for WhatsApp
- * Contains configuration options for WhatsApp client
+ * Optimized for low resource usage on VPS
  */
 
-// Generate client configuration options with instance-specific settings
+// Generate client configuration options with resource optimization
 const generateClientOptions = (instanceId) => {
   return {
     authStrategy: {
       type: 'LocalAuth',
       options: { 
         clientId: instanceId, 
-        // Using separate data paths for each instance to ensure proper isolation
         dataPath: `./whatsapp-sessions/${instanceId}`
       }
     },
     puppeteer: {
-      // Use appropriate Chromium path for Debian
       executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium' || '/usr/bin/chromium-browser',
       headless: true,
-      // Enhanced args for better stability in headless environments
+      // Optimized args for minimal resource usage
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -29,23 +27,38 @@ const generateClientOptions = (instanceId) => {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--single-process', // Helps with memory issues
+        '--single-process',
         '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process' // Help with WebKit issues
+        '--disable-features=IsolateOrigins,site-per-process',
+        // Memory optimization
+        '--memory-pressure-off',
+        '--max_old_space_size=512', // Limit to 512MB
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI',
+        '--disable-ipc-flooding-protection',
+        // Reduce CPU usage
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--metrics-recording-only',
+        '--no-report-upload'
       ],
-      // Browser timeout settings
-      timeout: 120000, // 2 minutes
-      // Memory management
+      timeout: 60000, // Reduced to 1 minute
       defaultViewport: {
-        width: 1280,
-        height: 800
+        width: 800, // Smaller viewport
+        height: 600
       }
     },
-    // Add client-specific timeouts
-    qrTimeoutMs: 60000, // 1 minute
-    authTimeoutMs: 120000, // 2 minutes
-    takeoverOnConflict: true, // Auto-handle session conflicts
-    takeoverTimeoutMs: 30000 // 30 seconds to wait for takeover
+    // Reduced timeouts to prevent hanging
+    qrTimeoutMs: 30000, // 30 seconds
+    authTimeoutMs: 60000, // 1 minute
+    takeoverOnConflict: true,
+    takeoverTimeoutMs: 15000, // 15 seconds
+    // Additional resource limits
+    restartOnCrash: false, // Don't auto-restart to prevent loops
+    killProcessOnBrowserClose: true
   };
 };
 

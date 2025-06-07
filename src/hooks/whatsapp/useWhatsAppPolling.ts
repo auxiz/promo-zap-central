@@ -9,7 +9,6 @@ interface UseWhatsAppPollingProps {
 }
 
 export function useWhatsAppPolling({ backendError, connectionStatus, consecutiveErrors }: UseWhatsAppPollingProps) {
-  // Use refs to track polling state and intervals
   const pollingIntervalsRef = useRef<{
     status: number | null;
     qrCode: number | null;
@@ -18,26 +17,25 @@ export function useWhatsAppPolling({ backendError, connectionStatus, consecutive
     qrCode: null
   });
 
-  // Calculate polling intervals based on backend status and connection state
+  // Much more conservative polling intervals to reduce server load
   const getPollingIntervals = useCallback(() => {
-    // If backend is having issues, increase the interval based on consecutive errors
+    // If backend is having issues, drastically increase the interval
     if (backendError) {
-      // Start with 15 seconds, then increase exponentially up to maximum interval
-      const calculatedDelay = CONNECTION_CONFIG.basePollingInterval * 3 * Math.pow(2, Math.min(consecutiveErrors, 6));
+      const calculatedDelay = CONNECTION_CONFIG.basePollingInterval * 5 * Math.pow(2, Math.min(consecutiveErrors, 4));
       const baseDelay = Math.min(calculatedDelay, CONNECTION_CONFIG.maxPollingInterval);
       
       return {
         statusInterval: baseDelay,
-        qrInterval: baseDelay * 2
+        qrInterval: baseDelay * 3 // Even less frequent for QR code
       };
     }
     
-    // Normal intervals when backend is responding
+    // Conservative intervals when backend is responding
     return {
       statusInterval: connectionStatus === 'connecting' ? 
-        CONNECTION_CONFIG.basePollingInterval : 
-        CONNECTION_CONFIG.basePollingInterval * 6,
-      qrInterval: CONNECTION_CONFIG.basePollingInterval * 6
+        CONNECTION_CONFIG.basePollingInterval : // 30 seconds when connecting
+        CONNECTION_CONFIG.basePollingInterval * 4, // 2 minutes when stable
+      qrInterval: CONNECTION_CONFIG.basePollingInterval * 3 // 1.5 minutes for QR code
     };
   }, [backendError, connectionStatus, consecutiveErrors]);
 

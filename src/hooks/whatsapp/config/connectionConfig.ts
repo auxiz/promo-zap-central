@@ -1,13 +1,14 @@
 
 /**
  * Configuration parameters for WhatsApp connection management
+ * Optimized for low resource usage
  */
 export const CONNECTION_CONFIG = {
-  maxStatusAttempts: 30,      // Maximum number of times to check status before giving up
-  maxQrAttempts: 10,          // Maximum number of QR code fetch attempts
-  basePollingInterval: 5000,  // Base polling interval when everything is normal (5 seconds)
-  maxPollingInterval: 300000, // Maximum polling interval when backend is down (5 minutes)
-  reconnectLimit: 5,          // Number of automatic reconnection attempts
-  maxErrorNotifications: 3,   // Maximum number of error notifications to show
-  errorNotificationCooldown: 300000, // 5 minutes between error notifications
+  maxStatusAttempts: 10,      // Reduced from 30 to 10
+  maxQrAttempts: 5,           // Reduced from 10 to 5
+  basePollingInterval: 30000, // Increased from 5s to 30s (6x less frequent)
+  maxPollingInterval: 600000, // Increased to 10 minutes when backend is down
+  reconnectLimit: 3,          // Reduced from 5 to 3
+  maxErrorNotifications: 2,   // Reduced from 3 to 2
+  errorNotificationCooldown: 600000, // Increased to 10 minutes between notifications
 };

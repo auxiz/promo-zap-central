@@ -1,6 +1,6 @@
 
 /**
- * WhatsApp Status Routes
+ * WhatsApp Status Routes with resource protection
  * Routes for managing WhatsApp connection status
  */
 
@@ -28,5 +28,8 @@ router.post('/reconnect/config', statusController.configureReconnection);
 
 // Get session information
 router.get('/session', statusController.getSessionInfo);
+
+// Emergency stop all connections (admin endpoint)
+router.post('/emergency-stop', statusController.emergencyStop);
 
 module.exports = router;

@@ -1,10 +1,10 @@
 
 /**
- * Instance model for WhatsApp client
+ * Instance model for WhatsApp client with resource optimization
  * Handles the state and data for each WhatsApp client instance
  */
 
-// Create instance object structure
+// Create instance object structure with conservative defaults
 const createInstanceObject = (instanceId) => ({
   qrCodeDataUrl: null,
   isConnected: false,
@@ -14,12 +14,12 @@ const createInstanceObject = (instanceId) => ({
   monitoredGroups: [],
   sendGroups: [],
   client: null,
-  // New fields for advanced session management
+  // Conservative session management to reduce resource usage
   sessionData: {
     lastActive: null,
     reconnectAttempts: 0,
-    maxReconnectAttempts: 5,
-    reconnectDelay: 5000, // 5 seconds initial delay
+    maxReconnectAttempts: 3,     // Reduced from 5 to 3
+    reconnectDelay: 15000,       // Increased from 5s to 15s
     isReconnecting: false
   }
 });
@@ -33,6 +33,7 @@ const instances = {
 const ensureInstance = (instanceId) => {
   if (!instances[instanceId]) {
     instances[instanceId] = createInstanceObject(instanceId);
+    console.log(`Created new instance ${instanceId} with conservative settings`);
   }
 };
 
@@ -62,11 +63,48 @@ const instanceExists = (instanceId) => {
   return !!instances[instanceId];
 };
 
+// Clean up inactive instances to free memory
+const cleanupInactiveInstances = () => {
+  const now = Date.now();
+  const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+  
+  for (const instanceId of Object.keys(instances)) {
+    const instance = instances[instanceId];
+    
+    // Don't cleanup default instance
+    if (instanceId === 'default') continue;
+    
+    // Check if instance is inactive
+    if (!instance.isConnected && 
+        instance.sessionData.lastActive && 
+        now - instance.sessionData.lastActive > inactiveThreshold) {
+      
+      console.log(`Cleaning up inactive instance: ${instanceId}`);
+      
+      // Clean up client if exists
+      if (instance.client) {
+        try {
+          instance.client.close();
+        } catch (error) {
+          console.error(`Error closing client during cleanup for ${instanceId}:`, error);
+        }
+      }
+      
+      // Remove from memory
+      delete instances[instanceId];
+    }
+  }
+};
+
+// Auto cleanup every 10 minutes
+setInterval(cleanupInactiveInstances, 10 * 60 * 1000);
+
 module.exports = {
   getInstance,
   ensureInstance,
   instances,
   updateSessionData,
   getAllInstanceIds,
-  instanceExists
+  instanceExists,
+  cleanupInactiveInstances
 };
