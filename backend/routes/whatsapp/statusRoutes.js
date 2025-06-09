@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
-const statusController = require('../../controllers/whatsapp/statusController');
+const statusController = require('../../controllers/whatsapp/mainStatusController');
 
 // Get QR code for connection
 router.get('/qrcode', statusController.getQRCode);
