@@ -42,20 +42,22 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     consecutiveErrors 
   });
 
-  // Initial fetch only on mount
+  // Initial fetch only on mount or when instanceId changes
   useEffect(() => {
     fetchStatus();
+    setStatusAttempts(0);
+    resetQrState();
   }, [instanceId]);
 
-  // Much more conservative polling to reduce server load
+  // Instance-specific polling with isolation
   useEffect(() => {
     clearPollingIntervals();
     
     // Stop polling after too many failed attempts to prevent server overload
     if (statusAttempts >= CONNECTION_CONFIG.maxStatusAttempts && backendError) {
-      console.log(`Reached maximum status check attempts (${CONNECTION_CONFIG.maxStatusAttempts}). Stopping polling to reduce server load.`);
+      console.log(`Reached maximum status check attempts (${CONNECTION_CONFIG.maxStatusAttempts}) for instance ${instanceId}. Stopping polling to reduce server load.`);
       addNotification(
-        'Sistema em Modo Conservação',
+        `Instância ${instanceId} em Modo Conservação`,
         'Polling pausado para reduzir carga no servidor. Use "Atualizar" manualmente.',
         'warning',
         'high'
@@ -64,14 +66,14 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     }
     
     const { statusInterval, qrInterval } = getPollingIntervals();
-    console.log(`Conservative polling: status=${statusInterval}ms, qr=${qrInterval}ms`);
+    console.log(`Conservative polling for instance ${instanceId}: status=${statusInterval}ms, qr=${qrInterval}ms`);
     
-    // Only poll when absolutely necessary
+    // Only poll when absolutely necessary for this specific instance
     if (connectionStatus === 'connecting') {
-      // Initial QR code fetch
+      // Initial QR code fetch for this instance
       fetchQrCodeWithRateLimit();
       
-      // Much less frequent polling when connecting
+      // Instance-specific status polling
       setStatusPollingInterval(() => {
         setStatusAttempts(prev => prev + 1);
         fetchStatus();
@@ -82,12 +84,12 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       // Reset attempts counter when successfully connected
       setStatusAttempts(0);
       
-      // Very infrequent polling when connected (every 2 minutes)
+      // Very infrequent polling when connected (every 2 minutes for this instance)
       setStatusPollingInterval(() => {
         fetchStatus();
       }, 120000);
     } else {
-      // Minimal polling when disconnected to check if server comes back
+      // Minimal polling when disconnected to check if server comes back for this instance
       setStatusPollingInterval(() => {
         setStatusAttempts(prev => prev + 1);
         fetchStatus();
@@ -97,7 +99,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     return clearPollingIntervals;
   }, [connectionStatus, backendError, fetchStatus, fetchQrCodeWithRateLimit, clearPollingIntervals, 
       consecutiveErrors, statusAttempts, addNotification, getPollingIntervals, setStatusPollingInterval, 
-      setQrCodePollingInterval]);
+      setQrCodePollingInterval, instanceId]);
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -110,11 +112,11 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
       await fetchStatus();
       await fetchQrCodeWithRateLimit();
     } catch (error) {
-      console.error('Error in connect flow:', error);
+      console.error(`Error in connect flow for instance ${instanceId}:`, error);
       setConnectionStatus('disconnected');
       addNotification(
-        'Erro de Conexão',
-        'Não foi possível iniciar a conexão com WhatsApp. O servidor pode estar sobrecarregado.',
+        `Erro de Conexão - ${instanceId}`,
+        `Não foi possível iniciar a conexão com WhatsApp para a instância ${instanceId}. O servidor pode estar sobrecarregado.`,
         'error',
         'high'
       );
@@ -137,8 +139,8 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
         resetQrState();
         setStatusAttempts(0);
         addNotification(
-          'WhatsApp Desconectado',
-          'WhatsApp foi desconectado com sucesso',
+          `WhatsApp Desconectado - ${instanceId}`,
+          `WhatsApp foi desconectado com sucesso da instância ${instanceId}`,
           'success',
           'high'
         );
@@ -146,10 +148,10 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
         throw new Error('Failed to disconnect');
       }
     } catch (error) {
-      console.error('Error disconnecting WhatsApp:', error);
+      console.error(`Error disconnecting WhatsApp instance ${instanceId}:`, error);
       addNotification(
-        'Erro ao Desconectar',
-        'Não foi possível desconectar o WhatsApp. Tente novamente.',
+        `Erro ao Desconectar - ${instanceId}`,
+        `Não foi possível desconectar o WhatsApp da instância ${instanceId}. Tente novamente.`,
         'error',
         'high'
       );
@@ -158,7 +160,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     }
   };
   
-  // Manual refresh with rate limiting
+  // Manual refresh with rate limiting for specific instance
   const refreshStatus = useCallback(async () => {
     setStatusAttempts(0);
     await fetchStatus();
@@ -174,6 +176,7 @@ export default function useWhatsAppConnection(instanceId: string = 'default') {
     handleQrCodeScanned,
     handleDisconnect,
     refreshStatus,
-    statusAttempts
+    statusAttempts,
+    instanceId // Return instanceId for reference
   };
 }

@@ -1,37 +1,29 @@
 
 import { useCallback } from 'react';
-import { useNotificationContext } from '@/contexts/NotificationContext';
 import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
 
 export function useWhatsAppQRCode(instanceId: string = 'default') {
-  const { addNotification } = useNotificationContext();
-
-  // Function to fetch QR code
-  const fetchQrCode = useCallback(async () => {
+  const fetchQrCode = useCallback(async (): Promise<string | null> => {
     try {
-      const response = await fetch(`${WHATSAPP_API_BASE_URL}/qrcode?instanceId=${instanceId}`);
+      const response = await fetch(`${WHATSAPP_API_BASE_URL}/instances/${instanceId}/qrcode`);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Failed to fetch QR code for instance ${instanceId}`);
       }
       
       const data = await response.json();
       
-      if (data.qr) {
-        return data.qr;
+      if (data.error) {
+        console.warn(`QR code error for instance ${instanceId}:`, data.error);
+        return null;
       }
-      return '';
+      
+      return data.qr || null;
     } catch (error) {
-      console.error('Error fetching QR code:', error);
-      addNotification(
-        'Erro no QR Code',
-        'Não foi possível obter o QR code para conexão',
-        'error',
-        'high'
-      );
-      return '';
+      console.error(`Error fetching QR code for instance ${instanceId}:`, error);
+      return null;
     }
-  }, [instanceId, addNotification]);
+  }, [instanceId]);
 
   return { fetchQrCode };
 }

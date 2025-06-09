@@ -1,7 +1,7 @@
 
 /**
- * Client factory for WhatsApp
- * Handles the creation and initialization of WhatsApp WPPConnect clients
+ * Client factory for WhatsApp with complete session isolation
+ * Handles the creation and initialization of isolated WhatsApp WPPConnect clients
  */
 
 const wppconnect = require('@wppconnect-team/wppconnect');
@@ -10,18 +10,21 @@ const fs = require('fs');
 const { attachEventHandlers } = require('./client/eventHandlers');
 const instanceModel = require('../models/instance');
 
-// Ensure token directory exists
-const TOKEN_DIR = path.join(process.cwd(), 'whatsapp-tokens');
-if (!fs.existsSync(TOKEN_DIR)) {
-  fs.mkdirSync(TOKEN_DIR, { recursive: true });
-}
-
-// Create WPP client with proper timeouts for QR scanning
+// Create WPP client with complete session isolation
 const createClient = async (instanceId) => {
   const instance = instanceModel.getInstance(instanceId);
   
-  // Set up token directory for this instance
-  const tokenPath = path.join(TOKEN_DIR, instanceId);
+  // Ensure unique session directory for this instance
+  const sessionPath = path.join(process.cwd(), 'whatsapp-sessions', instanceId);
+  if (!fs.existsSync(sessionPath)) {
+    fs.mkdirSync(sessionPath, { recursive: true });
+  }
+  
+  // Set up token directory for this instance (completely isolated)
+  const tokenPath = path.join(sessionPath, 'tokens');
+  if (!fs.existsSync(tokenPath)) {
+    fs.mkdirSync(tokenPath, { recursive: true });
+  }
   
   try {
     // Find appropriate Chromium path
@@ -37,18 +40,19 @@ const createClient = async (instanceId) => {
     for (const path of chromiumPaths) {
       if (path && fs.existsSync(path)) {
         executablePath = path;
-        console.log(`Using browser at: ${executablePath}`);
         break;
       }
     }
     
     if (!executablePath) {
-      console.warn('No Chromium/Chrome executable found. WPPConnect will attempt to use system default.');
+      console.warn(`No Chromium/Chrome executable found for instance ${instanceId}. WPPConnect will attempt to use system default.`);
+    } else {
+      console.log(`Using browser at: ${executablePath} for instance ${instanceId}`);
     }
     
-    // Initialize WPPConnect client with extended timeouts for QR scanning
+    // Initialize WPPConnect client with complete isolation
     const client = await wppconnect.create({
-      session: instanceId,
+      session: instanceId, // Unique session identifier
       autoClose: 300000, // 5 minutes - enough time to scan QR code comfortably
       puppeteerOptions: {
         executablePath,
@@ -64,7 +68,9 @@ const createClient = async (instanceId) => {
           '--no-zygote',
           '--single-process', // Helps with memory issues
           '--disable-web-security',
-          '--disable-features=IsolateOrigins,site-per-process' // Help with WebKit issues
+          '--disable-features=IsolateOrigins,site-per-process', // Help with WebKit issues
+          // Instance-specific user data directory for complete isolation
+          `--user-data-dir=${path.join(sessionPath, 'chrome-data')}`
         ],
         headless: true,
         defaultViewport: {
@@ -74,11 +80,17 @@ const createClient = async (instanceId) => {
         timeout: 300000 // 5 minutes timeout for Puppeteer operations
       },
       tokenStore: 'file',
-      tokenDir: tokenPath,
+      tokenDir: tokenPath, // Instance-specific token directory
       catchQR: (qrCode, asciiQR, attempt) => {
-        // Handle QR code generation here
+        // Handle QR code generation here - instance specific
         instance.qrCodeDataUrl = qrCode;
         console.log(`QR code generated for instance ${instanceId} (attempt ${attempt}) - QR will be available for 5 minutes`);
+        
+        // Update instance as active when QR is generated
+        instanceModel.updateInstanceConfig(instanceId, { 
+          isActive: true, 
+          lastQrGenerated: Date.now() 
+        });
       },
       logQR: false, // Don't log QR to console
       disableWelcome: true, // Disable welcome message
@@ -91,11 +103,10 @@ const createClient = async (instanceId) => {
       devtools: false,
       useChrome: true,
       debug: false,
-      logQR: false,
       browserRevision: '',
       addProxy: [],
-      folderNameToken: instanceId,
-      mkdirFolderToken: '',
+      folderNameToken: instanceId, // Unique folder for this instance
+      mkdirFolderToken: sessionPath, // Instance-specific directory
       addBrowserArgs: [],
       // Session and connection timeouts
       waitForLogin: true,
@@ -107,18 +118,72 @@ const createClient = async (instanceId) => {
       takeScreenshot: false
     });
     
-    // Attach event handlers for consistent behavior with old system
+    // Attach event handlers for consistent behavior
     attachEventHandlers(client, instanceId);
     
-    console.log(`WPPConnect client created for ${instanceId} with 5-minute timeouts for comfortable QR scanning`);
+    // Mark instance as active when client is created
+    instanceModel.updateInstanceConfig(instanceId, { 
+      isActive: true, 
+      lastClientCreated: Date.now() 
+    });
+    
+    console.log(`WPPConnect client created for ${instanceId} with complete session isolation and 5-minute timeouts`);
     
     return client;
   } catch (error) {
-    console.error(`Error creating WPPConnect client for instance ${instanceId}:`, error);
+    console.error(`Error creating isolated WPPConnect client for instance ${instanceId}:`, error);
+    
+    // Mark instance as inactive on error
+    instanceModel.updateInstanceConfig(instanceId, { 
+      isActive: false, 
+      lastError: Date.now(),
+      errorMessage: error.message 
+    });
+    
     throw error;
   }
 };
 
+// Validate session isolation for an instance
+const validateSessionIsolation = (instanceId) => {
+  const sessionPath = path.join(process.cwd(), 'whatsapp-sessions', instanceId);
+  const tokenPath = path.join(sessionPath, 'tokens');
+  const chromeDataPath = path.join(sessionPath, 'chrome-data');
+  
+  return {
+    sessionExists: fs.existsSync(sessionPath),
+    tokensExist: fs.existsSync(tokenPath),
+    chromeDataExists: fs.existsSync(chromeDataPath),
+    sessionPath,
+    tokenPath,
+    chromeDataPath
+  };
+};
+
+// Clean up session files for an instance
+const cleanupSessionFiles = (instanceId) => {
+  if (instanceId === 'default') {
+    console.log('Cannot cleanup default instance session files');
+    return false;
+  }
+  
+  const sessionPath = path.join(process.cwd(), 'whatsapp-sessions', instanceId);
+  
+  try {
+    if (fs.existsSync(sessionPath)) {
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+      console.log(`Cleaned up session files for instance ${instanceId}`);
+      return true;
+    }
+  } catch (error) {
+    console.error(`Error cleaning up session files for instance ${instanceId}:`, error);
+  }
+  
+  return false;
+};
+
 module.exports = {
-  createClient
+  createClient,
+  validateSessionIsolation,
+  cleanupSessionFiles
 };
