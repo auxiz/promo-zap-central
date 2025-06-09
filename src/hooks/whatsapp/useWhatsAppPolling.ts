@@ -17,7 +17,7 @@ export function useWhatsAppPolling({ backendError, connectionStatus, consecutive
     qrCode: null
   });
 
-  // Much more conservative polling intervals to reduce server load
+  // Improved polling intervals for better QR scanning experience
   const getPollingIntervals = useCallback(() => {
     // If backend is having issues, drastically increase the interval
     if (backendError) {
@@ -30,13 +30,26 @@ export function useWhatsAppPolling({ backendError, connectionStatus, consecutive
       };
     }
     
-    // Conservative intervals when backend is responding
-    return {
-      statusInterval: connectionStatus === 'connecting' ? 
-        CONNECTION_CONFIG.basePollingInterval : // 30 seconds when connecting
-        CONNECTION_CONFIG.basePollingInterval * 4, // 2 minutes when stable
-      qrInterval: CONNECTION_CONFIG.basePollingInterval * 3 // 1.5 minutes for QR code
-    };
+    // More responsive intervals when backend is responding
+    switch (connectionStatus) {
+      case 'connecting':
+        return {
+          statusInterval: CONNECTION_CONFIG.basePollingInterval, // 10 seconds when connecting
+          qrInterval: CONNECTION_CONFIG.qrPollingInterval // 15 seconds for QR updates
+        };
+      
+      case 'connected':
+        return {
+          statusInterval: CONNECTION_CONFIG.connectedPollingInterval, // 2 minutes when connected
+          qrInterval: CONNECTION_CONFIG.connectedPollingInterval * 2 // 4 minutes for QR (not needed when connected)
+        };
+      
+      default: // disconnected
+        return {
+          statusInterval: CONNECTION_CONFIG.basePollingInterval * 2, // 20 seconds when disconnected
+          qrInterval: CONNECTION_CONFIG.basePollingInterval * 4 // 40 seconds for QR when disconnected
+        };
+    }
   }, [backendError, connectionStatus, consecutiveErrors]);
 
   // Clear existing intervals when changing states

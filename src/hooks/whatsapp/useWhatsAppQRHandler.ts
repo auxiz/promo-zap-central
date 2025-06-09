@@ -12,7 +12,7 @@ export function useWhatsAppQRHandler(instanceId: string, connectionStatus: strin
   const { addNotification } = useNotificationContext();
   const { fetchQrCode } = useWhatsAppQRCode(instanceId);
 
-  // Function to fetch QR code with rate limiting and error handling
+  // Function to fetch QR code with improved rate limiting for better UX
   const fetchQrCodeWithRateLimit = useCallback(async () => {
     // Only fetch QR code when in connecting state
     if (connectionStatus !== 'connecting') {
@@ -25,9 +25,9 @@ export function useWhatsAppQRHandler(instanceId: string, connectionStatus: strin
       return;
     }
     
-    // Rate limiting - only fetch QR code every 30 seconds maximum
+    // Rate limiting - reduced to 15 seconds for better QR refresh experience
     const now = Date.now();
-    if (now - lastQrFetchTime < 30000) {
+    if (now - lastQrFetchTime < 15000) {
       return;
     }
     
@@ -40,12 +40,13 @@ export function useWhatsAppQRHandler(instanceId: string, connectionStatus: strin
         setQrCode(newQrCode);
         // Reset attempts on success
         setQrCodeAttempts(0);
+        console.log(`QR code updated for instance ${instanceId}, attempt ${qrCodeAttempts + 1}`);
       } else if (connectionStatus === 'connecting') {
-        // Only show warning if still in connecting state and no QR after multiple attempts
-        if (qrCodeAttempts > 2) {
+        // Only show info if still in connecting state and no QR after few attempts
+        if (qrCodeAttempts > 3) {
           addNotification(
             'Verificando sessão existente',
-            'Sistema está verificando se existe uma sessão salva. Aguarde um momento.',
+            'Sistema está verificando se existe uma sessão salva. O QR code ficará disponível por 5 minutos.',
             'info',
             'silent'
           );
@@ -53,20 +54,21 @@ export function useWhatsAppQRHandler(instanceId: string, connectionStatus: strin
       }
     } catch (error) {
       console.error('Error fetching QR code:', error);
-      if (qrCodeAttempts > 2) {
+      if (qrCodeAttempts > 3) {
         addNotification(
-          'Erro ao gerar QR Code',
-          'Houve um erro ao gerar o QR code. O sistema pode estar restaurando uma sessão anterior.',
+          'QR Code em preparação',
+          'Aguarde alguns segundos. O QR code ficará disponível por 5 minutos para escaneamento confortável.',
           'warning',
           'silent'
         );
       }
     }
-  }, [fetchQrCode, lastQrFetchTime, qrCodeAttempts, addNotification, connectionStatus]);
+  }, [fetchQrCode, lastQrFetchTime, qrCodeAttempts, addNotification, connectionStatus, instanceId]);
 
   const resetQrState = useCallback(() => {
     setQrCode('');
     setQrCodeAttempts(0);
+    setLastQrFetchTime(0);
   }, []);
 
   return {

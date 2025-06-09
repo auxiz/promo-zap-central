@@ -1,10 +1,10 @@
 
 /**
  * Client configuration for WhatsApp
- * Optimized for low resource usage on VPS
+ * Optimized for proper QR scanning while maintaining resource efficiency
  */
 
-// Generate client configuration options with resource optimization
+// Generate client configuration options with extended timeouts for QR scanning
 const generateClientOptions = (instanceId) => {
   return {
     authStrategy: {
@@ -17,7 +17,7 @@ const generateClientOptions = (instanceId) => {
     puppeteer: {
       executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium' || '/usr/bin/chromium-browser',
       headless: true,
-      // Optimized args for minimal resource usage
+      // Optimized args for minimal resource usage while allowing proper QR scanning
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -45,17 +45,17 @@ const generateClientOptions = (instanceId) => {
         '--metrics-recording-only',
         '--no-report-upload'
       ],
-      timeout: 60000, // Reduced to 1 minute
+      timeout: 300000, // 5 minutes - proper time for QR scanning
       defaultViewport: {
-        width: 800, // Smaller viewport
+        width: 800, // Smaller viewport for resource efficiency
         height: 600
       }
     },
-    // Reduced timeouts to prevent hanging
-    qrTimeoutMs: 30000, // 30 seconds
-    authTimeoutMs: 60000, // 1 minute
+    // Extended timeouts for comfortable QR scanning experience
+    qrTimeoutMs: 300000, // 5 minutes for QR code scanning
+    authTimeoutMs: 300000, // 5 minutes for authentication
     takeoverOnConflict: true,
-    takeoverTimeoutMs: 15000, // 15 seconds
+    takeoverTimeoutMs: 30000, // 30 seconds for takeover
     // Additional resource limits
     restartOnCrash: false, // Don't auto-restart to prevent loops
     killProcessOnBrowserClose: true

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Loader2, ServerCrash, AlertTriangle, Ban, History } from 'lucide-react';
+import { Loader2, ServerCrash, AlertTriangle, Ban, History, Clock } from 'lucide-react';
 import { useWhatsAppErrorMonitor } from '@/hooks/whatsapp/useWhatsAppErrorMonitor';
 
 type QRCodeScannerProps = {
@@ -24,7 +24,7 @@ export default function QRCodeScanner({
   }
 
   // Determine if we have excessive retries
-  const hasExcessiveRetries = errorStats?.retryAttempts && errorStats.retryAttempts > 5;
+  const hasExcessiveRetries = errorStats?.retryAttempts && errorStats.retryAttempts > 8;
 
   return (
     <div className="text-center">
@@ -83,9 +83,12 @@ export default function QRCodeScanner({
       
       {!backendError && connectionStatus === 'connecting' && qrCode && (
         <div className="mt-4 text-sm text-muted-foreground">
-          <p>Aguardando leitura do QR Code...</p>
-          <p className="mt-1">O QR Code expira em 60 segundos</p>
-          <p className="mt-2 text-xs">Após escanear, a sessão será salva e você não precisará escanear novamente ao reconectar</p>
+          <p className="flex items-center justify-center gap-2">
+            <Clock size={16} className="text-green-600" />
+            <span className="text-green-600 font-medium">QR Code disponível por 5 minutos</span>
+          </p>
+          <p className="mt-1">Escaneie com calma - tempo suficiente para conectar</p>
+          <p className="mt-2 text-xs">Após escanear, a sessão será salva e você não precisará escanear novamente</p>
         </div>
       )}
       
@@ -95,7 +98,8 @@ export default function QRCodeScanner({
           <p className="text-sm font-medium">Restaurando sessão anterior</p>
           <p className="text-xs mt-1">
             O sistema está tentando recuperar sua sessão anterior do WhatsApp.
-            Se existir uma sessão válida, a conexão será feita automaticamente em instantes.
+            Se existir uma sessão válida, a conexão será feita automaticamente.
+            Caso contrário, um QR Code será gerado e ficará disponível por 5 minutos.
           </p>
         </div>
       )}

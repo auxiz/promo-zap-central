@@ -16,7 +16,7 @@ if (!fs.existsSync(TOKEN_DIR)) {
   fs.mkdirSync(TOKEN_DIR, { recursive: true });
 }
 
-// Create WPP client with more detailed error handling for better debugging
+// Create WPP client with proper timeouts for QR scanning
 const createClient = async (instanceId) => {
   const instance = instanceModel.getInstance(instanceId);
   
@@ -46,10 +46,10 @@ const createClient = async (instanceId) => {
       console.warn('No Chromium/Chrome executable found. WPPConnect will attempt to use system default.');
     }
     
-    // Initialize WPPConnect client
+    // Initialize WPPConnect client with extended timeouts for QR scanning
     const client = await wppconnect.create({
       session: instanceId,
-      autoClose: false,
+      autoClose: 300000, // 5 minutes - enough time to scan QR code comfortably
       puppeteerOptions: {
         executablePath,
         // Enhanced args for better stability in headless environments
@@ -70,24 +70,47 @@ const createClient = async (instanceId) => {
         defaultViewport: {
           width: 1280,
           height: 800
-        }
+        },
+        timeout: 300000 // 5 minutes timeout for Puppeteer operations
       },
       tokenStore: 'file',
       tokenDir: tokenPath,
       catchQR: (qrCode, asciiQR, attempt) => {
         // Handle QR code generation here
         instance.qrCodeDataUrl = qrCode;
-        console.log(`QR code generated for instance ${instanceId} (attempt ${attempt})`);
+        console.log(`QR code generated for instance ${instanceId} (attempt ${attempt}) - QR will be available for 5 minutes`);
       },
       logQR: false, // Don't log QR to console
       disableWelcome: true, // Disable welcome message
       updatesLog: false, // Disable update logs
-      autoClose: 60000, // 60 seconds
       createPathFileToken: true,
+      // Extended timeouts for proper QR scanning experience
+      browserWS: '', 
+      browserArgs: [],
+      headless: true,
+      devtools: false,
+      useChrome: true,
+      debug: false,
+      logQR: false,
+      browserRevision: '',
+      addProxy: [],
+      folderNameToken: instanceId,
+      mkdirFolderToken: '',
+      addBrowserArgs: [],
+      // Session and connection timeouts
+      waitForLogin: true,
+      // Extended timeouts to allow proper QR scanning
+      timeoutQrCode: 300000, // 5 minutes for QR code timeout
+      qrTimeout: 300000, // 5 minutes QR timeout
+      authTimeout: 300000, // 5 minutes auth timeout
+      waitForQrCodeScan: true,
+      takeScreenshot: false
     });
     
     // Attach event handlers for consistent behavior with old system
     attachEventHandlers(client, instanceId);
+    
+    console.log(`WPPConnect client created for ${instanceId} with 5-minute timeouts for comfortable QR scanning`);
     
     return client;
   } catch (error) {
