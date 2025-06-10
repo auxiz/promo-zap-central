@@ -1,15 +1,16 @@
 
 import { useCallback } from 'react';
-import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
+import { buildInstanceUrl } from '@/utils/api-constants';
 
 export function useWhatsAppActions(instanceId: string = 'default') {
   const initiateConnection = useCallback(async () => {
     try {
-      const response = await fetch(`${WHATSAPP_API_BASE_URL}/instances/${instanceId}/connect`, {
+      const response = await fetch(`${buildInstanceUrl(instanceId)}/connect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ instanceId })
       });
       
       if (!response.ok) {
@@ -26,11 +27,12 @@ export function useWhatsAppActions(instanceId: string = 'default') {
 
   const disconnectWhatsApp = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${WHATSAPP_API_BASE_URL}/instances/${instanceId}/disconnect`, {
+      const response = await fetch(`${buildInstanceUrl(instanceId)}/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ instanceId })
       });
       
       if (!response.ok) {

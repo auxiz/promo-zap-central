@@ -1,11 +1,11 @@
 
 import { useCallback } from 'react';
-import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
+import { buildInstanceUrl } from '@/utils/api-constants';
 
 export function useWhatsAppQRCode(instanceId: string = 'default') {
   const fetchQrCode = useCallback(async (): Promise<string | null> => {
     try {
-      const response = await fetch(`${WHATSAPP_API_BASE_URL}/instances/${instanceId}/qrcode`);
+      const response = await fetch(`${buildInstanceUrl(instanceId)}/qrcode`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch QR code for instance ${instanceId}`);

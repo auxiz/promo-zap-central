@@ -1,26 +1,7 @@
 
-// API Configuration
-// Determine the correct API base URL based on environment
-const getApiBase = () => {
-  // Check if we're in development or production
-  if (import.meta.env.DEV) {
-    // In development, use local Node.js backend
-    return 'http://localhost:3000';
-  }
-  
-  // In production, use the same origin
-  return window.location.origin;
+export const WHATSAPP_API_BASE_URL = 'http://localhost:4000/api/whatsapp';
+
+// Helper function to build instance-specific URLs
+export const buildInstanceUrl = (instanceId: string = 'default') => {
+  return `${WHATSAPP_API_BASE_URL}/instances/${instanceId}`;
 };
-
-export const API_BASE = getApiBase();
-export const WHATSAPP_API_BASE_URL = `${API_BASE}/api/whatsapp`;
-export const SHOPEE_API_BASE_URL = `${API_BASE}/api/shopee`;
-
-// Health check endpoint
-export const HEALTH_CHECK_URL = `${API_BASE}/api/health`;
-
-console.log('API Configuration:', {
-  API_BASE,
-  WHATSAPP_API_BASE_URL,
-  SHOPEE_API_BASE_URL
-});

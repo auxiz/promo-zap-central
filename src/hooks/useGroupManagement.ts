@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import useWhatsAppConnection from './useWhatsAppConnection';
-import { WHATSAPP_API_BASE_URL } from '@/utils/api-constants';
+import { buildInstanceUrl } from '@/utils/api-constants';
 
 export interface Group {
   id: string;
@@ -12,17 +12,22 @@ export interface Group {
 interface UseGroupManagementProps {
   endpoint: 'monitored' | 'send';
   endpointLabel: string;
+  instanceId?: string;
 }
 
-export default function useGroupManagement({ endpoint, endpointLabel }: UseGroupManagementProps) {
+export default function useGroupManagement({ 
+  endpoint, 
+  endpointLabel, 
+  instanceId = 'default' 
+}: UseGroupManagementProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<Record<string, boolean>>({});
-  const { connectionStatus } = useWhatsAppConnection();
+  const { connectionStatus } = useWhatsAppConnection(instanceId);
 
-  // Fetch all groups and selected groups
+  // Fetch all groups and selected groups for the specific instance
   useEffect(() => {
     const fetchData = async () => {
       if (connectionStatus !== 'connected') {
@@ -32,15 +37,15 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
 
       setIsLoading(true);
       try {
-        // Fetch all groups
-        const groupsResponse = await fetch(`${WHATSAPP_API_BASE_URL}/groups`);
+        // Fetch all groups for this instance
+        const groupsResponse = await fetch(`${buildInstanceUrl(instanceId)}/groups`);
         if (!groupsResponse.ok) {
           throw new Error(`Falha ao carregar grupos`);
         }
         const groupsData = await groupsResponse.json();
 
-        // Fetch selected groups (monitored or send)
-        const selectedResponse = await fetch(`${WHATSAPP_API_BASE_URL}/${endpoint}`);
+        // Fetch selected groups (monitored or send) for this instance
+        const selectedResponse = await fetch(`${buildInstanceUrl(instanceId)}/${endpoint}`);
         if (!selectedResponse.ok) {
           throw new Error(`Falha ao carregar grupos ${endpointLabel.toLowerCase()}`);
         }
@@ -51,18 +56,18 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
         
         // Show success notification when groups load after connection
         if (connectionStatus === 'connected' && groupsData.groups?.length > 0) {
-          toast.success(`${groupsData.groups.length} grupos carregados com sucesso!`);
+          toast.success(`${groupsData.groups.length} grupos carregados com sucesso para instância ${instanceId}!`);
         }
       } catch (error) {
-        console.error(`Error fetching groups:`, error);
-        toast.error('Erro ao carregar dados dos grupos');
+        console.error(`Error fetching groups for instance ${instanceId}:`, error);
+        toast.error(`Erro ao carregar dados dos grupos da instância ${instanceId}`);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [connectionStatus, endpoint, endpointLabel]);
+  }, [connectionStatus, endpoint, endpointLabel, instanceId]);
 
   // Auto-refresh when connection status changes to connected
   useEffect(() => {
@@ -82,7 +87,7 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
   const handleAddGroup = async (groupId: string) => {
     setIsProcessing(prev => ({ ...prev, [groupId]: true }));
     try {
-      const response = await fetch(`${WHATSAPP_API_BASE_URL}/${endpoint}`, {
+      const response = await fetch(`${buildInstanceUrl(instanceId)}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ groupId })
@@ -94,10 +99,10 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
 
       const data = await response.json();
       setSelectedGroupIds(data[endpoint]);
-      toast.success(`Grupo adicionado à lista de ${endpointLabel.toLowerCase()}`);
+      toast.success(`Grupo adicionado à lista de ${endpointLabel.toLowerCase()} da instância ${instanceId}`);
     } catch (error) {
-      console.error(`Error adding ${endpoint} group:`, error);
-      toast.error(`Erro ao adicionar grupo ${endpointLabel.toLowerCase()}`);
+      console.error(`Error adding ${endpoint} group for instance ${instanceId}:`, error);
+      toast.error(`Erro ao adicionar grupo ${endpointLabel.toLowerCase()} na instância ${instanceId}`);
     } finally {
       setIsProcessing(prev => ({ ...prev, [groupId]: false }));
     }
@@ -106,7 +111,7 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
   const handleRemoveGroup = async (groupId: string) => {
     setIsProcessing(prev => ({ ...prev, [groupId]: true }));
     try {
-      const response = await fetch(`${WHATSAPP_API_BASE_URL}/${endpoint}/${groupId}`, {
+      const response = await fetch(`${buildInstanceUrl(instanceId)}/${endpoint}/${groupId}`, {
         method: 'DELETE'
       });
 
@@ -116,10 +121,10 @@ export default function useGroupManagement({ endpoint, endpointLabel }: UseGroup
 
       const data = await response.json();
       setSelectedGroupIds(data[endpoint]);
-      toast.success(`Grupo removido da lista de ${endpointLabel.toLowerCase()}`);
+      toast.success(`Grupo removido da lista de ${endpointLabel.toLowerCase()} da instância ${instanceId}`);
     } catch (error) {
-      console.error(`Error removing ${endpoint} group:`, error);
-      toast.error(`Erro ao remover grupo ${endpointLabel.toLowerCase()}`);
+      console.error(`Error removing ${endpoint} group for instance ${instanceId}:`, error);
+      toast.error(`Erro ao remover grupo ${endpointLabel.toLowerCase()} da instância ${instanceId}`);
     } finally {
       setIsProcessing(prev => ({ ...prev, [groupId]: false }));
     }
