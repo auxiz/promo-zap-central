@@ -1,215 +1,281 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAdvancedRateLimit } from '@/hooks/useAdvancedRateLimit';
 import { 
   Shield, 
   AlertTriangle, 
-  Clock, 
-  BarChart3,
-  RefreshCw,
-  Settings
+  CheckCircle, 
+  Clock,
+  Users,
+  Activity,
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 
+interface RateLimitTest {
+  id: string;
+  timestamp: Date;
+  success: boolean;
+  remainingRequests: number;
+}
+
 export function RateLimitMonitor() {
-  const authRateLimit = useAdvancedRateLimit('auth', {
-    maxRequests: 5,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 300000 // 5 minutes
-  });
-
-  const apiRateLimit = useAdvancedRateLimit('api', {
-    maxRequests: 100,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 60000 // 1 minute
-  });
-
-  const uploadRateLimit = useAdvancedRateLimit('upload', {
+  const [testKey, setTestKey] = useState('test-endpoint');
+  const [testHistory, setTestHistory] = useState<RateLimitTest[]>([]);
+  
+  const rateLimit = useAdvancedRateLimit(testKey, {
     maxRequests: 10,
-    windowMs: 300000, // 5 minutes
-    blockDurationMs: 600000 // 10 minutes
+    windowMs: 60000, // 1 minuto
+    blockDurationMs: 300000 // 5 minutos
   });
 
-  const rateLimits = [
-    {
-      name: 'Autenticação',
-      key: 'auth',
-      limit: authRateLimit,
-      icon: <Shield className="h-4 w-4" />,
-      description: 'Tentativas de login e registro'
-    },
-    {
-      name: 'API Geral',
-      key: 'api',
-      limit: apiRateLimit,
-      icon: <BarChart3 className="h-4 w-4" />,
-      description: 'Requisições gerais da API'
-    },
-    {
-      name: 'Upload de Arquivos',
-      key: 'upload',
-      limit: uploadRateLimit,
-      icon: <RefreshCw className="h-4 w-4" />,
-      description: 'Upload de imagens e documentos'
-    }
-  ];
+  // Simulated global rate limit stats
+  const [globalStats, setGlobalStats] = useState({
+    totalRequests: 1247,
+    blockedRequests: 23,
+    activeBlocks: 3,
+    peakRequestsPerMinute: 156
+  });
+
+  const testRateLimit = () => {
+    const success = rateLimit.attemptRequest();
+    const test: RateLimitTest = {
+      id: Date.now().toString(),
+      timestamp: new Date(),
+      success,
+      remainingRequests: rateLimit.remainingRequests
+    };
+    
+    setTestHistory(prev => [test, ...prev].slice(0, 10));
+  };
 
   const formatTime = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}m ${seconds}s`;
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
   };
+
+  useEffect(() => {
+    // Simulate global stats updates
+    const interval = setInterval(() => {
+      setGlobalStats(prev => ({
+        ...prev,
+        totalRequests: prev.totalRequests + Math.floor(Math.random() * 10),
+        blockedRequests: prev.blockedRequests + (Math.random() > 0.9 ? 1 : 0)
+      }));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const blockRate = globalStats.totalRequests > 0 
+    ? (globalStats.blockedRequests / globalStats.totalRequests * 100).toFixed(2)
+    : '0.00';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Monitor de Rate Limiting</h2>
-        <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
-          Configurações
+        <h2 className="text-3xl font-bold tracking-tight">Monitoramento de Rate Limiting</h2>
+        <Button onClick={() => rateLimit.reset()} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reset Limites
         </Button>
       </div>
 
-      {/* Global Alert for Blocked Users */}
-      {rateLimits.some(rl => rl.limit.isBlocked) && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Atenção: Alguns serviços estão temporariamente bloqueados devido ao rate limiting.
-            Aguarde ou entre em contato com o suporte se necessário.
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Status Global */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Requisições</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{globalStats.totalRequests.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Nas últimas 24h</p>
+          </CardContent>
+        </Card>
 
-      {/* Rate Limit Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {rateLimits.map((rateLimit) => (
-          <Card key={rateLimit.key} className={rateLimit.limit.isBlocked ? 'border-red-500' : ''}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  {rateLimit.icon}
-                  <span className="ml-2">{rateLimit.name}</span>
-                </div>
-                <Badge variant={rateLimit.limit.isBlocked ? 'destructive' : 'default'}>
-                  {rateLimit.limit.isBlocked ? 'Bloqueado' : 'Ativo'}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {rateLimit.description}
-              </p>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Requisições Bloqueadas</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{globalStats.blockedRequests}</div>
+            <p className="text-xs text-muted-foreground">Taxa: {blockRate}%</p>
+          </CardContent>
+        </Card>
 
-              {/* Request Usage */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Requisições Restantes</span>
-                  <span className="font-medium">
-                    {rateLimit.limit.remainingRequests}/{rateLimit.limit.maxRequests}
-                  </span>
-                </div>
-                <Progress 
-                  value={(rateLimit.limit.remainingRequests / rateLimit.limit.maxRequests) * 100}
-                  className="h-2"
-                />
-              </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bloqueios Ativos</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{globalStats.activeBlocks}</div>
+            <p className="text-xs text-muted-foreground">IPs bloqueados</p>
+          </CardContent>
+        </Card>
 
-              {/* Window Duration */}
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Janela de Tempo</span>
-                <span>{formatTime(rateLimit.limit.windowMs)}</span>
-              </div>
-
-              {/* Block Status */}
-              {rateLimit.limit.isBlocked && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 text-red-600 mr-2" />
-                    <span className="text-sm font-medium text-red-800">
-                      Bloqueado por mais {formatTime(rateLimit.limit.remainingTime)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Warning for Low Remaining Requests */}
-              {!rateLimit.limit.isBlocked && rateLimit.limit.remainingRequests <= 2 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                  <div className="flex items-center">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mr-2" />
-                    <span className="text-sm text-yellow-800">
-                      Poucas requisições restantes
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Reset Button */}
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={rateLimit.limit.reset}
-                className="w-full"
-                disabled={rateLimit.limit.remainingRequests === rateLimit.limit.maxRequests}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Resetar Limite
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pico de Requisições</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{globalStats.peakRequestsPerMinute}</div>
+            <p className="text-xs text-muted-foreground">Por minuto</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Rate Limit Summary */}
+      {/* Status do Rate Limit Atual */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <BarChart3 className="h-5 w-5 mr-2" />
-            Resumo do Rate Limiting
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Status do Rate Limit - {testKey}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total de Serviços</p>
-              <p className="text-2xl font-bold">{rateLimits.length}</p>
+        <CardContent className="space-y-4">
+          {rateLimit.isBlocked ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Endpoint Bloqueado</AlertTitle>
+              <AlertDescription>
+                Limite de {rateLimit.maxRequests} requisições por minuto excedido.
+                Bloqueio será removido em {formatTime(rateLimit.remainingTime)}.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Endpoint Ativo</AlertTitle>
+              <AlertDescription>
+                {rateLimit.remainingRequests} de {rateLimit.maxRequests} requisições disponíveis.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Requisições Utilizadas</span>
+              <span>{rateLimit.maxRequests - rateLimit.remainingRequests}/{rateLimit.maxRequests}</span>
             </div>
-            
+            <Progress 
+              value={(rateLimit.maxRequests - rateLimit.remainingRequests) / rateLimit.maxRequests * 100} 
+              className="h-2"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge variant={rateLimit.isBlocked ? 'destructive' : 'default'}>
+              {rateLimit.isBlocked ? 'Bloqueado' : 'Ativo'}
+            </Badge>
+            <Badge variant="secondary">
+              Janela: {(rateLimit.windowMs / 1000 / 60).toFixed(0)}min
+            </Badge>
+            <Badge variant="secondary">
+              Limite: {rateLimit.maxRequests} req/min
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Teste de Rate Limit */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Teste de Rate Limit
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Serviços Bloqueados</p>
-              <p className="text-2xl font-bold text-red-600">
-                {rateLimits.filter(rl => rl.limit.isBlocked).length}
-              </p>
+              <Label htmlFor="test-key">Endpoint para Teste</Label>
+              <Input
+                id="test-key"
+                value={testKey}
+                onChange={(e) => setTestKey(e.target.value)}
+                placeholder="test-endpoint"
+              />
             </div>
-            
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Serviços com Aviso</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {rateLimits.filter(rl => !rl.limit.isBlocked && rl.limit.remainingRequests <= 2).length}
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Serviços Normais</p>
-              <p className="text-2xl font-bold text-green-600">
-                {rateLimits.filter(rl => !rl.limit.isBlocked && rl.limit.remainingRequests > 2).length}
-              </p>
+            <div className="flex items-end">
+              <Button 
+                onClick={testRateLimit}
+                disabled={rateLimit.isBlocked}
+                className="w-full"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Testar Requisição
+              </Button>
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <h4 className="font-medium mb-2">Como Funciona o Rate Limiting</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Cada serviço tem um limite de requisições por janela de tempo</li>
-              <li>• Quando o limite é excedido, o serviço fica temporariamente bloqueado</li>
-              <li>• O bloqueio é automaticamente removido após o período configurado</li>
-              <li>• Administradores podem resetar limites manualmente se necessário</li>
-            </ul>
+          {testHistory.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Histórico de Testes</h4>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {testHistory.map((test) => (
+                  <div key={test.id} className="flex items-center justify-between text-sm p-2 rounded border">
+                    <div className="flex items-center gap-2">
+                      {test.success ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="h-3 w-3 text-red-600" />
+                      )}
+                      <span>{test.timestamp.toLocaleTimeString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={test.success ? 'default' : 'destructive'} className="text-xs">
+                        {test.success ? 'Sucesso' : 'Bloqueado'}
+                      </Badge>
+                      <span className="text-muted-foreground">
+                        {test.remainingRequests} restantes
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Configurações e Alertas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Configurações Ativas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 border rounded">
+              <p className="text-2xl font-bold">{rateLimit.maxRequests}</p>
+              <p className="text-sm text-muted-foreground">Máx. Requisições</p>
+            </div>
+            <div className="text-center p-4 border rounded">
+              <p className="text-2xl font-bold">{(rateLimit.windowMs / 1000 / 60).toFixed(0)}</p>
+              <p className="text-sm text-muted-foreground">Janela (min)</p>
+            </div>
+            <div className="text-center p-4 border rounded">
+              <p className="text-2xl font-bold">5</p>
+              <p className="text-sm text-muted-foreground">Bloqueio (min)</p>
+            </div>
           </div>
         </CardContent>
       </Card>
