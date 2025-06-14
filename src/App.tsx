@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppContent() {
+function AppFeatures() {
   // Initialize performance optimizations
   useBundleOptimization({
     enablePreloading: true,
@@ -42,6 +42,7 @@ function AppContent() {
   useIdlePreloading();
 
   // Initialize advanced features (PWA, Analytics, Real-time notifications)
+  // This must be inside AuthProvider context
   const { pwa, analytics } = useAdvancedFeatures();
 
   const { isSlowConnection } = useIntelligentCodeSplitting();
@@ -66,6 +67,15 @@ function AppContent() {
   }, [isSlowConnection, pwa, analytics]);
 
   return (
+    <>
+      <Router />
+      <Toaster />
+    </>
+  );
+}
+
+function AppContent() {
+  return (
     <ThemeProvider 
       attribute="class" 
       defaultTheme="dark" 
@@ -75,8 +85,7 @@ function AppContent() {
       <BrowserRouter>
         <AuthProvider>
           <NotificationProvider>
-            <Router />
-            <Toaster />
+            <AppFeatures />
           </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
