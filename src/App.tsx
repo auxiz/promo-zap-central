@@ -8,6 +8,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import Router from "@/Router";
 import { useBundleOptimization, useIntelligentCodeSplitting } from "@/hooks/useBundleOptimization";
 import { useIdlePreloading } from "@/hooks/usePreloadComponents";
+import { useAdvancedFeatures } from "@/hooks/useAdvancedFeatures";
 import { useEffect } from "react";
 
 // Create query client with optimized configuration
@@ -40,6 +41,9 @@ function AppContent() {
   // Start idle preloading after app loads
   useIdlePreloading();
 
+  // Initialize advanced features (PWA, Analytics, Real-time notifications)
+  const { pwa, analytics } = useAdvancedFeatures();
+
   const { isSlowConnection } = useIntelligentCodeSplitting();
 
   useEffect(() => {
@@ -48,8 +52,18 @@ function AppContent() {
       isSlowConnection: isSlowConnection(),
       userAgent: navigator.userAgent,
       language: navigator.language,
+      pwaInstallable: pwa.isInstallable,
+      pwaInstalled: pwa.isInstalled,
+      offline: pwa.isOffline,
     });
-  }, [isSlowConnection]);
+
+    // Track app initialization
+    analytics.trackEvent('app_initialized', {
+      isSlowConnection: isSlowConnection(),
+      isPWAInstalled: pwa.isInstalled,
+      isOffline: pwa.isOffline,
+    });
+  }, [isSlowConnection, pwa, analytics]);
 
   return (
     <ThemeProvider 

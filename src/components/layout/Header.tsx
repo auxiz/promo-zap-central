@@ -1,41 +1,39 @@
 
-import { Menu, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { NotificationCenter } from './NotificationCenter';
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import UserDropdown from "@/components/auth/UserDropdown";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import NotificationCenter from "./NotificationCenter";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 
 interface HeaderProps {
   onMenuToggle: () => void;
 }
 
 export default function Header({ onMenuToggle }: HeaderProps) {
-  const { signOut } = useAuth();
-
   return (
-    <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-      <div className="flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
+    <header className="bg-background border-b border-border/60 p-3 lg:p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="ghost" 
+            size="sm" 
             onClick={onMenuToggle}
-            className="md:hidden"
+            className="md:hidden p-1.5 h-auto"
           >
-            <Menu className="h-5 w-5" />
+            <Menu size={20} />
           </Button>
+          
+          <div className="hidden md:block">
+            <h2 className="text-lg font-semibold">PromoZap Central</h2>
+          </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2 lg:space-x-3">
+          <PWAInstallButton />
           <NotificationCenter />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut()}
-            className="text-muted-foreground hover:text-foreground"
-            title="Sair"
-          >
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <ThemeToggle />
+          <UserDropdown />
         </div>
       </div>
     </header>
