@@ -1,6 +1,6 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
 
 interface FeedbackOptions {
   type: 'success' | 'error' | 'warning' | 'info';
@@ -29,11 +29,8 @@ export function useVisualFeedback() {
       description: options.description,
       variant: options.type === 'error' ? 'destructive' : 'default',
       duration: options.duration,
-      action: options.action ? (
-        <Button onClick={options.action.onClick} variant="outline">
-          {options.action.label}
-        </Button>
-      ) : undefined
+      // Remove the action for now to avoid JSX in hook
+      // Action buttons can be handled in the component that calls this hook
     });
   }, [toast]);
 
