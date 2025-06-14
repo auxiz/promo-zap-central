@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
 interface PerformanceMetrics {
@@ -52,7 +51,7 @@ export function useAdvancedAnalytics() {
         largestContentfulPaint: Math.random() * 2000 + 1000, // Simulated
         cumulativeLayoutShift: Math.random() * 0.3,
         firstInputDelay: Math.random() * 100,
-        timeToInteractive: navigation?.domInteractive - navigation?.navigationStart || 0
+        timeToInteractive: navigation?.domInteractive - navigation?.fetchStart || 0
       };
 
       // Simulate user behavior metrics
