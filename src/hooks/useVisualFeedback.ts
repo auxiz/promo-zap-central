@@ -30,7 +30,6 @@ export function useVisualFeedback() {
       variant: options.type === 'error' ? 'destructive' : 'default',
       duration: options.duration,
       action: options.action ? {
-        altText: options.action.label,
         onClick: options.action.onClick,
         children: options.action.label
       } : undefined
