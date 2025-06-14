@@ -1,7 +1,7 @@
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import ModernAuthPage from "@/components/auth/ModernAuthPage";
+import AuthPage from "@/components/auth/AuthPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/admin/AdminRoute";
 import Layout from "@/components/layout/Layout";
@@ -34,7 +34,7 @@ export default function Router() {
   if (!user) {
     return (
       <Routes>
-        <Route path="/auth" element={<ModernAuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     );

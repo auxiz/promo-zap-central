@@ -1,72 +1,78 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
+import { ProfileAvatar } from '@/components/perfil/ProfileAvatar';
 import { ProfileForm } from '@/components/perfil/ProfileForm';
+import { AppearanceTab } from '@/components/perfil/AppearanceTab';
 import { NotificationsTab } from '@/components/perfil/NotificationsTab';
 import { PrivacyTab } from '@/components/perfil/PrivacyTab';
-import { AppearanceTab } from '@/components/perfil/AppearanceTab';
-import { AccessibilityTab } from '@/components/perfil/AccessibilityTab';
-import { User, Bell, Shield, Palette, Eye } from 'lucide-react';
 
 export default function Perfil() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const { user } = useAuth();
+  const { profile, loading, updateProfile } = useUserProfile();
+  const { role, isAdmin, loading: roleLoading } = useUserRole();
+
+  if (loading || roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Perfil do Usuário</h1>
-          <p className="text-muted-foreground">
-            Gerencie suas informações pessoais e preferências
-          </p>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="profile" className="flex items-center space-x-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Perfil</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center space-x-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notificações</span>
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center space-x-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Privacidade</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center space-x-2">
-              <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">Aparência</span>
-            </TabsTrigger>
-            <TabsTrigger value="accessibility" className="flex items-center space-x-2">
-              <Eye className="h-4 w-4" />
-              <span className="hidden sm:inline">Acessibilidade</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="profile" className="mt-6">
-            <ProfileForm />
-          </TabsContent>
-
-          <TabsContent value="notifications" className="mt-6">
-            <NotificationsTab />
-          </TabsContent>
-
-          <TabsContent value="privacy" className="mt-6">
-            <PrivacyTab />
-          </TabsContent>
-
-          <TabsContent value="appearance" className="mt-6">
-            <AppearanceTab />
-          </TabsContent>
-
-          <TabsContent value="accessibility" className="mt-6">
-            <AccessibilityTab />
-          </TabsContent>
-        </Tabs>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Minha Conta</h1>
+        <p className="text-muted-foreground">
+          Gerencie suas informações pessoais e preferências
+        </p>
       </div>
+
+      <Tabs defaultValue="perfil" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="aparencia">Aparência</TabsTrigger>
+          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+          <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="perfil" className="space-y-6">
+          <Card className="p-6">
+            <div className="space-y-6">
+              <ProfileAvatar 
+                profile={profile}
+                user={user}
+                isAdmin={isAdmin}
+                role={role}
+              />
+              <ProfileForm 
+                profile={profile}
+                user={user}
+                role={role}
+                isAdmin={isAdmin}
+                updateProfile={updateProfile}
+              />
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="aparencia" className="space-y-6">
+          <AppearanceTab />
+        </TabsContent>
+
+        <TabsContent value="notificacoes" className="space-y-6">
+          <NotificationsTab />
+        </TabsContent>
+
+        <TabsContent value="privacidade" className="space-y-6">
+          <PrivacyTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

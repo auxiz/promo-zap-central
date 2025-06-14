@@ -1,104 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Settings,
-  Users,
-  BarChart3,
-  Activity,
-  Zap,
-  Shield,
-  TrendingUp,
-  HardDrive
-} from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AdminSystemTab } from '@/components/admin/AdminSystemTab';
+
+import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Shield, Users, BarChart3, Settings, Activity } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { AdminUsersTab } from '@/components/admin/AdminUsersTab';
 import { AdminAnalyticsTab } from '@/components/admin/AdminAnalyticsTab';
+import { AdminSystemTab } from '@/components/admin/AdminSystemTab';
 import { AdminActivityTab } from '@/components/admin/AdminActivityTab';
 
-import { SystemMonitoringDashboard } from '@/components/admin/SystemMonitoringDashboard';
-import { PerformanceOptimizationPanel } from '@/components/admin/PerformanceOptimizationPanel';
-import { RateLimitMonitor } from '@/components/admin/RateLimitMonitor';
-import { AdvancedAnalyticsPanel } from '@/components/admin/AdvancedAnalyticsPanel';
-import { ResourceMonitoringPanel } from '@/components/admin/ResourceMonitoringPanel';
-
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState('system');
+  const { user } = useAuth();
+  const { isAdmin, loading } = useUserRole();
 
-  useEffect(() => {
-    // Optional: Persist tab selection in localStorage
-    const storedTab = localStorage.getItem('admin-active-tab');
-    if (storedTab) {
-      setActiveTab(storedTab);
-    }
-  }, []);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    // Optional: Persist tab selection in localStorage
-    localStorage.setItem('admin-active-tab', activeTab);
-  }, [activeTab]);
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'system':
-        return <AdminSystemTab />;
-      case 'users':
-        return <AdminUsersTab />;
-      case 'analytics':
-        return <AdminAnalyticsTab />;
-      case 'activity':
-        return <AdminActivityTab />;
-      case 'monitoring':
-        return <SystemMonitoringDashboard />;
-      case 'performance':
-        return <PerformanceOptimizationPanel />;
-      case 'rate-limit':
-        return <RateLimitMonitor />;
-      case 'advanced-analytics':
-        return <AdvancedAnalyticsPanel />;
-      case 'resources':
-        return <ResourceMonitoringPanel />;
-      default:
-        return <AdminSystemTab />;
-    }
-  };
-
-  const tabs = [
-    { id: 'system', label: 'Sistema', icon: Settings },
-    { id: 'users', label: 'Usuários', icon: Users },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'activity', label: 'Atividade', icon: Activity },
-    { id: 'monitoring', label: 'Monitoramento', icon: Activity },
-    { id: 'performance', label: 'Performance', icon: Zap },
-    { id: 'rate-limit', label: 'Rate Limiting', icon: Shield },
-    { id: 'advanced-analytics', label: 'Analytics Avançado', icon: TrendingUp },
-    { id: 'resources', label: 'Recursos', icon: HardDrive }
-  ];
+  // Redirect non-admin users
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
-    <div className="container mx-auto py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle>Painel de Administração</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList>
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
-                  <tab.icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {tabs.map((tab) => (
-              <TabsContent key={tab.id} value={tab.id} className="mt-6">
-                {renderTabContent()}
-              </TabsContent>
-            ))}
-          </Tabs>
-        </CardContent>
-      </Card>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <Shield className="h-8 w-8 text-yellow-600" />
+        <div>
+          <h1 className="text-3xl font-bold">Painel de Administração</h1>
+          <p className="text-muted-foreground">
+            Gerencie usuários, monitore o sistema e configure funcionalidades
+          </p>
+        </div>
+      </div>
+
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Usuários
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Atividades
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Sistema
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6">
+          <AdminUsersTab />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <AdminAnalyticsTab />
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-6">
+          <AdminActivityTab />
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-6">
+          <AdminSystemTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
