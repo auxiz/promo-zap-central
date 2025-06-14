@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 import { usePWA } from './usePWA';
@@ -16,6 +16,8 @@ interface RealtimeNotification {
 export const useRealtimeNotifications = () => {
   const { addNotification } = useNotificationContext();
   const { requestNotificationPermission } = usePWA();
+  const channelRef = useRef<any>(null);
+  const permissionRequestedRef = useRef(false);
 
   const sendBrowserNotification = useCallback((title: string, message: string) => {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -42,28 +44,48 @@ export const useRealtimeNotifications = () => {
   }, [addNotification, sendBrowserNotification]);
 
   useEffect(() => {
-    // Request notification permission on first load
-    requestNotificationPermission();
+    // Request notification permission only once
+    if (!permissionRequestedRef.current) {
+      permissionRequestedRef.current = true;
+      requestNotificationPermission();
+    }
 
-    // Subscribe to real-time notifications
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`,
-        },
-        (payload) => {
-          handleNotification(payload.new as RealtimeNotification);
-        }
-      )
-      .subscribe();
+    // Clean up existing channel if any
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    // Get current user and subscribe to notifications
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Subscribe to real-time notifications
+        channelRef.current = supabase
+          .channel('notifications')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              handleNotification(payload.new as RealtimeNotification);
+            }
+          )
+          .subscribe();
+      }
+    };
+
+    setupRealtimeSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [handleNotification, requestNotificationPermission]);
 
