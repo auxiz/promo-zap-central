@@ -47,7 +47,7 @@ export function useSystemMonitoring() {
       if (newMetrics.responseTime > 2000) {
         newAlerts.push({
           id: `rt-${Date.now()}`,
-          type: 'warning',
+          type: 'warning' as const,
           message: `Tempo de resposta alto: ${newMetrics.responseTime}ms`,
           timestamp: new Date(),
           resolved: false
@@ -57,7 +57,7 @@ export function useSystemMonitoring() {
       if (newMetrics.errorRate > 2) {
         newAlerts.push({
           id: `er-${Date.now()}`,
-          type: 'error',
+          type: 'error' as const,
           message: `Taxa de erro elevada: ${newMetrics.errorRate.toFixed(2)}%`,
           timestamp: new Date(),
           resolved: false
@@ -67,7 +67,7 @@ export function useSystemMonitoring() {
       if (newMetrics.memoryUsage > 85) {
         newAlerts.push({
           id: `mem-${Date.now()}`,
-          type: 'warning',
+          type: 'warning' as const,
           message: `Uso de memória alto: ${newMetrics.memoryUsage.toFixed(1)}%`,
           timestamp: new Date(),
           resolved: false
@@ -82,7 +82,7 @@ export function useSystemMonitoring() {
       console.error('Erro ao coletar métricas:', error);
       setAlerts(prev => [{
         id: `error-${Date.now()}`,
-        type: 'error',
+        type: 'error' as const,
         message: 'Falha na coleta de métricas do sistema',
         timestamp: new Date(),
         resolved: false

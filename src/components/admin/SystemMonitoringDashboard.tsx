@@ -10,7 +10,7 @@ import {
   AlertTriangle, 
   CheckCircle, 
   Clock, 
-  Memory, 
+  HardDrive, 
   TrendingUp,
   Users,
   Zap
@@ -132,7 +132,7 @@ export function SystemMonitoringDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Uso de Memória</CardTitle>
-              <Memory className="h-4 w-4 text-muted-foreground" />
+              <HardDrive className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${getStatusColor(metrics.memoryUsage, [70, 85])}`}>

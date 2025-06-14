@@ -5,7 +5,7 @@ import { useCallback, useMemo } from 'react';
 interface OptimizedQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'> {
   queryKey: QueryKey;
   queryFn: () => Promise<T>;
-  cacheTime?: number;
+  gcTime?: number;
   staleTime?: number;
   enableOptimisticUpdates?: boolean;
   enableBackgroundRefetch?: boolean;
@@ -15,7 +15,7 @@ export function useOptimizedQuery<T>(options: OptimizedQueryOptions<T>) {
   const {
     queryKey,
     queryFn,
-    cacheTime = 10 * 60 * 1000, // 10 minutes default cache
+    gcTime = 10 * 60 * 1000, // 10 minutes default cache
     staleTime = 5 * 60 * 1000,  // 5 minutes default stale time
     enableOptimisticUpdates = true,
     enableBackgroundRefetch = true,
@@ -30,7 +30,7 @@ export function useOptimizedQuery<T>(options: OptimizedQueryOptions<T>) {
     const baseOptions: UseQueryOptions<T> = {
       queryKey,
       queryFn: memoizedQueryFn,
-      cacheTime,
+      gcTime,
       staleTime,
       refetchOnWindowFocus: enableBackgroundRefetch,
       refetchOnReconnect: enableBackgroundRefetch,
@@ -39,16 +39,11 @@ export function useOptimizedQuery<T>(options: OptimizedQueryOptions<T>) {
       ...restOptions
     };
 
-    // Enable optimistic updates for write operations
-    if (enableOptimisticUpdates) {
-      baseOptions.optimisticResults = true;
-    }
-
     return baseOptions;
   }, [
     queryKey,
     memoizedQueryFn,
-    cacheTime,
+    gcTime,
     staleTime,
     enableBackgroundRefetch,
     enableOptimisticUpdates,
@@ -68,14 +63,11 @@ export function useOptimizedQuery<T>(options: OptimizedQueryOptions<T>) {
 
     // Log performance metrics for monitoring
     if (typeof window !== 'undefined' && window.performance) {
-      const entry = performance.getEntriesByName(String(queryKey))[0];
-      if (entry) {
-        console.debug(`Query Performance [${String(queryKey)}]:`, {
-          duration: entry.duration,
-          cached: performance.isCached,
-          optimized: performance.isOptimized
-        });
-      }
+      console.debug(`Query Performance [${String(queryKey)}]:`, {
+        cached: performance.isCached,
+        optimized: performance.isOptimized,
+        lastFetch: performance.lastFetchTime
+      });
     }
 
     return performance;
