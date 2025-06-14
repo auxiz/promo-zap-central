@@ -1,6 +1,6 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface FeedbackOptions {
   type: 'success' | 'error' | 'warning' | 'info';
@@ -29,10 +29,11 @@ export function useVisualFeedback() {
       description: options.description,
       variant: options.type === 'error' ? 'destructive' : 'default',
       duration: options.duration,
-      action: options.action ? {
-        onClick: options.action.onClick,
-        children: options.action.label
-      } : undefined
+      action: options.action ? (
+        <Button onClick={options.action.onClick} variant="outline">
+          {options.action.label}
+        </Button>
+      ) : undefined
     });
   }, [toast]);
 
