@@ -1,7 +1,6 @@
-
 import { lazy, Suspense, ComponentType } from 'react';
 import { EnhancedFeedback } from '@/components/ui/EnhancedFeedback';
-import ErrorBoundary from 'react-error-boundary';
+import { ErrorBoundary } from 'react-error-boundary';
 
 interface LazyComponentOptions {
   fallback?: React.ComponentType;
