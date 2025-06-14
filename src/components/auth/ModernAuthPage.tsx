@@ -7,17 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ArrowLeft, Eye, EyeOff, Mail, Lock, User, Github, Chrome } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { SocialLoginButtons } from './SocialLoginButtons';
+import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
-
-interface PasswordStrength {
-  score: number;
-  feedback: string[];
-}
 
 export default function ModernAuthPage() {
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -28,7 +25,6 @@ export default function ModernAuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [emailValid, setEmailValid] = useState<boolean | null>(null);
-  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({ score: 0, feedback: [] });
   const { signIn, signUp } = useAuth();
 
   // Real-time email validation
@@ -41,50 +37,6 @@ export default function ModernAuthPage() {
     }
   }, [email]);
 
-  // Password strength calculation
-  useEffect(() => {
-    if (password && mode === 'signup') {
-      const strength = calculatePasswordStrength(password);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength({ score: 0, feedback: [] });
-    }
-  }, [password, mode]);
-
-  const calculatePasswordStrength = (pwd: string): PasswordStrength => {
-    let score = 0;
-    const feedback = [];
-
-    if (pwd.length >= 8) score += 1;
-    else feedback.push('Pelo menos 8 caracteres');
-
-    if (/[A-Z]/.test(pwd)) score += 1;
-    else feedback.push('Uma letra maiúscula');
-
-    if (/[a-z]/.test(pwd)) score += 1;
-    else feedback.push('Uma letra minúscula');
-
-    if (/\d/.test(pwd)) score += 1;
-    else feedback.push('Um número');
-
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) score += 1;
-    else feedback.push('Um caractere especial');
-
-    return { score, feedback };
-  };
-
-  const getPasswordStrengthColor = (score: number) => {
-    if (score <= 1) return 'bg-red-500';
-    if (score <= 3) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-
-  const getPasswordStrengthText = (score: number) => {
-    if (score <= 1) return 'Fraca';
-    if (score <= 3) return 'Média';
-    return 'Forte';
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -93,10 +45,6 @@ export default function ModernAuthPage() {
       if (mode === 'signin') {
         await signIn(email, password);
       } else if (mode === 'signup') {
-        if (passwordStrength.score < 3) {
-          toast.error('Senha muito fraca. Por favor, escolha uma senha mais forte.');
-          return;
-        }
         await signUp(email, password, fullName);
       } else if (mode === 'reset') {
         await handlePasswordReset();
@@ -129,25 +77,6 @@ export default function ModernAuthPage() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'github') => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      console.error(`${provider} login failed:`, error);
-      toast.error(`Erro ao fazer login com ${provider}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getTitle = () => {
     switch (mode) {
       case 'signin':
@@ -175,9 +104,15 @@ export default function ModernAuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-      {/* Background pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 relative">
+      {/* Background pattern using Tailwind */}
+      <div 
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+          backgroundSize: '20px 20px'
+        }}
+      />
       
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
         <CardHeader className="space-y-2 text-center">
@@ -208,26 +143,7 @@ export default function ModernAuthPage() {
           {/* Social Login Buttons */}
           {mode !== 'reset' && (
             <div className="space-y-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleSocialLogin('google')}
-                disabled={loading}
-                className="w-full h-11 font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <Chrome className="w-5 h-5 mr-2" />
-                Continuar com Google
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleSocialLogin('github')}
-                disabled={loading}
-                className="w-full h-11 font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <Github className="w-5 h-5 mr-2" />
-                Continuar com GitHub
-              </Button>
+              <SocialLoginButtons disabled={loading} />
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -317,39 +233,8 @@ export default function ModernAuthPage() {
                   </Button>
                 </div>
                 
-                {mode === 'signup' && password && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span>Força da senha:</span>
-                      <span className={cn(
-                        "font-medium",
-                        passwordStrength.score <= 1 && "text-red-500",
-                        passwordStrength.score > 1 && passwordStrength.score <= 3 && "text-yellow-500",
-                        passwordStrength.score > 3 && "text-green-500"
-                      )}>
-                        {getPasswordStrengthText(passwordStrength.score)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={cn(
-                          "h-2 rounded-full transition-all duration-300",
-                          getPasswordStrengthColor(passwordStrength.score)
-                        )}
-                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                      />
-                    </div>
-                    {passwordStrength.feedback.length > 0 && (
-                      <ul className="text-xs text-gray-500 space-y-1">
-                        {passwordStrength.feedback.map((item, index) => (
-                          <li key={index} className="flex items-center gap-1">
-                            <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+                {mode === 'signup' && (
+                  <PasswordStrengthIndicator password={password} />
                 )}
               </div>
             )}
@@ -380,7 +265,7 @@ export default function ModernAuthPage() {
             <Button 
               type="submit" 
               className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium" 
-              disabled={loading || (mode === 'signup' && passwordStrength.score < 3)}
+              disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === 'signin' && 'Entrar'}
@@ -418,13 +303,6 @@ export default function ModernAuthPage() {
           </div>
         </CardContent>
       </Card>
-
-      <style jsx global>{`
-        .bg-grid-pattern {
-          background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
-          background-size: 20px 20px;
-        }
-      `}</style>
     </div>
   );
 }
