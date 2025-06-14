@@ -1,20 +1,61 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, lazy, Suspense } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "@/components/auth/AuthPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/admin/AdminRoute";
 import Layout from "@/components/layout/Layout";
-import Index from "@/pages/Index";
-import WhatsAppConexao from "@/pages/WhatsAppConexao";
-import GruposMonitorados from "@/pages/GruposMonitorados";
-import GruposEnvio from "@/pages/GruposEnvio";
-import Mensagens from "@/pages/Mensagens";
-import Configuracoes from "@/pages/Configuracoes";
-import Perfil from "@/pages/Perfil";
-import Admin from "@/pages/Admin";
-import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { EnhancedFeedback } from "@/components/ui/EnhancedFeedback";
+import { ErrorBoundary } from "react-error-boundary";
+
+// Lazy load das páginas principais para otimizar bundle
+const Index = lazy(() => import("@/pages/Index"));
+const WhatsAppConexao = lazy(() => import("@/pages/WhatsAppConexao"));
+const GruposMonitorados = lazy(() => import("@/pages/GruposMonitorados"));
+const GruposEnvio = lazy(() => import("@/pages/GruposEnvio"));
+const Mensagens = lazy(() => import("@/pages/Mensagens"));
+const Configuracoes = lazy(() => import("@/pages/Configuracoes"));
+const Perfil = lazy(() => import("@/pages/Perfil"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+// Componente de loading para rotas
+const RouteLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <EnhancedFeedback
+      type="loading"
+      title="Carregando página..."
+      message="Aguarde enquanto preparamos o conteúdo."
+    />
+  </div>
+);
+
+// Componente de erro para rotas
+const RouteErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => (
+  <div className="min-h-screen flex items-center justify-center">
+    <EnhancedFeedback
+      type="error"
+      title="Erro ao carregar página"
+      message="Ocorreu um erro inesperado ao carregar esta página."
+      action={{
+        label: "Tentar novamente",
+        onClick: resetErrorBoundary
+      }}
+    />
+  </div>
+);
+
+// HOC para wrapping lazy routes com erro handling
+const withLazyRoute = (Component: React.LazyExoticComponent<React.ComponentType<any>>) => {
+  return (props: any) => (
+    <ErrorBoundary FallbackComponent={RouteErrorFallback}>
+      <Suspense fallback={<RouteLoader />}>
+        <Component {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
 
 export default function Router() {
   const { user, loading } = useAuth();
@@ -40,56 +81,56 @@ export default function Router() {
     );
   }
 
-  // If user is logged in, show protected routes
+  // If user is logged in, show protected routes with lazy loading
   return (
     <Routes>
       <Route path="/auth" element={<Navigate to="/" replace />} />
       <Route path="/" element={
         <ProtectedRoute>
           <Layout>
-            <Index />
+            {withLazyRoute(Index)({})}
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/whatsapp-conexao" element={
         <ProtectedRoute>
           <Layout>
-            <WhatsAppConexao />
+            {withLazyRoute(WhatsAppConexao)({})}
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/grupos-monitorados" element={
         <ProtectedRoute>
           <Layout>
-            <GruposMonitorados />
+            {withLazyRoute(GruposMonitorados)({})}
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/grupos-envio" element={
         <ProtectedRoute>
           <Layout>
-            <GruposEnvio />
+            {withLazyRoute(GruposEnvio)({})}
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/mensagens" element={
         <ProtectedRoute>
           <Layout>
-            <Mensagens />
+            {withLazyRoute(Mensagens)({})}
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/configuracoes" element={
         <ProtectedRoute>
           <Layout>
-            <Configuracoes />
+            {withLazyRoute(Configuracoes)({})}
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/perfil" element={
         <ProtectedRoute>
           <Layout>
-            <Perfil />
+            {withLazyRoute(Perfil)({})}
           </Layout>
         </ProtectedRoute>
       } />
@@ -97,14 +138,14 @@ export default function Router() {
         <ProtectedRoute>
           <AdminRoute>
             <Layout>
-              <Admin />
+              {withLazyRoute(Admin)({})}
             </Layout>
           </AdminRoute>
         </ProtectedRoute>
       } />
       {/* Redirect old configuracoes-usuario route to perfil */}
       <Route path="/configuracoes-usuario" element={<Navigate to="/perfil" replace />} />
-      <Route path="*" element={<NotFound />} />
+      <Route path="*" element={withLazyRoute(NotFound)({})} />
     </Routes>
   );
 }

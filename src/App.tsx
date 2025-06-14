@@ -6,27 +6,74 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import Router from "@/Router";
+import { useBundleOptimization, useIntelligentCodeSplitting } from "@/hooks/useBundleOptimization";
+import { useIdlePreloading } from "@/hooks/usePreloadComponents";
+import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+// Create query client with optimized configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors
+        if (error && typeof error === 'object' && 'status' in error) {
+          const status = (error as any).status;
+          if (status >= 400 && status < 500) return false;
+        }
+        return failureCount < 3;
+      },
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function AppContent() {
+  // Initialize performance optimizations
+  useBundleOptimization({
+    enablePreloading: true,
+    enablePrefetching: true,
+    enableResourceHints: true,
+  });
+
+  // Start idle preloading after app loads
+  useIdlePreloading();
+
+  const { isSlowConnection } = useIntelligentCodeSplitting();
+
+  useEffect(() => {
+    // Log connection info for debugging
+    console.log('🌐 Connection Status:', {
+      isSlowConnection: isSlowConnection(),
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+    });
+  }, [isSlowConnection]);
+
+  return (
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="dark" 
+      enableSystem
+      storageKey="vite-ui-theme"
+    >
+      <BrowserRouter>
+        <AuthProvider>
+          <NotificationProvider>
+            <Router />
+            <Toaster />
+          </NotificationProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider 
-        attribute="class" 
-        defaultTheme="dark" 
-        enableSystem
-        storageKey="vite-ui-theme"
-      >
-        <BrowserRouter>
-          <AuthProvider>
-            <NotificationProvider>
-              <Router />
-              <Toaster />
-            </NotificationProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
+      <AppContent />
     </QueryClientProvider>
   );
 }

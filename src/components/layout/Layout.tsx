@@ -112,8 +112,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex h-screen bg-background w-full max-w-full overflow-x-hidden">
       <Sidebar 
         isOpen={isSidebarOpen} 
-        onToggle={toggleSidebar} 
-        className={`transition-all duration-300 ease-in-out ${isTransitioning ? 'transition-transform' : ''}`}
+        onToggle={toggleSidebar}
       />
       
       <div className="flex flex-col flex-1 overflow-hidden min-w-0 main-content transition-all duration-300">
