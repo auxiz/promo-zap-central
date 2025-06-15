@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AnalyticsEvent {
@@ -18,20 +18,27 @@ export const useAnalytics = () => {
   const { user } = useAuth();
   const [pageViews, setPageViews] = useState<PageView[]>([]);
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
+  
+  // Stable references that don't change
   const sessionStartRef = useRef<number>(Date.now());
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPageViewRef = useRef<string>('');
   const trackingDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastHeartbeatRef = useRef<number>(0);
+  const performanceTrackedRef = useRef<boolean>(false);
 
-  // Stable session ID that doesn't change
-  const sessionId = sessionStartRef.current;
+  // Stable session ID using useMemo
+  const sessionId = useMemo(() => sessionStartRef.current, []);
 
-  // Track page view with debounce to prevent excessive calls
+  // Stable user ID reference
+  const userId = useMemo(() => user?.id, [user?.id]);
+
+  // Track page view with debounce and rate limiting
   const trackPageView = useCallback((path: string) => {
     // Skip if same path was just tracked
     if (lastPageViewRef.current === path) return;
     
-    // Debounce to prevent rapid successive calls
+    // Clear any existing debounce
     if (trackingDebounceRef.current) {
       clearTimeout(trackingDebounceRef.current);
     }
@@ -59,27 +66,37 @@ export const useAnalytics = () => {
       });
 
       // Send to analytics service (placeholder)
-      console.log('📊 Page View:', { path, timestamp: now, user_id: user?.id });
-    }, 100); // 100ms debounce
-  }, [user?.id]);
+      console.log('📊 Page View:', { path, timestamp: now, user_id: userId });
+    }, 200); // Increased debounce to 200ms
+  }, [userId]); // Only depend on userId
 
-  // Track custom event - stable reference
+  // Track custom event - stable reference with rate limiting
   const trackEvent = useCallback((event: string, properties: Record<string, any> = {}) => {
+    const now = Date.now();
+    
+    // Rate limit: max 1 event per second for the same event type
+    const lastEventKey = `${event}_${JSON.stringify(properties)}`;
+    const lastEventTime = sessionStorage.getItem(`last_${lastEventKey}`);
+    if (lastEventTime && now - parseInt(lastEventTime) < 1000) {
+      return; // Skip if too frequent
+    }
+    sessionStorage.setItem(`last_${lastEventKey}`, now.toString());
+
     const analyticsEvent: AnalyticsEvent = {
       event,
       properties: {
         ...properties,
-        user_id: user?.id,
+        user_id: userId,
         session_id: sessionId,
       },
-      timestamp: Date.now(),
+      timestamp: now,
     };
 
     setEvents(prev => [...prev, analyticsEvent].slice(-100)); // Keep last 100 events
 
     // Send to analytics service (placeholder)
     console.log('📊 Event:', analyticsEvent);
-  }, [user?.id, sessionId]);
+  }, [userId, sessionId]); // Stable dependencies
 
   // Track user interaction
   const trackInteraction = useCallback((element: string, action: string, context?: string) => {
@@ -92,7 +109,8 @@ export const useAnalytics = () => {
 
   // Track performance metrics - only once per session
   const trackPerformance = useCallback(() => {
-    if (typeof window.performance === 'undefined') return;
+    if (typeof window.performance === 'undefined' || performanceTrackedRef.current) return;
+    performanceTrackedRef.current = true;
 
     const navigation = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
     
@@ -117,13 +135,10 @@ export const useAnalytics = () => {
 
   // Initialize performance tracking only once
   useEffect(() => {
-    let performanceTracked = false;
+    if (performanceTrackedRef.current) return;
     
     const handlePerformanceTracking = () => {
-      if (!performanceTracked) {
-        performanceTracked = true;
-        trackPerformance();
-      }
+      trackPerformance();
     };
 
     if (document.readyState === 'complete') {
@@ -135,31 +150,46 @@ export const useAnalytics = () => {
     return () => {
       window.removeEventListener('load', handlePerformanceTracking);
     };
-  }, [trackPerformance]);
+  }, []); // No dependencies - run only once
 
-  // Session heartbeat - with proper cleanup
+  // Session heartbeat - optimized with longer intervals
   useEffect(() => {
     // Clear any existing interval
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
     }
 
-    // Set up new interval only if user exists
-    if (user?.id) {
-      heartbeatIntervalRef.current = setInterval(() => {
-        trackEvent('session_heartbeat', {
-          session_duration: Date.now() - sessionId,
-        });
-      }, 60000); // Reduced to every 60 seconds instead of 30
-    }
+    // Only set up heartbeat if user exists and we haven't sent one recently
+    if (userId) {
+      const now = Date.now();
+      
+      // Don't start heartbeat immediately, wait a bit
+      const startHeartbeat = () => {
+        heartbeatIntervalRef.current = setInterval(() => {
+          const currentTime = Date.now();
+          // Rate limit: only send heartbeat if 5 minutes have passed
+          if (currentTime - lastHeartbeatRef.current >= 300000) { // 5 minutes
+            lastHeartbeatRef.current = currentTime;
+            trackEvent('session_heartbeat', {
+              session_duration: currentTime - sessionId,
+            });
+          }
+        }, 300000); // Every 5 minutes instead of 60 seconds
+      };
 
-    return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-    };
-  }, [user?.id, trackEvent, sessionId]);
+      // Start heartbeat after 2 minutes to avoid initial rush
+      const delayTimeout = setTimeout(startHeartbeat, 120000);
+
+      return () => {
+        clearTimeout(delayTimeout);
+        if (heartbeatIntervalRef.current) {
+          clearInterval(heartbeatIntervalRef.current);
+          heartbeatIntervalRef.current = null;
+        }
+      };
+    }
+  }, [userId, sessionId, trackEvent]); // Minimal dependencies
 
   // Cleanup on unmount
   useEffect(() => {

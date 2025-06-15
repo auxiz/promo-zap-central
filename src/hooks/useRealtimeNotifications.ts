@@ -18,9 +18,21 @@ export const useRealtimeNotifications = () => {
   const { requestNotificationPermission } = usePWA();
   const channelRef = useRef<any>(null);
   const permissionRequestedRef = useRef(false);
+  const userIdRef = useRef<string | null>(null);
 
   const sendBrowserNotification = useCallback((title: string, message: string) => {
     if ('Notification' in window && Notification.permission === 'granted') {
+      // Rate limit browser notifications
+      const lastNotificationKey = `last_browser_notification_${title}`;
+      const lastTime = sessionStorage.getItem(lastNotificationKey);
+      const now = Date.now();
+      
+      if (lastTime && now - parseInt(lastTime) < 5000) { // 5 second cooldown
+        return;
+      }
+      
+      sessionStorage.setItem(lastNotificationKey, now.toString());
+      
       new Notification(title, {
         body: message,
         icon: '/favicon.ico',
@@ -31,6 +43,13 @@ export const useRealtimeNotifications = () => {
   }, []);
 
   const handleNotification = useCallback((notification: RealtimeNotification) => {
+    // Rate limit notifications processing
+    const lastProcessedKey = `last_processed_${notification.id}`;
+    if (sessionStorage.getItem(lastProcessedKey)) {
+      return; // Already processed
+    }
+    sessionStorage.setItem(lastProcessedKey, Date.now().toString());
+
     // Add to internal notification system
     addNotification(
       notification.title,
@@ -47,41 +66,53 @@ export const useRealtimeNotifications = () => {
     // Request notification permission only once
     if (!permissionRequestedRef.current) {
       permissionRequestedRef.current = true;
-      requestNotificationPermission();
+      // Delay to avoid blocking app startup
+      setTimeout(() => {
+        requestNotificationPermission();
+      }, 3000);
     }
 
     // Clean up existing channel if any
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
     // Get current user and subscribe to notifications
     const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Subscribe to real-time notifications
-        channelRef.current = supabase
-          .channel('notifications')
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'notifications',
-              filter: `user_id=eq.${user.id}`,
-            },
-            (payload) => {
-              handleNotification(payload.new as RealtimeNotification);
-            }
-          )
-          .subscribe();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user && user.id !== userIdRef.current) {
+          userIdRef.current = user.id;
+          
+          // Subscribe to real-time notifications
+          channelRef.current = supabase
+            .channel(`notifications_${user.id}`) // Unique channel per user
+            .on(
+              'postgres_changes',
+              {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${user.id}`,
+              },
+              (payload) => {
+                handleNotification(payload.new as RealtimeNotification);
+              }
+            )
+            .subscribe();
+        }
+      } catch (error) {
+        console.error('Error setting up realtime subscription:', error);
       }
     };
 
-    setupRealtimeSubscription();
+    // Delay setup to avoid blocking app initialization
+    const timeoutId = setTimeout(setupRealtimeSubscription, 2000);
 
     return () => {
+      clearTimeout(timeoutId);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
